@@ -12,12 +12,26 @@ const GRID_KEYS = ['Q','W','E','R','A','S','D','F','Z','X','C','V']
 // On QWERTZ keyboards the physical Z key fires 'Y' and vice versa.
 // We normalise all incoming keys to their QWERTY equivalent so the
 // rest of the app only deals with QWERTY names.
-function normalise(key, isQwertz) {
+function normalise(key, isQwertz, code) {
   const k = key.toUpperCase()
+  // Standard QWERTZ physical-position remappings (no modifier held)
   if (isQwertz && k === 'Y') return 'Z'
   if (isQwertz && k === 'Z') return 'Y'  // physical Y position (rare but correct)
   if (isQwertz && k === 'Ö') return ':'  // physical ;/: key position → : shortcut
   if (isQwertz && k === '+') return ']'  // physical ] key position → ] shortcut
+  // On macOS, Alt/Option composes non-ASCII characters (e.g. Alt+B → '∫', Alt++ → '±').
+  // When event.key lands outside ASCII, fall back to event.code (the physical scan-code)
+  // which is always the unmodified key name regardless of held modifiers or OS.
+  if (code && k.charCodeAt(0) > 127) {
+    if (code.startsWith('Key')) {
+      const letter = code.slice(3)  // 'KeyB' → 'B'
+      if (isQwertz && letter === 'Y') return 'Z'
+      if (isQwertz && letter === 'Z') return 'Y'
+      return letter
+    }
+    if (code === 'BracketRight') return ']'
+    if (code === 'Semicolon')    return ':'
+  }
   return k
 }
 
@@ -1299,7 +1313,7 @@ function onKey(event) {
     // Ignore bare modifier key presses (fire before the actual key in e.g. Ctrl+S, Alt+B)
     if (['Control', 'Shift', 'Alt', 'Meta'].includes(event.key)) return
     event.preventDefault()
-    const key  = normalise(event.key, settings.keyboard === 'qwertz')
+    const key  = normalise(event.key, settings.keyboard === 'qwertz', event.code)
     const mods = []
     if (event.ctrlKey) mods.push('ctrl')
     if (event.altKey)  mods.push('alt')
@@ -1318,7 +1332,7 @@ function onKey(event) {
     // Pressing the correct answer key also advances (handles the case where the
     // user presses the right key just as the timer runs out)
     if (currentEntry) {
-      const pressedKey = normalise(event.key, settings.keyboard === 'qwertz')
+      const pressedKey = normalise(event.key, settings.keyboard === 'qwertz', event.code)
       let isCorrect = false
       if (currentEntry.type === 'shortcut') {
         const lastIdx   = currentEntry.seqKeys.length - 1
@@ -1350,7 +1364,7 @@ function onKey(event) {
   // While paused, block all other input
   if (paused) return
 
-  const key = normalise(event.key, settings.keyboard === 'qwertz')
+  const key = normalise(event.key, settings.keyboard === 'qwertz', event.code)
 
   // Browse screen: category switching + pagination
   if (screens.browse.classList.contains('active')) {
