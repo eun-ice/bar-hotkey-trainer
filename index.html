@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BAR Hotkey Trainer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ── LOADING ──────────────────────────────────────────────────────────────── -->
+<div id="screen-loading" class="screen active">
+  <div class="loading-content">
+    <div class="spinner"></div>
+    <p>Loading unit data…</p>
+  </div>
+</div>
+
+<!-- ── SETUP ────────────────────────────────────────────────────────────────── -->
+<div id="screen-setup" class="screen">
+  <div class="setup-wrap">
+
+    <header class="setup-header">
+      <h1>BAR Hotkey Trainer</h1>
+      <p>Train your build menu hotkeys for <em>Beyond All Reason</em></p>
+    </header>
+
+    <div class="setup-grid">
+
+      <section class="setup-card">
+        <h2>Faction</h2>
+        <div class="check-group">
+          <label class="check-label"><input type="checkbox" name="faction" value="armada" checked> Armada</label>
+          <label class="check-label"><input type="checkbox" name="faction" value="cortex" checked> Cortex</label>
+          <label class="check-label"><input type="checkbox" name="faction" value="legion" checked> Legion</label>
+        </div>
+      </section>
+
+      <section class="setup-card">
+        <h2>Tier</h2>
+        <div class="check-group">
+          <label class="check-label"><input type="checkbox" name="tier" value="0" checked> Commander</label>
+          <label class="check-label"><input type="checkbox" name="tier" value="1" checked> T1</label>
+          <label class="check-label"><input type="checkbox" name="tier" value="2" checked> T2</label>
+          <label class="check-label"><input type="checkbox" name="tier" value="3" id="cb-experimental"> T3 / Experimental</label>
+          <label class="check-label"><input type="checkbox" name="tier" value="optional" id="cb-optional"> Minelayers</label>
+        </div>
+      </section>
+
+      <section class="setup-card">
+        <h2>Game Shortcuts</h2>
+        <div class="check-group">
+          <label class="check-label"><input type="checkbox" name="shortcuts" value="general" checked> General Selection</label>
+          <label class="check-label"><input type="checkbox" name="shortcuts" value="battle" checked> Battle Commands</label>
+          <label class="check-label"><input type="checkbox" name="shortcuts" value="factory" checked> Factory Commands</label>
+          <label class="check-label"><input type="checkbox" name="shortcuts" value="builder" checked> Builder Commands</label>
+          <label class="check-label"><input type="checkbox" name="shortcuts" value="blueprint" checked> Blueprint Commands</label>
+          <label class="check-label"><input type="checkbox" name="shortcuts" value="rezbot" checked> Rezbot Commands</label>
+          <label class="check-label"><input type="checkbox" name="shortcuts" value="transport" checked> Transport Commands</label>
+        </div>
+      </section>
+
+      <section class="setup-card">
+        <h2>Keyboard</h2>
+        <div class="radio-group">
+          <label class="radio-label"><input type="radio" name="keyboard" value="qwerty" checked> QWERTY</label>
+          <label class="radio-label"><input type="radio" name="keyboard" value="qwertz"> QWERTZ <span class="key-hint">(Y↔Z swapped)</span></label>
+        </div>
+      </section>
+
+      <section class="setup-card">
+        <h2>Hint Timeout</h2>
+        <div class="slider-row">
+          <input type="range" id="hint-timeout" min="0" max="10" step="1" value="0">
+          <span id="hint-timeout-val">Always visible</span>
+        </div>
+        <p class="setup-hint">Seconds before the build menu is revealed</p>
+      </section>
+
+      <section class="setup-card">
+        <h2>Time Limit</h2>
+        <div class="slider-row">
+          <input type="range" id="time-limit" min="0" max="10" step="1" value="3">
+          <span id="time-limit-val">3s / key</span>
+        </div>
+        <p class="setup-hint">Seconds per key press before auto-fail (0 = no limit)</p>
+      </section>
+
+      <section class="setup-card">
+        <h2>Run Length</h2>
+        <div class="slider-row">
+          <input type="range" id="run-length" min="0" max="50" step="5" value="20">
+          <span id="run-length-val">20</span>
+        </div>
+        <p class="setup-hint">Questions per run (0 = unlimited)</p>
+      </section>
+
+    </div>
+
+    <div class="setup-footer">
+      <span id="builder-count" class="builder-count">— builders</span>
+      <div class="setup-footer-btns">
+        <button id="btn-browse" class="btn-secondary">Browse Menus</button>
+        <button id="btn-start" class="btn-primary">Start Training</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── TRAINING ──────────────────────────────────────────────────────────────── -->
+<div id="screen-training" class="screen" style="flex-direction:column">
+
+  <div class="training-layout">
+
+    <!-- Left: question -->
+    <div class="question-col">
+
+      <div class="builder-card">
+        <img id="builder-icon" class="unit-portrait" src="" alt="">
+        <div class="builder-text">
+          <div class="label-small">Building with</div>
+          <div id="builder-name" class="name-large">—</div>
+          <div id="builder-meta" class="label-small">—</div>
+        </div>
+      </div>
+
+      <div class="target-card">
+        <div class="label-small">Build:</div>
+        <div class="target-icon-wrap">
+          <img id="target-icon" class="unit-portrait" src="" alt="">
+        </div>
+        <div id="target-name" class="name-large">—</div>
+        <div id="target-description" class="target-description"></div>
+        <div class="target-costs">
+          <span class="cost metal"><span class="cost-sym">▪</span><span id="target-metal">—</span></span>
+          <span class="cost energy"><span class="cost-sym">⚡</span><span id="target-energy">—</span></span>
+        </div>
+      </div>
+
+      <div id="instruction" class="instruction">—</div>
+
+    </div>
+
+    <!-- Center: build menu -->
+    <div class="menu-col">
+
+      <!-- Wrapper gives hint-overlay a containing block that doesn't include the hover row -->
+      <div class="build-menu-wrap">
+
+        <div id="build-menu" class="build-menu">
+
+          <div id="menu-grid" class="menu-grid">
+            <!-- 12 slots rendered by JS -->
+          </div>
+
+          <div class="menu-footer">
+            <div id="cat-tabs" class="cat-tabs">
+              <!-- 4 tabs rendered by JS -->
+            </div>
+            <div id="page-btn" class="page-btn">
+              <span class="page-btn-label">Pg <strong id="page-cur">1</strong>/<span id="page-tot">2</span></span>
+              <kbd class="page-btn-key">B</kbd>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Overlay when menu is hidden (hint countdown) -->
+        <div id="hint-overlay" class="hint-overlay hidden">
+          <div class="hint-box">
+            <div class="hint-box-label">Menu hidden</div>
+            <div id="hint-countdown" class="hint-countdown">5</div>
+            <div class="hint-box-label">sec until hint</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Hovered unit name — fixed 2-line area directly below the build menu -->
+      <div id="slot-hover-info" class="slot-hover-info"></div>
+
+    </div>
+
+    <!-- Right: stats -->
+    <div class="stats-col">
+
+      <!-- Circular answer timer (hidden when timeLimit = 0) -->
+      <div id="timer-wrap" class="timer-wrap hidden">
+        <svg class="timer-ring" viewBox="0 0 44 44">
+          <circle class="timer-ring-bg" cx="22" cy="22" r="18"/>
+          <circle class="timer-ring-fg" id="timer-ring-fg" cx="22" cy="22" r="18"
+                  stroke-dasharray="113.097" stroke-dashoffset="0"/>
+        </svg>
+        <span id="timer-label" class="timer-label">5</span>
+      </div>
+
+      <div class="stat-block">
+        <div id="stat-correct" class="stat-num success">0</div>
+        <div class="stat-label">Correct</div>
+      </div>
+      <div class="stat-block">
+        <div id="stat-wrong" class="stat-num error">0</div>
+        <div class="stat-label">Wrong</div>
+      </div>
+      <div class="stat-block">
+        <div id="stat-streak" class="stat-num accent">0</div>
+        <div class="stat-label">Streak</div>
+      </div>
+      <div class="stats-sep"></div>
+      <button class="btn-secondary" id="btn-settings">⚙ Settings</button>
+      <button class="btn-secondary" id="btn-pause">⏸ Pause</button>
+      <button class="btn-secondary" id="btn-skip">↩ Skip</button>
+      <button class="btn-newrun" id="btn-newrun">▶ New Run</button>
+    </div>
+
+  </div>
+
+  <!-- ── Reaction-time stats panel ───────────────────────────────────────── -->
+  <div id="stats-panel" class="stats-panel hidden">
+    <div id="run-summary" class="run-summary hidden"></div>
+    <div class="stats-panel-header">
+      <span class="stats-panel-title">Reaction times — slowest first</span>
+      <button id="btn-reset-stats" class="btn-secondary stats-reset-btn">↺ Reset run</button>
+    </div>
+    <div class="stats-table-wrap">
+      <table class="stats-table">
+        <thead id="stats-thead"></thead>
+        <tbody id="stats-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── BROWSE ──────────────────────────────────────────────────────────────── -->
+<div id="screen-browse" class="screen">
+
+  <div class="browse-topbar">
+    <button class="btn-secondary browse-back-btn" id="btn-browse-back">← Back</button>
+    <h2 class="browse-title">Build Menu Reference</h2>
+    <input type="search" id="browse-search" class="browse-search" placeholder="Filter builders…">
+  </div>
+
+  <div class="browse-layout">
+
+    <!-- Sidebar: builder list -->
+    <div class="browse-sidebar">
+      <div id="browse-list" class="browse-list"></div>
+    </div>
+
+    <!-- Main: selected builder's build menu -->
+    <div class="browse-main">
+      <div id="browse-empty" class="browse-empty">← Select a builder to see their menu</div>
+
+      <div id="browse-content" class="browse-content hidden">
+
+        <div class="browse-builder-header">
+          <img id="browse-builder-icon" class="unit-portrait" src="" alt="">
+          <div class="browse-builder-text">
+            <div id="browse-builder-name" class="name-large">—</div>
+            <div id="browse-builder-meta" class="label-small">—</div>
+          </div>
+        </div>
+
+        <div class="build-menu">
+          <div id="browse-menu-grid" class="menu-grid"></div>
+          <div id="browse-page-bar" class="page-bar hidden"></div>
+          <div id="browse-cat-tabs" class="cat-tabs"></div>
+        </div>
+
+        <div id="browse-slot-hover-info" class="slot-hover-info"></div>
+
+        <div class="browse-key-hint">
+          Press <kbd>Z</kbd> <kbd>X</kbd> <kbd>C</kbd> <kbd>V</kbd> to switch categories
+          · <kbd>B</kbd> to advance page
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── PAUSE OVERLAY ──────────────────────────────────────────────────────────── -->
+<div id="pause-overlay" class="pause-overlay hidden">
+  <div class="pause-box">
+    <div class="pause-label">⏸ Paused</div>
+    <button id="btn-resume" class="btn-primary">▶ Resume</button>
+  </div>
+</div>
+
+<!-- ── COUNTDOWN OVERLAY ──────────────────────────────────────────────────────── -->
+<div id="countdown-overlay" class="countdown-overlay hidden">
+  <div id="countdown-number" class="countdown-number">3</div>
+</div>
+
+<footer id="site-footer">
+  Non-commercial fan project — not affiliated with the BAR team. <a href="https://github.com/eun-ice/bar-hotkey-trainer/">Open-Source</a>
+  Unit icons &copy; <a href="https://www.beyondallreason.info/" target="_blank" rel="noopener">Beyond All Reason</a>
+  by IceXuick &amp; Floris,
+  <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" rel="noopener">CC&nbsp;BY-NC-ND&nbsp;4.0</a>.
+  All rights remain with the original authors. If you have suggestions or if you want this taken down, mention @eunice3x on BAR discord.
+</footer>
+
+<script src="app.js" type="module"></script>
+</body>
+</html>

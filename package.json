@@ -1,0 +1,14 @@
+{
+  "name": "bar-hotkey-trainer",
+  "version": "0.1.0",
+  "description": "Hotkey training app for Beyond All Reason",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "extract": "node extract-data.js",
+    "extract:no-icons": "node extract-data.js --skip-icons"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

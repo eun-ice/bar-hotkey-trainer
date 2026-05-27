@@ -1,0 +1,282 @@
+{
+  "version": 1,
+  "note": "Key values match browser event.key (uppercase letters, special keys by name).",
+  "note_zy": "Z and Y are always treated as equivalent — handles QWERTY/QWERTZ confusion.",
+  "note_colon": "Position uses ':' — on QWERTY: Shift+; — on QWERTZ: Shift+. — both produce event.key ':' so no special handling needed.",
+  "contexts": {
+    "none":      "No unit selected — show prompt text only",
+    "battle":    "Show commander (represents any combat unit)",
+    "factory":   "Show a random T1 factory from the selected faction(s)",
+    "builder":   "Show a random constructor/builder from the selected faction(s)",
+    "rezbot":    "Show a Rezbot (ARM: Eraser / COR: Resurrector / LEG: equivalent)",
+    "transport": "Show a transport plane from the selected faction(s)"
+  },
+  "groups": [
+    {
+      "id": "general",
+      "name": "General Selection",
+      "context": "none",
+      "shortcuts": [
+        {
+          "id": "select-commander",
+          "label": "Select Commander",
+          "key": "Tab",
+          "description": "Jump to and select your commander"
+        },
+        {
+          "id": "select-all-same-type",
+          "label": "Select All Same Type",
+          "key": "W",
+          "modifiers": ["Ctrl"],
+          "description": "Select every unit of the same type as the currently selected unit"
+        },
+        {
+          "id": "select-all-same-type-screen",
+          "label": "Select All Same Type on Screen",
+          "key": "Q",
+          "description": "Select all units of the same type visible on screen"
+        },
+        {
+          "id": "split-army",
+          "label": "Split Army",
+          "key": "Q",
+          "modifiers": ["Ctrl"],
+          "description": "Split the selected group into two halves"
+        },
+        {
+          "id": "select-waiting-units",
+          "label": "Select Waiting Units",
+          "key": "Y",
+          "modifiers": ["Ctrl"],
+          "note": "Y/Z interchangeable — QWERTY: Ctrl+Y, QWERTZ physical: Ctrl+Z",
+          "description": "Select units that are waiting (hold fire etc.)"
+        },
+        {
+          "id": "select-idle-transports",
+          "label": "Select Idle Transports",
+          "key": "R",
+          "modifiers": ["Ctrl"],
+          "description": "Select transport planes/ships that have no orders"
+        }
+      ]
+    },
+    {
+      "id": "battle",
+      "name": "Battle Commands",
+      "context": "battle",
+      "shortcuts": [
+        {
+          "id": "attack",
+          "label": "Attack",
+          "key": "A",
+          "description": "Order selected units to attack a target"
+        },
+        {
+          "id": "target-set",
+          "label": "Target Set",
+          "key": "S",
+          "description": "Set a manual fire target"
+        },
+        {
+          "id": "target-cancel",
+          "label": "Target Cancel",
+          "key": "S",
+          "modifiers": ["Ctrl"],
+          "description": "Clear the manual fire target"
+        },
+        {
+          "id": "fight",
+          "label": "Fight",
+          "key": "F",
+          "description": "Move while engaging enemies along the way"
+        },
+        {
+          "id": "patrol",
+          "label": "Patrol",
+          "key": "H",
+          "description": "Patrol between current position and a target point"
+        },
+        {
+          "id": "guard",
+          "label": "Guard",
+          "key": "O",
+          "description": "Follow and protect another unit"
+        },
+        {
+          "id": "reclaim",
+          "label": "Reclaim",
+          "key": "E",
+          "description": "Reclaim a wreck or feature for metal"
+        },
+        {
+          "id": "repair",
+          "label": "Repair",
+          "key": "R",
+          "description": "Repair a friendly unit or structure"
+        },
+        {
+          "id": "repeat",
+          "label": "Repeat",
+          "key": "T",
+          "description": "Toggle repeat orders in the queue"
+        },
+        {
+          "id": "stop",
+          "label": "Stop",
+          "key": "G",
+          "description": "Clear all orders and stop the unit"
+        },
+        {
+          "id": "gather-wait",
+          "label": "Gather Wait",
+          "key": "P",
+          "description": "Wait at current position until a certain number of units gather"
+        },
+        {
+          "id": "on-off",
+          "label": "On / Off",
+          "key": "B",
+          "description": "Toggle unit active state (e.g. shields, cloak fields)"
+        },
+        {
+          "id": "stance",
+          "label": "Stance",
+          "key": "L",
+          "description": "Cycle fire stance: Hold Fire → Fire at Will → Return Fire"
+        },
+        {
+          "id": "position",
+          "label": "Position",
+          "key": ":",
+          "note": "':' — QWERTY: Shift+;  QWERTZ: Shift+.  Both produce ':' in the browser",
+          "description": "Cycle movement stance: Hold Position → Maneuver → Roam"
+        },
+        {
+          "id": "cloak",
+          "label": "Cloak",
+          "key": "K",
+          "description": "Toggle cloaking on units that support it"
+        },
+        {
+          "id": "dgun",
+          "label": "D-Gun",
+          "key": "D",
+          "description": "Fire the commander's disintegrator gun"
+        },
+        {
+          "id": "capture",
+          "label": "Capture",
+          "key": "W",
+          "description": "Capture an enemy unit or structure"
+        },
+        {
+          "id": "show-pathing",
+          "label": "Show Pathing",
+          "key": "F6",
+          "description": "Toggle pathfinding debug overlay"
+        }
+      ]
+    },
+    {
+      "id": "factory",
+      "name": "Factory Commands",
+      "context": "factory",
+      "shortcuts": [
+        {
+          "id": "factory-cycle",
+          "label": "Factory Cycle",
+          "key": ".",
+          "description": "Cycle through available build queues / factory modes"
+        },
+        {
+          "id": "factory-guard",
+          "label": "Factory Guard Toggle",
+          "key": "G",
+          "modifiers": ["Ctrl"],
+          "description": "Toggle whether newly built units guard the factory"
+        }
+      ]
+    },
+    {
+      "id": "builder",
+      "name": "Builder Commands",
+      "context": "builder",
+      "shortcuts": [
+        {
+          "id": "queue-next",
+          "label": "Queue Next",
+          "key": "N",
+          "description": "Move to the next item in the build queue"
+        },
+        {
+          "id": "wait",
+          "label": "Wait",
+          "key": "Y",
+          "note": "Y/Z interchangeable — QWERTY: Y, QWERTZ physical: Z",
+          "description": "Pause the unit until further orders"
+        },
+        {
+          "id": "self-destruct",
+          "label": "Self Destruct",
+          "key": "B",
+          "modifiers": ["Ctrl"],
+          "description": "Order the unit to self-destruct"
+        }
+      ]
+    },
+    {
+      "id": "blueprint",
+      "name": "Blueprint Commands",
+      "context": "builder",
+      "shortcuts": [
+        {
+          "id": "place-blueprint",
+          "label": "Place Blueprint",
+          "key": "B",
+          "modifiers": ["Alt"],
+          "description": "Place a blueprint for a structure to be built later"
+        },
+        {
+          "id": "next-blueprint",
+          "label": "Next Blueprint",
+          "key": "]",
+          "modifiers": ["Alt"],
+          "note": "QWERTY: Alt+]  QWERTZ: Alt++ (same physical key; normalised in trainer)",
+          "description": "Cycle to the next blueprint in your list"
+        }
+      ]
+    },
+    {
+      "id": "rezbot",
+      "name": "Rezbot Commands",
+      "context": "rezbot",
+      "shortcuts": [
+        {
+          "id": "resurrect",
+          "label": "Resurrect",
+          "key": "W",
+          "description": "Resurrect a destroyed unit from its wreck"
+        }
+      ]
+    },
+    {
+      "id": "transport",
+      "name": "Transport Commands",
+      "context": "transport",
+      "shortcuts": [
+        {
+          "id": "load",
+          "label": "Load",
+          "key": "J",
+          "description": "Order the transport to load nearby units"
+        },
+        {
+          "id": "unload",
+          "label": "Unload",
+          "key": "U",
+          "description": "Drop transported units at a target location"
+        }
+      ]
+    }
+  ]
+}
