@@ -1131,14 +1131,15 @@ function preloadNextQuestion() {
 
 function startTraining() {
   const builders = filteredBuilders(settings)
-  if (!builders.length) {
-    alert('No builders match the current filters.')
+  const queue0   = mergeShortcutsIntoQueue(buildQueue(builders, sr))
+  if (!queue0.length) {
+    alert('Nothing to train — select at least one faction/tier or a shortcut group.')
     showScreen('setup')
     return
   }
   archiveCurrentRun()   // save any in-progress run before starting fresh
   currentRunEntries = []
-  queue      = mergeShortcutsIntoQueue(buildQueue(builders, sr))
+  queue      = queue0
   queueIndex = 0
   session    = { correct: 0, wrong: 0, streak: 0, totalAnswered: 0 }
   runComplete = false
@@ -1645,7 +1646,7 @@ function initSetupScreen() {
 
   $('btn-start').addEventListener('click', () => {
     precacheIcons(filteredBuilders(settings))
-    startTraining()
+    showNewRunCountdown()
   })
   $('btn-browse').addEventListener('click', () => showScreen('browse'))
   $('btn-settings').addEventListener('click', () => {
