@@ -45,8 +45,8 @@
           <label class="check-label"><input type="checkbox" name="tier" value="0" checked> Commander</label>
           <label class="check-label"><input type="checkbox" name="tier" value="1" checked> T1</label>
           <label class="check-label"><input type="checkbox" name="tier" value="2" checked> T2</label>
-          <label class="check-label"><input type="checkbox" name="tier" value="3" id="cb-experimental"> T3 / Experimental</label>
-          <label class="check-label"><input type="checkbox" name="tier" value="optional" id="cb-optional"> Minelayers</label>
+          <label class="check-label"><input type="checkbox" name="tier" value="3" id="cb-experimental" checked> T3 / Experimental</label>
+          <label class="check-label"><input type="checkbox" name="tier" value="optional" id="cb-optional" checked> Minelayers</label>
         </div>
       </section>
 
@@ -115,6 +115,16 @@
 <div id="screen-training" class="screen" style="flex-direction:column">
 
   <div class="training-layout">
+
+    <!-- Run-complete celebration (replaces question + menu cols when a run finishes) -->
+    <div id="run-complete-col" class="run-complete-col hidden">
+      <canvas id="confetti-canvas" class="confetti-canvas"></canvas>
+      <div class="run-complete-content">
+        <div class="run-complete-trophy">🏆</div>
+        <div class="run-complete-title">Run Complete!</div>
+        <div class="run-complete-hint">Reaction times below ↓</div>
+      </div>
+    </div>
 
     <!-- Left: question -->
     <div class="question-col">

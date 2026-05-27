@@ -981,3 +981,65 @@ kbd {
 .target-card.shortcut-target .target-costs {
   display: none;
 }
+
+/* ─── Run-end celebration ────────────────────────────────────────────────────── */
+
+/* The celebration column replaces question + menu columns */
+.run-complete-col {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 340px;
+}
+
+.confetti-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.run-complete-content {
+  position: relative;   /* above the canvas */
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  padding: 32px 24px;
+}
+
+.run-complete-trophy {
+  font-size: 72px;
+  line-height: 1;
+  filter: drop-shadow(0 4px 16px rgba(251,191,36,.6));
+  animation: trophy-pop .5s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes trophy-pop {
+  from { transform: scale(0) rotate(-15deg); opacity: 0 }
+  to   { transform: scale(1) rotate(0);     opacity: 1 }
+}
+
+.run-complete-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-bright);
+  letter-spacing: .02em;
+  animation: fade-up .4s .15s ease both;
+}
+
+.run-complete-hint {
+  font-size: 12px;
+  color: var(--text-dim);
+  animation: fade-up .4s .35s ease both;
+}
+
+@keyframes fade-up {
+  from { transform: translateY(12px); opacity: 0 }
+  to   { transform: translateY(0);    opacity: 1 }
+}

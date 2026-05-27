@@ -45,7 +45,11 @@ function keysMatch(pressed, expected) {
 
 // For display: show 'Y' instead of 'Z' on QWERTZ
 function display(key, isQwertz) {
-  return (isQwertz && key === 'Z') ? 'Y' : key
+  if (!isQwertz) return key
+  if (key === 'Z') return 'Y'
+  if (key === ':') return 'Ö'
+  if (key === ']') return '+'
+  return key
 }
 
 // ─── Audio ────────────────────────────────────────────────────────────────────
@@ -126,12 +130,12 @@ const SETTINGS_KEY = 'bar-trainer-settings'
 function defaultSettings() {
   return {
     factions:    ['armada', 'cortex', 'legion'],
-    tiers:       [0, 1, 2],
+    tiers:       [0, 1, 2, 3, 'optional'],
     keyboard:    'qwerty',
     hintTimeout: 0,
     timeLimit:   3,   // seconds per required key press
     runLength:   20,  // questions per run (0 = unlimited)
-    shortcuts:   ['general', 'battle', 'factory', 'builder', 'rezbot', 'transport'],
+    shortcuts:   ['general', 'battle', 'factory', 'builder', 'blueprint', 'rezbot', 'transport'],
   }
 }
 
@@ -952,8 +956,14 @@ function endRun() {
   $('btn-skip').textContent = '↩ Skip'
   $('btn-skip').disabled    = true
   $('btn-pause').disabled   = true
+
+  // Hide the active question and build menu; reveal the celebration panel
+  document.querySelector('.question-col').classList.add('hidden')
+  document.querySelector('.menu-col').classList.add('hidden')
+  $('run-complete-col').classList.remove('hidden')
+
   renderStatsTable()
-  setTimeout(() => $('stats-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100)
+  startConfetti()
 }
 
 /** Return the ordered key labels the user needs to press for the current question. */
@@ -1020,6 +1030,65 @@ function togglePause() {
     $('pause-overlay').classList.remove('hidden')
     $('btn-pause').textContent = '▶ Resume'
   }
+}
+
+// ─── Run-end confetti ─────────────────────────────────────────────────────────
+
+let confettiRaf = null
+
+function startConfetti() {
+  const canvas = $('confetti-canvas')
+  if (!canvas) return
+  const ctx  = canvas.getContext('2d')
+  const col  = document.querySelector('.run-complete-col')
+  const rect = col ? col.getBoundingClientRect() : { width: 600, height: 400 }
+  canvas.width  = rect.width
+  canvas.height = rect.height
+
+  const COLORS = ['#4ade80','#60a5fa','#f59e0b','#e879f9','#f87171','#34d399','#fbbf24']
+  const particles = Array.from({ length: 140 }, () => ({
+    x:        Math.random() * rect.width,
+    y:        -20 - Math.random() * rect.height * 0.4,
+    vx:       (Math.random() - 0.5) * 3,
+    vy:       1.5 + Math.random() * 3,
+    rot:      Math.random() * 360,
+    rotSpeed: (Math.random() - 0.5) * 10,
+    w:        7 + Math.random() * 7,
+    h:        4 + Math.random() * 4,
+    color:    COLORS[Math.floor(Math.random() * COLORS.length)],
+    opacity:  1,
+  }))
+
+  if (confettiRaf) cancelAnimationFrame(confettiRaf)
+
+  function step() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    let anyAlive = false
+    for (const p of particles) {
+      p.x  += p.vx
+      p.y  += p.vy
+      p.vy += 0.06   // gravity
+      p.rot += p.rotSpeed
+      if (p.y > canvas.height * 0.8) p.opacity -= 0.018
+      if (p.opacity <= 0) continue
+      anyAlive = true
+      ctx.save()
+      ctx.globalAlpha = Math.max(0, p.opacity)
+      ctx.translate(p.x, p.y)
+      ctx.rotate(p.rot * Math.PI / 180)
+      ctx.fillStyle = p.color
+      ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h)
+      ctx.restore()
+    }
+    confettiRaf = anyAlive ? requestAnimationFrame(step) : null
+  }
+  confettiRaf = requestAnimationFrame(step)
+}
+
+function stopConfetti() {
+  if (confettiRaf) { cancelAnimationFrame(confettiRaf); confettiRaf = null }
+  const canvas = $('confetti-canvas')
+  if (canvas) { const ctx = canvas.getContext('2d'); ctx.clearRect(0, 0, canvas.width, canvas.height) }
 }
 
 // ─── New-run countdown ────────────────────────────────────────────────────────
@@ -1138,6 +1207,10 @@ function startTraining() {
     return
   }
   archiveCurrentRun()   // save any in-progress run before starting fresh
+  stopConfetti()
+  $('run-complete-col').classList.add('hidden')
+  document.querySelector('.question-col').classList.remove('hidden')
+  document.querySelector('.menu-col').classList.remove('hidden')
   currentRunEntries = []
   queue      = queue0
   queueIndex = 0
@@ -1259,9 +1332,12 @@ function nextQuestion() {
 }
 
 function formatShortcutKeyHtml(seqKeys, seqMods, currentStep) {
+  const isQwertz = settings.keyboard === 'qwertz'
   return seqKeys.map((key, idx) => {
     const mods = seqMods[idx] ?? []
-    const keyLabel = key.length === 1 ? key.toUpperCase() : key  // Tab, F6 keep their casing
+    // For single chars use display() so QWERTZ users see their physical key (Z→Y, :→Ö, ]→+)
+    const rawLabel = key.length === 1 ? key.toUpperCase() : key  // Tab, F6 keep their casing
+    const keyLabel = display(rawLabel, isQwertz)
     const parts = [...mods.map(m => `<kbd>${capitalize(m)}</kbd>`), `<kbd>${keyLabel}</kbd>`]
     const keyHtml = parts.join('+')
     return idx === currentStep ? `<strong>${keyHtml}</strong>` : keyHtml
