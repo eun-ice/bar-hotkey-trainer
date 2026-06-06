@@ -221,6 +221,13 @@
           "key": "B",
           "modifiers": ["Ctrl"],
           "description": "Order the unit to self-destruct"
+        },
+        {
+          "id": "area-mex",
+          "label": "Area MEX",
+          "keys": ["Y", "Y"],
+          "note": "Y/Z interchangeable — QWERTY: YY, QWERTZ physical: ZZ",
+          "description": "Place metal extractors on all available spots in a dragged area"
         }
       ]
     },
