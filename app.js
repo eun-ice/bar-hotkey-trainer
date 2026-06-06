@@ -286,7 +286,7 @@ function buildShortcutQueue() {
 
 const State = {
   WAITING_CATEGORY: 'cat',
-  WAITING_SHIFT:    'shift',  // kept for compatibility but no longer entered
+  WAITING_SHIFT:    'shift',
   WAITING_PAGE:     'page',
   WAITING_GRID:     'grid',
   WAITING_SHORTCUT: 'shortcut',
@@ -1376,7 +1376,7 @@ function updateInstruction() {
   if (trainingState === State.WAITING_CATEGORY) {
     setInstruction(`Press the <strong>category key</strong> for this unit`)
   } else if (trainingState === State.WAITING_SHIFT) {
-    setInstruction(`Wrong category — press <kbd>Shift</kbd> to go back`, 'state-wrong')
+    setInstruction(`Wrong category — press <kbd>Shift</kbd> or <kbd>Esc</kbd> to go back`, 'state-wrong')
   } else if (trainingState === State.WAITING_PAGE) {
     setInstruction(`Press <kbd>B</kbd> to advance to page ${currentEntry.page + 1}`)
   } else if (trainingState === State.WAITING_GRID) {
@@ -1449,9 +1449,10 @@ function onKey(event) {
   if (event.ctrlKey || event.altKey || event.metaKey) return
   if (['INPUT','TEXTAREA','SELECT'].includes(event.target.tagName)) return
 
-  // Pause toggle with Escape (on training screen)
+  // Escape: go back from wrong category first; fall through to pause toggle otherwise
   if (event.key === 'Escape' && screens.training.classList.contains('active')) {
     event.preventDefault()
+    if (trainingState === State.WAITING_SHIFT) { handleGoBack(); return }
     togglePause()
     return
   }
@@ -1519,12 +1520,14 @@ function handleCategoryKey(key) {
       updateInstruction()
     }
   } else {
-    // Silently switch to the wrong category (mirrors in-game behaviour)
+    // Switch to the wrong category tab (mirrors in-game behaviour) and require
+    // Shift or Escape to go back — just like the real game.
     questionHadWrong = true
     activeCatId = matched.id
     currentPage = 0
     renderMenu(currentEntry.builder, activeCatId, currentPage)
-    // No flash, no message — stay in WAITING_CATEGORY, timer keeps running
+    trainingState = State.WAITING_SHIFT
+    updateInstruction()
   }
 }
 
