@@ -800,6 +800,20 @@ function clearShortcutKeyTimer() {
 
 // ─── Answer timer ─────────────────────────────────────────────────────────────
 
+/**
+ * True when the target unit is at the Z slot (bottom-left) of a constructor menu on page 0.
+ * In-game, pressing the category tab key pre-selects that slot automatically — so only ONE
+ * keypress is needed.  e.g. MEX = Z, LLT = X (not XZ), Radar = C (not CZ), etc.
+ * keysMatch handles the Z/Y QWERTZ equivalence.
+ */
+function isBottomRowItem(entry) {
+  if (entry.type === 'shortcut') return false
+  const builder = DATA.builders[entry.builderId]
+  if (!builder || isFactory(builder)) return false
+  if (entry.page > 0) return false
+  return keysMatch(entry.gridKey, 'Z')
+}
+
 /** Compute total timeout in ms for the current question based on required key presses. */
 function calcTimeoutMs(entry) {
   if (!settings.timeLimit) return 0
@@ -807,9 +821,9 @@ function calcTimeoutMs(entry) {
     return settings.timeLimit * entry.seqKeys.length * 1000
   }
   const builder = DATA.builders[entry.builderId]
-  let keystrokes = 1                      // always need the grid key
-  if (!isFactory(builder)) keystrokes++   // category key
-  keystrokes += entry.page                // one B per page to advance
+  let keystrokes = 1                         // always need the grid key (or combined key)
+  if (!isFactory(builder) && !isBottomRowItem(entry)) keystrokes++  // separate category key
+  keystrokes += entry.page                   // one B per page to advance
   return settings.timeLimit * keystrokes * 1000
 }
 
@@ -979,7 +993,11 @@ function correctKeySequence() {
   const keys = []
   if (!isFactory(currentEntry.builder)) {
     const cat = CATEGORIES.find(c => c.id === currentEntry.categoryId)
-    if (cat) keys.push(display(cat.key, isQwertz))
+    if (cat) {
+      keys.push(display(cat.key, isQwertz))
+      // Bottom-row item: category key press also selects the unit — no separate grid key
+      if (isBottomRowItem(currentEntry)) return keys
+    }
   }
   for (let page = 0; page < currentEntry.page; page++) keys.push('B')
   keys.push(display(currentEntry.gridKey, isQwertz))
@@ -1486,10 +1504,20 @@ function handleCategoryKey(key) {
 
     if (currentEntry.page > 0) {
       trainingState = State.WAITING_PAGE
+      updateInstruction()
+    } else if (isBottomRowItem(currentEntry)) {
+      // The category key also activates the bottom-row slot — one press does it all
+      flashSlot(currentEntry.gridKey, 'flash-correct')
+      playBuildSound('builder')
+      clearAnswerTimer()
+      recordResult(questionHadWrong ? 'wrong' : 'correct')
+      setInstruction('✓ Correct!', 'state-correct')
+      trainingState = State.FEEDBACK
+      setTimeout(() => checkRunEnd(), 900)
     } else {
       trainingState = State.WAITING_GRID
+      updateInstruction()
     }
-    updateInstruction()
   } else {
     // Silently switch to the wrong category (mirrors in-game behaviour)
     questionHadWrong = true
