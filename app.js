@@ -129,13 +129,14 @@ const SETTINGS_KEY = 'bar-trainer-settings'
 
 function defaultSettings() {
   return {
-    factions:    ['armada', 'cortex', 'legion'],
-    tiers:       [0, 1, 2, 3, 'optional'],
-    keyboard:    'qwerty',
-    hintTimeout: 0,
-    timeLimit:   3,   // seconds per required key press
-    runLength:   20,  // questions per run (0 = unlimited)
-    shortcuts:   ['general', 'battle', 'factory', 'builder', 'blueprint', 'rezbot', 'transport'],
+    factions:     ['armada', 'cortex', 'legion'],
+    tiers:        [0, 1, 2, 3, 'optional'],
+    builderTypes: ['factory', 'constructor'],
+    keyboard:     'qwerty',
+    hintTimeout:  0,
+    timeLimit:    5,   // seconds per required key press
+    runLength:    20,  // questions per run (0 = unlimited)
+    shortcuts:    ['general', 'battle', 'factory', 'builder', 'blueprint', 'rezbot', 'transport'],
   }
 }
 
@@ -201,14 +202,19 @@ async function loadData() {
 
 /** Return builders matching current settings */
 function filteredBuilders(settings) {
+  const types = settings.builderTypes ?? ['factory', 'constructor']
   return Object.values(DATA.builders).filter(b => {
     // A builder is included if at least one of its reachable factions is selected.
     // (Legion shares all Cortex factories, so cor* builders have factions ['cortex','legion'])
     const factions = b.factions ?? [b.faction]
     if (!factions.some(f => settings.factions.includes(f))) return false
     if (b.optional && !settings.tiers.includes('optional')) return false
-    if (b.experimental) return settings.tiers.includes(3)
-    return settings.tiers.includes(b.tier)
+    if (b.experimental && !settings.tiers.includes(3)) return false
+    if (!settings.tiers.includes(b.tier)) return false
+    // Filter by unit type: factories vs constructors
+    if (isFactory(b) && !types.includes('factory'))     return false
+    if (!isFactory(b) && !types.includes('constructor')) return false
+    return true
   })
 }
 
@@ -1290,9 +1296,9 @@ function resolveShortcutContextUnit(context) {
 function nextQuestion() {
   clearSlotHover('slot-hover-info')
   if (queueIndex >= queue.length) {
-    // Rebuild queue (loop forever)
-    const builders = filteredBuilders(settings)
-    queue      = mergeShortcutsIntoQueue(buildQueue(builders, sr))
+    // Rebuild queue from current settings every time we loop — picks up any
+    // faction/tier/shortcut changes made since the last rebuild.
+    queue      = mergeShortcutsIntoQueue(buildQueue(filteredBuilders(settings), sr))
     queueIndex = 0
   }
 
@@ -1734,7 +1740,10 @@ function initSetupScreen() {
     saveSettings(settings)
   })
 
-  for (const cb of document.querySelectorAll('input[name=faction], input[name=tier]'))
+  for (const cb of document.querySelectorAll('input[name=buildertype]'))
+    cb.checked = (settings.builderTypes ?? ['factory', 'constructor']).includes(cb.value)
+
+  for (const cb of document.querySelectorAll('input[name=faction], input[name=tier], input[name=buildertype]'))
     cb.addEventListener('change', onFilterChange)
 
   for (const cb of document.querySelectorAll('input[name=shortcuts]'))
@@ -1786,6 +1795,8 @@ function onFilterChange() {
     .map(cb => cb.value)
   settings.tiers = [...document.querySelectorAll('input[name=tier]:checked')]
     .map(cb => cb.value === 'optional' ? 'optional' : Number(cb.value))
+  settings.builderTypes = [...document.querySelectorAll('input[name=buildertype]:checked')]
+    .map(cb => cb.value)
   saveSettings(settings)
   updateBuilderCount()
 }

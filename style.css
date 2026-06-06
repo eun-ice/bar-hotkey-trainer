@@ -136,6 +136,25 @@ kbd {
   color: var(--text-dim);
   margin-bottom: 12px;
 }
+.setup-sub-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin: 14px 0 8px;
+}
+.setup-sub-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.setup-sub-label:first-of-type { margin-top: 2px }
+
 .check-group, .radio-group { display: flex; flex-direction: column; gap: 8px }
 .check-label, .radio-label {
   display: flex;
