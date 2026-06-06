@@ -284,6 +284,41 @@
           "description": "Drop transported units at a target location"
         }
       ]
+    },
+    {
+      "id": "camera",
+      "name": "Camera Controls",
+      "context": "none",
+      "shortcuts": [
+        {
+          "id": "camera-recall-1",
+          "label": "Select Camera 1",
+          "key": "F1",
+          "description": "Jump to stored camera position 1"
+        },
+        {
+          "id": "camera-recall-2",
+          "label": "Select Camera 2",
+          "key": "F2",
+          "description": "Jump to stored camera position 2"
+        },
+        {
+          "id": "camera-store-1",
+          "label": "Store Camera 1",
+          "key": "F1",
+          "modifiers": ["Ctrl"],
+          "browserReserved": true,
+          "description": "Save the current camera position to slot 1"
+        },
+        {
+          "id": "camera-store-2",
+          "label": "Store Camera 2",
+          "key": "F2",
+          "modifiers": ["Ctrl"],
+          "browserReserved": true,
+          "description": "Save the current camera position to slot 2"
+        }
+      ]
     }
   ]
 }

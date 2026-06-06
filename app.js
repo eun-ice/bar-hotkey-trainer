@@ -136,7 +136,7 @@ function defaultSettings() {
     hintTimeout:  0,
     timeLimit:    5,   // seconds per required key press
     runLength:    20,  // questions per run (0 = unlimited)
-    shortcuts:    ['general', 'battle', 'factory', 'builder', 'blueprint', 'rezbot', 'transport'],
+    shortcuts:    ['general', 'battle', 'factory', 'builder', 'blueprint', 'rezbot', 'transport', 'camera'],
   }
 }
 
@@ -1746,13 +1746,29 @@ function initSetupScreen() {
   for (const cb of document.querySelectorAll('input[name=faction], input[name=tier], input[name=buildertype]'))
     cb.addEventListener('change', onFilterChange)
 
+  function syncShortcutSettings() {
+    settings.shortcuts = [...document.querySelectorAll('input[name=shortcuts]:checked')]
+      .map(el => el.value)
+    saveSettings(settings)
+    updateBuilderCount()
+    const allChecked = document.querySelectorAll('input[name=shortcuts]').length ===
+                       document.querySelectorAll('input[name=shortcuts]:checked').length
+    $('btn-shortcuts-toggle').textContent = allChecked ? 'Deselect all' : 'Select all'
+  }
+
   for (const cb of document.querySelectorAll('input[name=shortcuts]'))
-    cb.addEventListener('change', () => {
-      settings.shortcuts = [...document.querySelectorAll('input[name=shortcuts]:checked')]
-        .map(el => el.value)
-      saveSettings(settings)
-      updateBuilderCount()
-    })
+    cb.addEventListener('change', syncShortcutSettings)
+
+  $('btn-shortcuts-toggle').addEventListener('click', () => {
+    const allChecked = document.querySelectorAll('input[name=shortcuts]').length ===
+                       document.querySelectorAll('input[name=shortcuts]:checked').length
+    for (const cb of document.querySelectorAll('input[name=shortcuts]'))
+      cb.checked = !allChecked
+    syncShortcutSettings()
+  })
+
+  // Set initial toggle label
+  syncShortcutSettings()
 
   for (const rb of document.querySelectorAll('input[name=keyboard]'))
     rb.addEventListener('change', e => {
