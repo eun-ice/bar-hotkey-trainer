@@ -16,9 +16,8 @@ const GRID_KEYS = ['Q','W','E','R','A','S','D','F','Z','X','C','V']
 // rest of the app only deals with QWERTY names.
 function normalise(key, isQwertz, code) {
   const k = key.toUpperCase()
-  // Standard QWERTZ physical-position remappings (no modifier held)
   if (isQwertz && k === 'Y') return 'Z'
-  if (isQwertz && k === 'Z') return 'Y'  // physical Y position (rare but correct)
+  if (isQwertz && k === 'Z') return 'Y'
   if (isQwertz && k === 'Ö') return ':'  // physical ;/: key position → : shortcut
   if (isQwertz && k === '+') return ']'  // physical ] key position → ] shortcut
   // On macOS, Alt/Option composes non-ASCII characters (e.g. Alt+B → '∫', Alt++ → '±').
@@ -37,18 +36,17 @@ function normalise(key, isQwertz, code) {
   return k
 }
 
-// Z and Y occupy swapped positions on QWERTY vs QWERTZ.
-// Accept either regardless of the keyboard setting so users who forget to
-// switch still get the right answer.
 function keysMatch(pressed, expected) {
-  if (pressed === expected) return true
-  return (pressed === 'Y' || pressed === 'Z') && (expected === 'Y' || expected === 'Z')
+  return pressed === expected
 }
 
-// For display: show 'Y' instead of 'Z' on QWERTZ
+// For display: remap QWERTY scan-code key names to their physical QWERTZ labels.
+// Z and Y are swapped: the key in the QWERTY-Z position is labeled Y on QWERTZ and
+// vice versa. All other keys are unaffected.
 function display(key, isQwertz) {
   if (!isQwertz) return key
   if (key === 'Z') return 'Y'
+  if (key === 'Y') return 'Z'
   if (key === ':') return 'Ö'
   if (key === ']') return '+'
   return key
@@ -134,7 +132,7 @@ function defaultSettings() {
     factions:     ['armada', 'cortex', 'legion'],
     tiers:        [0, 1, 2, 3, 'optional'],
     builderTypes: ['factory', 'constructor'],
-    keyboard:     'qwerty',
+    keyboard:     '',
     hintTimeout:  0,
     timeLimit:    5,   // seconds per required key press
     runLength:    20,  // questions per run (0 = unlimited)
@@ -538,10 +536,11 @@ function renderStatsTable() {
 const $ = id => document.getElementById(id)
 
 const screens = {
-  loading:  $('screen-loading'),
-  setup:    $('screen-setup'),
-  training: $('screen-training'),
-  browse:   $('screen-browse'),
+  loading:   $('screen-loading'),
+  setup:     $('screen-setup'),
+  training:  $('screen-training'),
+  browse:    $('screen-browse'),
+  shortcuts: $('screen-shortcuts'),
 }
 
 // ─── Screen switching ─────────────────────────────────────────────────────────
@@ -549,6 +548,9 @@ const screens = {
 function showScreen(name) {
   for (const [key, el] of Object.entries(screens)) {
     el.classList.toggle('active', key === name)
+  }
+  if (name === 'shortcuts' && activeShortcutsGroupId) {
+    selectShortcutsGroup(activeShortcutsGroupId)
   }
 }
 
@@ -1706,7 +1708,8 @@ function initSetupScreen() {
     else                         cb.checked = settings.tiers.includes(Number(cb.value))
   }
 
-  document.querySelector(`input[name=keyboard][value=${settings.keyboard}]`).checked = true
+  if (settings.keyboard)
+    document.querySelector(`input[name=keyboard][value=${settings.keyboard}]`).checked = true
   $('hint-timeout').value = settings.hintTimeout
   updateHintLabel(settings.hintTimeout)
   $('time-limit').value = settings.timeLimit
@@ -1783,6 +1786,7 @@ function initSetupScreen() {
     showNewRunCountdown()
   })
   $('btn-browse').addEventListener('click', () => showScreen('browse'))
+  $('btn-browse-shortcuts').addEventListener('click', () => showScreen('shortcuts'))
   $('btn-settings').addEventListener('click', () => {
     clearAnswerTimer()
     clearHintTimer()
@@ -1838,6 +1842,11 @@ function updateBuilderCount() {
     (settings.shortcuts?.includes(grp.id) ? total + grp.shortcuts.length : total), 0)
   $('builder-count').textContent =
     `${count} builder${count !== 1 ? 's' : ''} · ${scCount} shortcut${scCount !== 1 ? 's' : ''} selected`
+  if (!settings.keyboard) {
+    $('builder-count').textContent = '⚠ Choose a keyboard layout above to start'
+    $('btn-start').disabled = true
+    return
+  }
   $('btn-start').disabled = (count === 0 && scCount === 0)
 }
 
@@ -2049,6 +2058,87 @@ function browsePageDelta(delta) {
   renderBrowseMenu()
 }
 
+// ─── Shortcuts reference screen ───────────────────────────────────────────────
+
+let activeShortcutsGroupId = null
+
+function formatShortcutKey(shortcut, isQwertz) {
+  const mods = shortcut.modifiers ?? []
+  const renderCombo = (key) => {
+    const parts = [...mods, display(key, isQwertz)]
+    return parts.map(p => `<kbd>${p}</kbd>`).join('+')
+  }
+  if (shortcut.keys) {
+    return shortcut.keys.map(renderCombo).join(' <span class="sc-seq-arrow">→</span> ')
+  }
+  return renderCombo(shortcut.key)
+}
+
+function initShortcutsScreen() {
+  $('btn-shortcuts-back').addEventListener('click', () => showScreen('setup'))
+
+  const list = $('shortcuts-group-list')
+  for (const group of SHORTCUTS) {
+    const item = document.createElement('div')
+    item.className = 'browse-item'
+    item.dataset.id = group.id
+
+    const label = document.createElement('div')
+    label.className = 'browse-item-label'
+    const name = document.createElement('span')
+    name.textContent = group.name
+    label.appendChild(name)
+    item.appendChild(label)
+
+    item.addEventListener('click', () => selectShortcutsGroup(group.id))
+    list.appendChild(item)
+  }
+
+  if (SHORTCUTS.length) selectShortcutsGroup(SHORTCUTS[0].id)
+}
+
+function selectShortcutsGroup(id) {
+  activeShortcutsGroupId = id
+  const isQwertz = settings.keyboard === 'qwertz'
+
+  for (const el of $('shortcuts-group-list').querySelectorAll('.browse-item'))
+    el.classList.toggle('active', el.dataset.id === id)
+
+  const group = SHORTCUTS.find(g => g.id === id)
+  if (!group) return
+
+  $('shortcuts-empty').classList.add('hidden')
+  const content = $('shortcuts-content')
+  content.classList.remove('hidden')
+
+  const rows = group.shortcuts.map(sc => {
+    const reserved = sc.browserReserved
+      ? '<span class="sc-reserved">study card — all browsers</span>'
+      : sc.browserReservedFirefox
+        ? '<span class="sc-reserved">study card — Firefox only</span>'
+        : ''
+    const desc = sc.description
+      ? `<div class="sc-desc">${sc.description}</div>` : ''
+    return `
+      <tr>
+        <td class="sc-action"><span class="sc-label">${sc.label}</span>${desc}</td>
+        <td class="sc-key">${formatShortcutKey(sc, isQwertz)}${reserved}</td>
+      </tr>`
+  }).join('')
+
+  content.innerHTML = `
+    <h3 class="sc-group-heading">${group.name}</h3>
+    <table class="sc-table">
+      <thead>
+        <tr>
+          <th>Action</th>
+          <th>Key</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`
+}
+
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
 async function init() {
@@ -2070,6 +2160,7 @@ async function init() {
 
   initSetupScreen()
   initBrowseScreen()
+  initShortcutsScreen()
   showScreen('setup')
   // Prevent browser-reserved keys from closing the tab/app while training.
   // Ctrl+W closes tabs and Ctrl+Q quits the browser on Linux/Windows.

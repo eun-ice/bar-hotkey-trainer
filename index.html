@@ -76,7 +76,7 @@
       <section class="setup-card">
         <h2>Keyboard</h2>
         <div class="radio-group">
-          <label class="radio-label"><input type="radio" name="keyboard" value="qwerty" checked> QWERTY</label>
+          <label class="radio-label"><input type="radio" name="keyboard" value="qwerty"> QWERTY</label>
           <label class="radio-label"><input type="radio" name="keyboard" value="qwertz"> QWERTZ <span class="key-hint">(Y↔Z swapped)</span></label>
         </div>
       </section>
@@ -114,6 +114,7 @@
       <span id="builder-count" class="builder-count">— builders</span>
       <div class="setup-footer-btns">
         <button id="btn-browse" class="btn-secondary">Browse Menus</button>
+        <button id="btn-browse-shortcuts" class="btn-secondary">Browse Shortcuts</button>
         <button id="btn-start" class="btn-primary">Start Training</button>
       </div>
     </div>
@@ -254,6 +255,28 @@
     </div>
   </div>
 
+</div>
+
+<!-- ── SHORTCUTS REFERENCE ───────────────────────────────────────────────── -->
+<div id="screen-shortcuts" class="screen">
+
+  <div class="browse-topbar">
+    <button class="btn-secondary browse-back-btn" id="btn-shortcuts-back">← Back</button>
+    <h2 class="browse-title">Shortcuts Reference</h2>
+  </div>
+
+  <div class="browse-layout">
+
+    <div class="browse-sidebar">
+      <div id="shortcuts-group-list" class="browse-list"></div>
+    </div>
+
+    <div class="browse-main">
+      <div id="shortcuts-empty" class="browse-empty">← Select a group</div>
+      <div id="shortcuts-content" class="shortcuts-content hidden"></div>
+    </div>
+
+  </div>
 </div>
 
 <!-- ── BROWSE ──────────────────────────────────────────────────────────────── -->
