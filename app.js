@@ -1,5 +1,7 @@
 // ─── Constants ────────────────────────────────────────────────────────────────
 
+const IS_FIREFOX = navigator.userAgent.includes('Firefox')
+
 const CATEGORIES = [
   { id: 'economy', label: 'Economy', key: 'Z' },
   { id: 'combat',  label: 'Combat',  key: 'X' },
@@ -280,7 +282,7 @@ function buildShortcutQueue() {
         context:         group.context,
         seqKeys,
         seqMods,
-        browserReserved: shortcut.browserReserved ?? false,
+        browserReserved: (shortcut.browserReserved ?? false) || (IS_FIREFOX && (shortcut.browserReservedFirefox ?? false)),
       })
     }
   }
@@ -2069,6 +2071,24 @@ async function init() {
   initSetupScreen()
   initBrowseScreen()
   showScreen('setup')
+  // Prevent browser-reserved keys from closing the tab/app while training.
+  // Ctrl+W closes tabs and Ctrl+Q quits the browser on Linux/Windows.
+  window.addEventListener('keydown', (event) => {
+    if (event.ctrlKey && (event.key === 'w' || event.key === 'W' ||
+                          event.key === 'q' || event.key === 'Q')) {
+      event.preventDefault()
+    }
+  }, { capture: true })
+
+  // Belt-and-suspenders: if the keydown block didn't work (e.g. Chromium on Linux
+  // intercepts Ctrl+W before JS), the beforeunload dialog is the last line of defence.
+  window.addEventListener('beforeunload', (event) => {
+    if (document.getElementById('screen-training')?.classList.contains('active')) {
+      event.preventDefault()
+      event.returnValue = ''
+    }
+  })
+
   document.addEventListener('keydown', onKey)
   // Fallback: some browsers deliver the Shift keydown to the focused element before
   // it bubbles (or swallow it entirely for focus-management shortcuts like Shift+Tab).

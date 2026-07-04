@@ -42,7 +42,7 @@
           "label": "Split Army",
           "key": "Q",
           "modifiers": ["Ctrl"],
-          "browserReserved": true,
+          "browserReservedFirefox": true,
           "description": "Split the selected group into two halves"
         },
         {
@@ -309,7 +309,7 @@
           "label": "Store Camera 1",
           "key": "F1",
           "modifiers": ["Ctrl"],
-          "browserReserved": true,
+          "browserReservedFirefox": true,
           "description": "Save the current camera position to slot 1"
         },
         {
@@ -317,7 +317,7 @@
           "label": "Store Camera 2",
           "key": "F2",
           "modifiers": ["Ctrl"],
-          "browserReserved": true,
+          "browserReservedFirefox": true,
           "description": "Save the current camera position to slot 2"
         }
       ]
