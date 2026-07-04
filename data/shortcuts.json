@@ -42,6 +42,7 @@
           "label": "Split Army",
           "key": "Q",
           "modifiers": ["Ctrl"],
+          "browserReserved": true,
           "description": "Split the selected group into two halves"
         },
         {
