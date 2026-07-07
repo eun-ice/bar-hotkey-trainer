@@ -1,6 +1,7 @@
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const IS_FIREFOX = navigator.userAgent.includes('Firefox')
+const IS_MAC     = navigator.platform.startsWith('Mac') || /Mac/.test(navigator.userAgent)
 
 const CATEGORIES = [
   { id: 'economy', label: 'Economy', key: 'Z' },
@@ -280,7 +281,7 @@ function buildShortcutQueue() {
         context:         group.context,
         seqKeys,
         seqMods,
-        browserReserved: (shortcut.browserReserved ?? false) || (IS_FIREFOX && (shortcut.browserReservedFirefox ?? false)),
+        browserReserved: (shortcut.browserReserved ?? false) || (IS_FIREFOX && (shortcut.browserReservedFirefox ?? false)) || (!IS_MAC && (shortcut.browserReservedWindows ?? false)),
       })
     }
   }
@@ -312,7 +313,7 @@ let hintTimerId   = null
 let hintInterval  = null
 let shortcutKeyVisible  = false  // false = hide key for first 3s of shortcut question
 let shortcutKeyTimerId  = null
-let session       = { correct: 0, wrong: 0, streak: 0 }
+let session       = { correct: 0, late: 0, wrong: 0, streak: 0 }
 
 let answerTimerId    = null
 let answerTimerEnd   = 0
@@ -399,39 +400,61 @@ function renderStatsTable() {
   const summaryEl = $('run-summary')
   if (summaryEl) {
     if (runComplete) {
-      const correct = currentRunEntries.filter(e => e.outcome === 'correct')
-      const times   = correct.map(e => e.ms)
-      let html = `<div class="run-summary-title">Run complete — ${session.totalAnswered} questions</div>`
+      const studyCount    = currentRunEntries.filter(e => e.studyCard).length
+      const trainable     = currentRunEntries.filter(e => !e.studyCard)
+      const answered      = trainable.filter(e => e.outcome !== 'wrong')
+      const times         = answered.map(e => e.ms)
+      const trainCount    = session.totalAnswered - studyCount
+
+      let html = `<div class="run-summary-title">Run complete — ${trainCount} question${trainCount !== 1 ? 's' : ''}${studyCount ? ` + ${studyCount} studied` : ''}</div>`
       html += `<div class="run-summary-stats">`
       html += `<span class="rs-item"><span class="rs-val success">${session.correct}</span> correct</span>`
+      if (session.late > 0)
+        html += `<span class="rs-item"><span class="rs-val warn">${session.late}</span> retried</span>`
       html += `<span class="rs-item"><span class="rs-val error">${session.wrong}</span> wrong</span>`
+
       if (times.length) {
-        const avg  = Math.round(times.reduce((a, b) => a + b, 0) / times.length)
-        const best = Math.min(...times)
-        const worst= Math.max(...times)
+        const avg   = Math.round(times.reduce((a, b) => a + b, 0) / times.length)
+        const best  = Math.min(...times)
+        const worst = Math.max(...times)
         html += `<span class="rs-item"><span class="rs-val">${fmtMs(avg)}</span> avg</span>`
         html += `<span class="rs-item"><span class="rs-val success">${fmtMs(best)}</span> best</span>`
         html += `<span class="rs-item"><span class="rs-val error">${fmtMs(worst)}</span> worst</span>`
 
         // ── Compare to previous runs ──────────────────────────────────────────
-        const histAvgs = history.map(run => {
-          const runCorrect = run.entries.filter(e => e.outcome === 'correct')
-          if (!runCorrect.length) return null
-          return runCorrect.reduce((sum, e) => sum + e.ms, 0) / runCorrect.length
-        }).filter(a => a !== null)
+        // Score = {wrongs, avg}: fewer wrongs wins; tie-break on lower avg time.
+        // Legacy entry compat: old 'timeout' = new 'wrong'; old 'wrong' = new 'late'.
+        function runScore(entries) {
+          const t = entries.filter(e => !e.studyCard)
+          const wc = t.filter(e => e.outcome === 'wrong' || e.outcome === 'timeout').length
+          const ans = t.filter(e => e.outcome !== 'wrong' && e.outcome !== 'timeout')
+          const a = ans.length ? Math.round(ans.reduce((s, e) => s + e.ms, 0) / ans.length) : Infinity
+          return { wrongs: wc, avg: a }
+        }
+        function scoreBetter(a, b) {
+          if (a.wrongs !== b.wrongs) return a.wrongs < b.wrongs
+          return a.avg < b.avg
+        }
+
+        const cur        = runScore(currentRunEntries)
+        const histScores = history.map(r => runScore(r.entries))
 
         let verdict
-        if (histAvgs.length === 0) {
+        if (!histScores.length) {
           verdict = '🎯 First run!'
         } else {
-          const histMeanAvg = histAvgs.reduce((a, b) => a + b, 0) / histAvgs.length
-          const bestHistAvg = Math.min(...histAvgs)
-          if (avg <= bestHistAvg) {
+          const best = histScores.reduce((b, s) => scoreBetter(s, b) ? s : b)
+          if (scoreBetter(cur, best) || (cur.wrongs === best.wrongs && cur.avg === best.avg)) {
             verdict = '🏆 Best run ever!'
-          } else if (avg < histMeanAvg) {
-            verdict = '📈 Better than average'
           } else {
-            verdict = '📉 Below average'
+            const avgWrongs = histScores.reduce((s, h) => s + h.wrongs, 0) / histScores.length
+            const timeable  = histScores.filter(h => h.avg !== Infinity)
+            const avgTime   = timeable.length ? timeable.reduce((s, h) => s + h.avg, 0) / timeable.length : Infinity
+            if (cur.wrongs < avgWrongs || (cur.wrongs <= avgWrongs && cur.avg < avgTime)) {
+              verdict = '📈 Better than average'
+            } else {
+              verdict = '📉 Below average'
+            }
           }
         }
         html += `<span class="rs-verdict">${verdict}</span>`
@@ -444,34 +467,35 @@ function renderStatsTable() {
     }
   }
 
-  // Per (builderId:unitId) keep the LATEST time in current run
+  // Per (builderId:unitId) keep the LATEST time in current run; exclude study cards
   const curMap = new Map()
   for (const e of currentRunEntries) {
+    if (e.studyCard) continue
     curMap.set(`${e.builderId}:${e.unitId}`, e)
   }
 
-  // Sort slowest first (timeouts always float to top), cap at MAX_TABLE_ROWS
+  // Sort: wrong (unanswered) floats to top, then slowest first
   const rows = [...curMap.values()].sort((a, b) => {
-    const aSort = a.outcome === 'timeout' ? Infinity : a.ms
-    const bSort = b.outcome === 'timeout' ? Infinity : b.ms
+    const aSort = a.outcome === 'wrong' ? Infinity : a.ms
+    const bSort = b.outcome === 'wrong' ? Infinity : b.ms
     return bSort - aSort
   }).slice(0, MAX_TABLE_ROWS)
 
-  // Past runs: lookup maps key → best ms in that run (timeouts excluded)
+  // Past runs: lookup maps key → best ms in that run (wrong/timeout/study excluded)
   const histMaps = history.map(run => {
     const m = new Map()
     for (const e of run.entries) {
-      if (e.outcome === 'timeout') continue
+      if (e.outcome === 'wrong' || e.outcome === 'timeout' || e.studyCard) continue
       const k = `${e.builderId}:${e.unitId}`
       if (!m.has(k) || e.ms < m.get(k)) m.set(k, e.ms)
     }
     return { label: runLabel(run.date), map: m }
   })
 
-  // All-time best per key (timeouts excluded)
+  // All-time best per key (wrong/timeout/study excluded)
   const bestMap = new Map()
   for (const e of currentRunEntries) {
-    if (e.outcome === 'timeout') continue
+    if (e.outcome === 'wrong' || e.studyCard) continue
     const k = `${e.builderId}:${e.unitId}`
     if (!bestMap.has(k) || e.ms < bestMap.get(k)) bestMap.set(k, e.ms)
   }
@@ -513,8 +537,8 @@ function renderStatsTable() {
     addCell(entry.unitName, 'col-unit')
     addCell(entry.builderName, 'col-builder')
     addCell(
-      entry.outcome === 'timeout' ? '⏱' : fmtMs(entry.ms),
-      `col-time col-now ${entry.outcome === 'timeout' ? 'time-timeout' : timeClass(entry.ms)}`
+      entry.outcome === 'wrong' ? '⏱' : fmtMs(entry.ms),
+      `col-time col-now ${entry.outcome === 'wrong' ? 'time-timeout' : entry.outcome === 'late' ? 'time-late' : timeClass(entry.ms)}`
     )
 
     for (const { map } of histMaps) {
@@ -761,9 +785,11 @@ function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1) }
 // ─── Stats ────────────────────────────────────────────────────────────────────
 
 function updateStats() {
-  $('stat-correct').textContent = session.correct
-  $('stat-wrong').textContent   = session.wrong
-  $('stat-streak').textContent  = session.streak
+  $('stat-first-try').textContent = session.correct
+  $('stat-correct').textContent   = session.late
+  $('stat-wrong').textContent     = session.wrong
+  const s = session.streak
+  $('stat-streak').textContent    = s === 0 ? '—' : s <= 8 ? '🥇'.repeat(s) : `🥇×${s}`
 }
 
 // ─── Hint overlay ─────────────────────────────────────────────────────────────
@@ -883,7 +909,7 @@ function updateTimerDisplay(fraction) {
 function handleTimeout() {
   if (trainingState === State.FEEDBACK || trainingState === State.SHOW_ANSWER) return
   if (!screens.training.classList.contains('active')) return
-  recordResult('timeout')
+  recordResult('wrong')
   showAnswer('⏱ Time up — ')
 }
 
@@ -1242,7 +1268,7 @@ function startTraining() {
   currentRunEntries = []
   queue      = queue0
   queueIndex = 0
-  session    = { correct: 0, wrong: 0, streak: 0, totalAnswered: 0 }
+  session    = { correct: 0, late: 0, wrong: 0, streak: 0, totalAnswered: 0 }
   runComplete = false
   paused      = false
   $('btn-skip').disabled  = false
@@ -1521,7 +1547,7 @@ function handleCategoryKey(key) {
       flashSlot(currentEntry.gridKey, 'flash-correct')
       playBuildSound('builder')
       clearAnswerTimer()
-      recordResult(questionHadWrong ? 'wrong' : 'correct')
+      recordResult(questionHadWrong ? 'late' : 'correct')
       setInstruction('✓ Correct!', 'state-correct')
       trainingState = State.FEEDBACK
       setTimeout(() => checkRunEnd(), 900)
@@ -1558,7 +1584,7 @@ function handleGridKey(key) {
     playBuildSound(isFactory(currentEntry.builder) ? 'factory' : 'builder')
     clearAnswerTimer()
     // Count as 'wrong' if any key was pressed incorrectly during this question
-    recordResult(questionHadWrong ? 'wrong' : 'correct')
+    recordResult(questionHadWrong ? 'late' : 'correct')
     setInstruction('✓ Correct!', 'state-correct')
     trainingState = State.FEEDBACK
     setTimeout(() => checkRunEnd(), 900)
@@ -1586,7 +1612,7 @@ function handleShortcutKey(key, mods) {
       playBuildSound('builder')
       clearAnswerTimer()
       clearShortcutKeyTimer()
-      recordResult(questionHadWrong ? 'wrong' : 'correct')
+      recordResult(questionHadWrong ? 'late' : 'correct')
       setInstruction('✓ Correct!', 'state-correct')
       trainingState = State.FEEDBACK
       setTimeout(() => checkRunEnd(), 900)
@@ -1602,12 +1628,14 @@ function handleShortcutKey(key, mods) {
 }
 
 function recordResult(outcome) {
-  // outcome: 'correct' | 'wrong' | 'timeout'
-  // 'wrong'   = user eventually pressed the right key but had wrong attempts first
-  // 'timeout' = timer expired before user pressed the right key
+  // outcome: 'correct' | 'late' | 'wrong'
+  // 'correct' = right on first try
+  // 'late'    = correct eventually but had wrong attempts first
+  // 'wrong'   = timer expired with no correct answer
   session.totalAnswered++
 
-  const ms = Date.now() - questionStartTime
+  const ms        = Date.now() - questionStartTime
+  const studyCard = !!(currentEntry.browserReserved)
 
   if (currentEntry.type === 'shortcut') {
     currentRunEntries.push({
@@ -1617,11 +1645,15 @@ function recordResult(outcome) {
       builderName: 'Shortcut',
       ms,
       outcome,
+      studyCard,
     })
     renderStatsTable()
     if (outcome === 'correct') {
       session.correct++
       session.streak++
+    } else if (outcome === 'late') {
+      session.late++
+      session.streak = 0
     } else {
       session.wrong++
       session.streak = 0
@@ -1642,12 +1674,16 @@ function recordResult(outcome) {
     builderName: currentEntry.builder.name,
     ms,
     outcome,
+    studyCard: false,
   })
   renderStatsTable()
 
   if (outcome === 'correct') {
     session.correct++
     session.streak++
+  } else if (outcome === 'late') {
+    session.late++
+    session.streak = 0
   } else {
     session.wrong++
     session.streak = 0
@@ -1779,6 +1815,7 @@ function initSetupScreen() {
     rb.addEventListener('change', e => {
       settings.keyboard = e.target.value
       saveSettings(settings)
+      updateBuilderCount()
     })
 
   $('btn-start').addEventListener('click', () => {

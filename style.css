@@ -578,14 +578,26 @@ kbd {
   padding: 10px 8px 8px;
   text-align: center;
 }
-.stat-num {
-  font-size: 28px;
+.stat-medal {
+  font-size: 22px;
+  line-height: 1.2;
+}
+.stat-medal-void {
+  visibility: hidden;
+}
+.stat-count {
+  font-size: 24px;
   font-weight: 700;
   line-height: 1.1;
 }
-.stat-num.success { color: var(--success) }
-.stat-num.error   { color: var(--error) }
-.stat-num.accent  { color: var(--accent) }
+.stat-count.error { color: var(--error) }
+.stat-streak-medals {
+  font-size: 15px;
+  line-height: 1.4;
+  word-break: break-all;
+  min-height: 22px;
+  padding: 0 2px;
+}
 .stat-label {
   font-size: 10px;
   font-weight: 700;
@@ -655,7 +667,6 @@ kbd {
 .stats-table td {
   padding: 5px 10px;
   border-bottom: 1px solid var(--border);
-  color: var(--text);
 }
 .stats-table tr:last-child td { border-bottom: none }
 .stats-table tr:hover td { background: var(--bg-panel2) }
@@ -670,6 +681,7 @@ kbd {
 .time-fast    { color: var(--success) }
 .time-mid     { color: var(--accent) }
 .time-slow    { color: var(--error) }
+.time-late    { color: var(--energy); font-weight: 700 }
 .time-none    { color: var(--text-dim) }
 .time-timeout { color: var(--error); font-weight: 700 }
 
@@ -805,6 +817,7 @@ kbd {
 .rs-item { display: flex; align-items: baseline; gap: 5px }
 .rs-val { font-size: 18px; font-weight: 700; color: var(--text-bright) }
 .rs-val.success { color: var(--success) }
+.rs-val.warn    { color: var(--energy) }
 .rs-val.error   { color: var(--error) }
 .rs-verdict {
   font-size: 14px;

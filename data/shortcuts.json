@@ -28,7 +28,7 @@
           "label": "Select All Same Type",
           "key": "W",
           "modifiers": ["Ctrl"],
-          "browserReserved": true,
+          "browserReservedWindows": true,
           "description": "Select every unit of the same type as the currently selected unit"
         },
         {
