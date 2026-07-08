@@ -19,7 +19,7 @@ function normalise(key, isQwertz, code) {
   const k = key.toUpperCase()
   if (isQwertz && k === 'Y') return 'Z'
   if (isQwertz && k === 'Z') return 'Y'
-  if (isQwertz && k === 'Ö') return ':'  // physical ;/: key position → : shortcut
+  if (isQwertz && k === 'Ö') return ';'  // physical ;/Ö key position → ; shortcut
   if (isQwertz && k === '+') return ']'  // physical ] key position → ] shortcut
   // On macOS, Alt/Option composes non-ASCII characters (e.g. Alt+B → '∫', Alt++ → '±').
   // When event.key lands outside ASCII, fall back to event.code (the physical scan-code)
@@ -32,7 +32,7 @@ function normalise(key, isQwertz, code) {
       return letter
     }
     if (code === 'BracketRight') return ']'
-    if (code === 'Semicolon')    return ':'
+    if (code === 'Semicolon')    return ';'
   }
   return k
 }
@@ -48,7 +48,7 @@ function display(key, isQwertz) {
   if (!isQwertz) return key
   if (key === 'Z') return 'Y'
   if (key === 'Y') return 'Z'
-  if (key === ':') return 'Ö'
+  if (key === ';') return 'Ö'
   if (key === ']') return '+'
   return key
 }

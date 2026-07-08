@@ -149,8 +149,8 @@
         {
           "id": "position",
           "label": "Position",
-          "key": ":",
-          "note": "':' — QWERTY: Shift+;  QWERTZ: Shift+.  Both produce ':' in the browser",
+          "key": ";",
+          "note": "';' — QWERTY: ; key  QWERTZ: Ö key (same physical position)",
           "description": "Cycle movement stance: Hold Position → Maneuver → Roam"
         },
         {
