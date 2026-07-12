@@ -2211,7 +2211,7 @@ async function init() {
   // Belt-and-suspenders: if the keydown block didn't work (e.g. Chromium on Linux
   // intercepts Ctrl+W before JS), the beforeunload dialog is the last line of defence.
   window.addEventListener('beforeunload', (event) => {
-    if (document.getElementById('screen-training')?.classList.contains('active')) {
+    if (document.getElementById('screen-training')?.classList.contains('active') && !runComplete) {
       event.preventDefault()
       event.returnValue = ''
     }
