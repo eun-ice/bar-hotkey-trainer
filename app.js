@@ -130,14 +130,14 @@ const SETTINGS_KEY = 'bar-trainer-settings'
 
 function defaultSettings() {
   return {
-    factions:     ['armada', 'cortex', 'legion'],
+    factions:     ['armada', 'cortex'],
     tiers:        [0, 1, 2, 3, 'optional'],
     builderTypes: ['factory', 'constructor'],
     keyboard:     '',
     hintTimeout:  0,
     timeLimit:    5,   // seconds per required key press
     runLength:    20,  // questions per run (0 = unlimited)
-    shortcuts:    ['general', 'battle', 'factory', 'builder', 'blueprint', 'rezbot', 'transport', 'camera'],
+    shortcuts:    ['general', 'battle', 'factory', 'builder', 'blueprint', 'rezbot', 'air', 'transport', 'camera'],
   }
 }
 
@@ -1792,9 +1792,10 @@ function initSetupScreen() {
       .map(el => el.value)
     saveSettings(settings)
     updateBuilderCount()
-    const allChecked = document.querySelectorAll('input[name=shortcuts]').length ===
-                       document.querySelectorAll('input[name=shortcuts]:checked').length
-    $('btn-shortcuts-toggle').textContent = allChecked ? 'Deselect all' : 'Select all'
+    const total   = document.querySelectorAll('input[name=shortcuts]').length
+    const checked = document.querySelectorAll('input[name=shortcuts]:checked').length
+    $('btn-shortcuts-toggle').textContent = (total === checked) ? 'Deselect all' : 'Select all'
+    $('shortcuts-master').checked = checked > 0
   }
 
   for (const cb of document.querySelectorAll('input[name=shortcuts]'))
@@ -1811,6 +1812,13 @@ function initSetupScreen() {
   // Set initial toggle label
   syncShortcutSettings()
 
+  $('shortcuts-master').addEventListener('change', () => {
+    const isOn = $('shortcuts-master').checked
+    for (const cb of document.querySelectorAll('input[name=shortcuts]'))
+      cb.checked = isOn
+    syncShortcutSettings()
+  })
+
   for (const rb of document.querySelectorAll('input[name=keyboard]'))
     rb.addEventListener('change', e => {
       settings.keyboard = e.target.value
@@ -1819,6 +1827,13 @@ function initSetupScreen() {
     })
 
   $('btn-start').addEventListener('click', () => {
+    if (!settings.keyboard) {
+      showKbdDetect(() => {
+        precacheIcons(filteredBuilders(settings))
+        showNewRunCountdown()
+      })
+      return
+    }
     precacheIcons(filteredBuilders(settings))
     showNewRunCountdown()
   })
@@ -1847,6 +1862,8 @@ function initSetupScreen() {
     precacheIcons(filteredBuilders(settings))
     showNewRunCountdown()
   })
+
+  initAdvancedToggles()
 }
 
 function onFilterChange() {
@@ -1879,12 +1896,67 @@ function updateBuilderCount() {
     (settings.shortcuts?.includes(grp.id) ? total + grp.shortcuts.length : total), 0)
   $('builder-count').textContent =
     `${count} builder${count !== 1 ? 's' : ''} · ${scCount} shortcut${scCount !== 1 ? 's' : ''} selected`
-  if (!settings.keyboard) {
-    $('builder-count').textContent = '⚠ Choose a keyboard layout above to start'
-    $('btn-start').disabled = true
-    return
-  }
   $('btn-start').disabled = (count === 0 && scCount === 0)
+}
+
+const ADV_OPEN_KEY = 'bar-trainer-adv-open'
+
+function initAdvancedToggles() {
+  let open
+  try { open = new Set(JSON.parse(localStorage.getItem(ADV_OPEN_KEY) ?? '[]')) }
+  catch { open = new Set() }
+
+  for (const btn of document.querySelectorAll('.btn-adv[data-target]')) {
+    const targetId = btn.dataset.target
+    const panel = document.getElementById(targetId)
+    if (!panel) continue
+    const apply = () => {
+      const isOpen = open.has(targetId)
+      panel.classList.toggle('adv-open', isOpen)
+      btn.classList.toggle('btn-adv-active', isOpen)
+    }
+    apply()
+    btn.addEventListener('click', () => {
+      open.has(targetId) ? open.delete(targetId) : open.add(targetId)
+      localStorage.setItem(ADV_OPEN_KEY, JSON.stringify([...open]))
+      apply()
+    })
+  }
+}
+
+let kbdDetectPendingCallback = null
+
+function showKbdDetect(callback) {
+  kbdDetectPendingCallback = callback
+  $('kbd-detect-modal').classList.remove('hidden')
+
+  function onKey(e) {
+    const key = e.key?.toUpperCase()
+    if (key === 'Y') apply('qwerty')
+    else if (key === 'Z') apply('qwertz')
+    else if (key === 'ESCAPE') close()
+  }
+
+  function apply(layout) {
+    document.removeEventListener('keydown', onKey)
+    $('kbd-detect-modal').classList.add('hidden')
+    settings.keyboard = layout
+    document.querySelector(`input[name=keyboard][value=${layout}]`).checked = true
+    saveSettings(settings)
+    updateBuilderCount()
+    const cb = kbdDetectPendingCallback
+    kbdDetectPendingCallback = null
+    if (cb) cb()
+  }
+
+  function close() {
+    document.removeEventListener('keydown', onKey)
+    $('kbd-detect-modal').classList.add('hidden')
+    kbdDetectPendingCallback = null
+  }
+
+  document.addEventListener('keydown', onKey)
+  $('btn-kbd-cancel').onclick = close
 }
 
 // ─── Browse screen ─────────────────────────────────────────────────────────────

@@ -23,102 +23,145 @@
 <div id="screen-setup" class="screen">
   <div class="setup-wrap">
 
-    <header class="setup-header">
+    <header class="setup-welcome">
       <h1>BAR Hotkey Trainer</h1>
-      <p>Train your build menu hotkeys for <em>Beyond All Reason</em></p>
+      <p class="setup-tagline">★ Learn keyboard shortcuts. Gain OS.</p>
+      <p class="setup-desc">Commanders, free your mouse for what matters most: Commanding your units. Use shortcuts for everything else.<br><br>This trainer burns the grid keys into muscle memory so your fingers don't have to think. If you prefer legacy keys, this is not for you.</p>
     </header>
 
-    <div class="setup-grid">
+    <div class="setup-form">
 
-      <section class="setup-card">
-        <h2>Units</h2>
-        <p class="setup-sub-label">Faction</p>
-        <div class="check-group">
+      <section class="setup-section">
+        <div class="setup-section-head">
+          <h2 class="setup-section-title">Keyboard</h2>
+        </div>
+        <div class="radio-group radio-group-inline">
+          <label class="radio-label"><input type="radio" name="keyboard" value="qwerty"> QWERTY</label>
+          <label class="radio-label"><input type="radio" name="keyboard" value="qwertz"> QWERTZ</label>
+        </div>
+      </section>
+
+      <section class="setup-section">
+        <div class="setup-section-head">
+          <h2 class="setup-section-title">Faction</h2>
+        </div>
+        <div class="check-group check-group-inline">
           <label class="check-label"><input type="checkbox" name="faction" value="armada" checked> Armada</label>
           <label class="check-label"><input type="checkbox" name="faction" value="cortex" checked> Cortex</label>
-          <label class="check-label"><input type="checkbox" name="faction" value="legion" checked> Legion</label>
+          <label class="check-label"><input type="checkbox" name="faction" value="legion"> Legion</label>
         </div>
-        <p class="setup-sub-label">Type</p>
-        <div class="check-group">
-          <label class="check-label"><input type="checkbox" name="buildertype" value="factory" checked> Factories <span class="key-hint">(Bot Lab, Vehicle Plant…)</span></label>
+      </section>
+
+      <section class="setup-section">
+        <div class="setup-section-head">
+          <button class="btn-adv btn-adv-row" data-target="adv-units">
+            <span class="setup-section-title">Units</span>
+            <span class="adv-chevron">▾</span>
+          </button>
+        </div>
+        <div class="check-group check-group-inline">
           <label class="check-label"><input type="checkbox" name="buildertype" value="constructor" checked> Constructors <span class="key-hint">(con bots, con vehicles…)</span></label>
+          <label class="check-label"><input type="checkbox" name="buildertype" value="factory" checked> Factories <span class="key-hint">(Bot Lab, Vehicle Plant…)</span></label>
+        </div>
+        <div id="adv-units" class="adv-section">
+          <div class="adv-divider"></div>
+          <p class="setup-sub-label">Tier</p>
+          <div class="check-group">
+            <label class="check-label"><input type="checkbox" name="tier" value="0" checked> Commander</label>
+            <label class="check-label"><input type="checkbox" name="tier" value="1" checked> T1</label>
+            <label class="check-label"><input type="checkbox" name="tier" value="2" checked> T2</label>
+            <label class="check-label"><input type="checkbox" name="tier" value="3" id="cb-experimental" checked> T3 / Experimental</label>
+            <label class="check-label"><input type="checkbox" name="tier" value="optional" id="cb-optional" checked> Minelayers</label>
+          </div>
         </div>
       </section>
 
-      <section class="setup-card">
-        <h2>Tier</h2>
-        <div class="check-group">
-          <label class="check-label"><input type="checkbox" name="tier" value="0" checked> Commander</label>
-          <label class="check-label"><input type="checkbox" name="tier" value="1" checked> T1</label>
-          <label class="check-label"><input type="checkbox" name="tier" value="2" checked> T2</label>
-          <label class="check-label"><input type="checkbox" name="tier" value="3" id="cb-experimental" checked> T3 / Experimental</label>
-          <label class="check-label"><input type="checkbox" name="tier" value="optional" id="cb-optional" checked> Minelayers</label>
+      <section class="setup-section">
+        <div class="setup-section-head">
+          <label class="check-label setup-section-toggle">
+            <input type="checkbox" id="shortcuts-master" checked>
+            <span class="setup-section-title">Game Shortcuts</span>
+          </label>
+          <button class="btn-adv btn-adv-expand" data-target="adv-shortcuts"><span class="adv-chevron">▾</span></button>
+        </div>
+        <div id="adv-shortcuts" class="adv-section">
+          <div class="adv-divider"></div>
+          <div class="adv-shortcuts-header">
+            <button id="btn-shortcuts-toggle" class="btn-toggle-all">Select all</button>
+          </div>
+          <div class="check-group">
+            <label class="check-label"><input type="checkbox" name="shortcuts" value="general" checked> General Selection</label>
+            <label class="check-label"><input type="checkbox" name="shortcuts" value="battle" checked> Battle Commands</label>
+            <label class="check-label"><input type="checkbox" name="shortcuts" value="factory" checked> Factory Commands</label>
+            <label class="check-label"><input type="checkbox" name="shortcuts" value="builder" checked> Builder Commands</label>
+            <label class="check-label"><input type="checkbox" name="shortcuts" value="blueprint" checked> Blueprint Commands</label>
+            <label class="check-label"><input type="checkbox" name="shortcuts" value="rezbot" checked> Rezbot Commands</label>
+            <label class="check-label"><input type="checkbox" name="shortcuts" value="air" checked> Air Commands</label>
+            <label class="check-label"><input type="checkbox" name="shortcuts" value="transport" checked> Transport Commands</label>
+            <label class="check-label"><input type="checkbox" name="shortcuts" value="camera" checked> Camera Controls</label>
+          </div>
         </div>
       </section>
 
-      <section class="setup-card">
-        <div class="setup-card-header">
-          <h2>Game Shortcuts</h2>
-          <button id="btn-shortcuts-toggle" class="btn-toggle-all">Select all</button>
+      <section class="setup-section">
+        <div class="setup-section-head">
+          <button class="btn-adv btn-adv-full" data-target="adv-run">Run Options <span class="adv-chevron">▾</span></button>
         </div>
-        <div class="check-group">
-          <label class="check-label"><input type="checkbox" name="shortcuts" value="general" checked> General Selection</label>
-          <label class="check-label"><input type="checkbox" name="shortcuts" value="battle" checked> Battle Commands</label>
-          <label class="check-label"><input type="checkbox" name="shortcuts" value="factory" checked> Factory Commands</label>
-          <label class="check-label"><input type="checkbox" name="shortcuts" value="builder" checked> Builder Commands</label>
-          <label class="check-label"><input type="checkbox" name="shortcuts" value="blueprint" checked> Blueprint Commands</label>
-          <label class="check-label"><input type="checkbox" name="shortcuts" value="rezbot" checked> Rezbot Commands</label>
-          <label class="check-label"><input type="checkbox" name="shortcuts" value="transport" checked> Transport Commands</label>
-          <label class="check-label"><input type="checkbox" name="shortcuts" value="camera" checked> Camera Controls</label>
+        <div id="adv-run" class="adv-section">
+          <div class="adv-divider"></div>
+          <div class="adv-run-grid">
+            <div>
+              <p class="setup-sub-label">Hint Timeout</p>
+              <div class="slider-row">
+                <input type="range" id="hint-timeout" min="0" max="10" step="1" value="0">
+                <span id="hint-timeout-val">Always visible</span>
+              </div>
+              <p class="setup-hint">Seconds before the build menu is revealed</p>
+            </div>
+            <div>
+              <p class="setup-sub-label">Time Limit</p>
+              <div class="slider-row">
+                <input type="range" id="time-limit" min="0" max="10" step="1" value="3">
+                <span id="time-limit-val">3s / key</span>
+              </div>
+              <p class="setup-hint">Seconds per key press before auto-fail (0 = no limit)</p>
+            </div>
+            <div>
+              <p class="setup-sub-label">Run Length</p>
+              <div class="slider-row">
+                <input type="range" id="run-length" min="0" max="50" step="5" value="20">
+                <span id="run-length-val">20</span>
+              </div>
+              <p class="setup-hint">Questions per run (0 = unlimited)</p>
+            </div>
+          </div>
         </div>
-      </section>
-
-      <section class="setup-card">
-        <h2>Keyboard</h2>
-        <div class="radio-group">
-          <label class="radio-label"><input type="radio" name="keyboard" value="qwerty"> QWERTY</label>
-          <label class="radio-label"><input type="radio" name="keyboard" value="qwertz"> QWERTZ <span class="key-hint">(Y↔Z swapped)</span></label>
-        </div>
-      </section>
-
-      <section class="setup-card">
-        <h2>Hint Timeout</h2>
-        <div class="slider-row">
-          <input type="range" id="hint-timeout" min="0" max="10" step="1" value="0">
-          <span id="hint-timeout-val">Always visible</span>
-        </div>
-        <p class="setup-hint">Seconds before the build menu is revealed</p>
-      </section>
-
-      <section class="setup-card">
-        <h2>Time Limit</h2>
-        <div class="slider-row">
-          <input type="range" id="time-limit" min="0" max="10" step="1" value="3">
-          <span id="time-limit-val">3s / key</span>
-        </div>
-        <p class="setup-hint">Seconds per key press before auto-fail (0 = no limit)</p>
-      </section>
-
-      <section class="setup-card">
-        <h2>Run Length</h2>
-        <div class="slider-row">
-          <input type="range" id="run-length" min="0" max="50" step="5" value="20">
-          <span id="run-length-val">20</span>
-        </div>
-        <p class="setup-hint">Questions per run (0 = unlimited)</p>
       </section>
 
     </div>
 
-    <div class="setup-footer">
-      <span id="builder-count" class="builder-count">— builders</span>
-      <div class="setup-footer-btns">
-        <button id="btn-browse" class="btn-secondary">Browse Menus</button>
-        <button id="btn-browse-shortcuts" class="btn-secondary">Browse Shortcuts</button>
-        <button id="btn-start" class="btn-primary">Start Training</button>
+    <div class="setup-actions">
+      <span id="builder-count" class="builder-count"></span>
+      <div class="setup-action-btns">
+        <button id="btn-browse" class="btn-action">📖 Learn Menus</button>
+        <button id="btn-browse-shortcuts" class="btn-action">⌨ Learn Shortcuts</button>
+        <button id="btn-start" class="btn-action btn-action-primary">▶ Start Training</button>
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- ── KEYBOARD DETECT MODAL ─────────────────────────────────────────────────── -->
+<div id="kbd-detect-modal" class="kbd-detect-modal hidden">
+  <div class="kbd-detect-box">
+    <div class="kbd-detect-title">Which keyboard layout are you using?</div>
+    <p class="kbd-detect-prompt">Press the key that fills the gap:</p>
+    <div class="kbd-detect-keys">
+      <kbd class="kbd-detect-key">Q</kbd><kbd class="kbd-detect-key">W</kbd><kbd class="kbd-detect-key">E</kbd><kbd class="kbd-detect-key">R</kbd><kbd class="kbd-detect-key">T</kbd><kbd class="kbd-detect-key kbd-detect-blank">?</kbd><kbd class="kbd-detect-key">U</kbd><kbd class="kbd-detect-key">I</kbd>
+    </div>
+    <p class="kbd-detect-hint">Press <strong>Y</strong> for QWERTY &nbsp;·&nbsp; Press <strong>Z</strong> for QWERTZ</p>
+    <button class="btn-secondary" id="btn-kbd-cancel" style="margin-top:16px;width:auto;padding:6px 20px">Cancel</button>
   </div>
 </div>
 
