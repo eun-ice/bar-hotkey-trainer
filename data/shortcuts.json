@@ -310,6 +310,7 @@
           "key": "F1",
           "modifiers": ["Ctrl"],
           "browserReservedFirefox": true,
+          "browserReservedMac": true,
           "description": "Save the current camera position to slot 1"
         },
         {
@@ -318,6 +319,7 @@
           "key": "F2",
           "modifiers": ["Ctrl"],
           "browserReservedFirefox": true,
+          "browserReservedMac": true,
           "description": "Save the current camera position to slot 2"
         }
       ]

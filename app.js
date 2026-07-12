@@ -281,7 +281,7 @@ function buildShortcutQueue() {
         context:         group.context,
         seqKeys,
         seqMods,
-        browserReserved: (shortcut.browserReserved ?? false) || (IS_FIREFOX && (shortcut.browserReservedFirefox ?? false)) || (!IS_MAC && (shortcut.browserReservedWindows ?? false)),
+        browserReserved: (shortcut.browserReserved ?? false) || (IS_FIREFOX && (shortcut.browserReservedFirefox ?? false)) || (!IS_MAC && (shortcut.browserReservedWindows ?? false)) || (IS_MAC && (shortcut.browserReservedMac ?? false)),
       })
     }
   }
@@ -1004,8 +1004,9 @@ function endRun() {
   // Don't archive yet — startTraining() will do it; currentRunEntries is still
   // needed by renderStatsTable() for the summary (correct[], min/max/avg).
   $('btn-skip').textContent = '↩ Skip'
-  $('btn-skip').disabled    = true
-  $('btn-pause').disabled   = true
+  $('btn-skip').classList.add('hidden')
+  $('btn-pause').classList.add('hidden')
+  $('btn-settings').textContent = '⌂ Home'
 
   // Hide the active question and build menu; reveal the celebration panel
   document.querySelector('.question-col').classList.add('hidden')
@@ -1271,10 +1272,11 @@ function startTraining() {
   session    = { correct: 0, late: 0, wrong: 0, streak: 0, totalAnswered: 0 }
   runComplete = false
   paused      = false
-  $('btn-skip').disabled  = false
-  $('btn-pause').disabled = false
+  $('btn-skip').classList.remove('hidden')
+  $('btn-pause').classList.remove('hidden')
   $('btn-skip').textContent = '↩ Skip'
   $('btn-pause').textContent = '⏸ Pause'
+  $('btn-settings').textContent = '◼ Stop'
   $('pause-overlay').classList.add('hidden')
   updateStats()
   renderStatsTable()
@@ -2221,11 +2223,15 @@ function selectShortcutsGroup(id) {
   content.classList.remove('hidden')
 
   const rows = group.shortcuts.map(sc => {
-    const reserved = sc.browserReserved
+    const reserved = (sc.browserReserved ?? false)
       ? '<span class="sc-reserved">study card — all browsers</span>'
-      : sc.browserReservedFirefox
-        ? '<span class="sc-reserved">study card — Firefox only</span>'
-        : ''
+      : (IS_MAC && (sc.browserReservedMac ?? false))
+        ? '<span class="sc-reserved">study card — Mac only</span>'
+        : (IS_FIREFOX && (sc.browserReservedFirefox ?? false))
+          ? '<span class="sc-reserved">study card — Firefox only</span>'
+          : (!IS_MAC && (sc.browserReservedWindows ?? false))
+            ? '<span class="sc-reserved">study card — Windows only</span>'
+            : ''
     const desc = sc.description
       ? `<div class="sc-desc">${sc.description}</div>` : ''
     return `
