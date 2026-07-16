@@ -893,7 +893,21 @@ async function main() {
   writeFileSync(jsonPath, JSON.stringify(output, null, 2))
   console.log(`Wrote data/buildmenus.json  (${afterCount} builders)`)
 
-  // 7. Convert icons (only for units that survived the reachability filter)
+  // 7. Write water-equivalents.json from cmd_context_build.lua
+  const contextBuildPath = join(BAR_DATA, 'luaui/Widgets/cmd_context_build.lua')
+  if (existsSync(contextBuildPath)) {
+    const cbLua = readFileSync(contextBuildPath, 'utf8')
+    const parsePairs = block => [...block.matchAll(/\{'(\w+)',\s*'(\w+)'\}/g)].map(m => [m[1], m[2]])
+    const unitlistBlock  = cbLua.match(/local unitlist\s*=\s*\{([\s\S]*?)\n\}/)?.[1] ?? ''
+    const legionBlock    = cbLua.match(/local legionUnitlist\s*=\s*\{([\s\S]*?)\n\}/)?.[1] ?? ''
+    const pairs = [...parsePairs(unitlistBlock), ...parsePairs(legionBlock)]
+    const equivalents = {}
+    for (const [a, b] of pairs) { equivalents[a] = b; equivalents[b] = a }
+    writeFileSync(join(__dirname, 'data', 'water-equivalents.json'), JSON.stringify(equivalents, null, 2))
+    console.log(`Wrote data/water-equivalents.json  (${pairs.length} pairs)`)
+  }
+
+  // 8. Convert icons (only for units that survived the reachability filter)
   if (!skipIcons) {
     const neededIds = new Set()
     for (const b of Object.values(output.builders)) {

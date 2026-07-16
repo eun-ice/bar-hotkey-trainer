@@ -608,6 +608,17 @@ kbd {
   pointer-events: none;
 }
 
+.slot .slot-equiv {
+  position: absolute;
+  bottom: 3px; left: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #5bc8f5;
+  text-shadow: -1px 0 #000, 1px 0 #000, 0 -1px #000, 0 1px #000;
+  line-height: 1;
+  pointer-events: none;
+}
+
 /* Slot states */
 .slot.is-target {
   border-color: var(--accent);
@@ -925,6 +936,7 @@ kbd {
 .slot-hover-info {
   /* Always reserves exactly 2 lines so layout never shifts on hover */
   height: 40px;
+  /* Browse screen override (below) allows a third line for the equiv */
   padding: 4px 6px 2px;
   font-size: 12px;
   line-height: 1.4;
@@ -938,6 +950,15 @@ kbd {
   color: var(--text-dim);
   font-style: italic;
   font-size: 11px;
+}
+.slot-hover-equiv {
+  font-weight: 400;
+  color: #5bc8f5;
+  font-size: 11px;
+}
+.slot-hover-equiv kbd {
+  font-size: 10px;
+  padding: 0 3px;
 }
 
 /* ─── Answer countdown (inline in instruction after wrong/timeout) ──────────── */
@@ -1046,6 +1067,10 @@ kbd {
 /* ─── Browse screen ─────────────────────────────────────────────────────────── */
 #screen-browse {
   flex-direction: column;
+}
+#browse-slot-hover-info {
+  height: auto;
+  min-height: 40px;
 }
 
 .browse-topbar {
@@ -1193,6 +1218,58 @@ kbd {
   font-size: 12px;
   color: var(--text-dim);
   text-align: center;
+}
+
+.browse-equiv-table {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 0 4px;
+  align-self: flex-start;
+}
+.equiv-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.equiv-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.equiv-name {
+  white-space: nowrap;
+  color: var(--text);
+}
+.equiv-key {
+  font-size: 11px;
+  padding: 1px 5px;
+  flex-shrink: 0;
+}
+.equiv-sep {
+  color: #5bc8f5;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.equiv-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-dim);
+  padding-bottom: 4px;
+}
+.equiv-desc {
+  font-size: 13px;
+  color: var(--text-dim);
+  padding-top: 8px;
+  line-height: 1.6;
+  white-space: normal;
+  word-break: break-word;
+  max-width: 600px;
 }
 
 /* ─── Shortcuts reference screen ────────────────────────────────────────────── */

@@ -143,6 +143,7 @@ async function main() {
     'language/en/units.json',
     'luaui/configs/buildmenu_sorting.lua',
     'luaui/configs/gridmenu_layouts.lua',
+    'luaui/Widgets/cmd_context_build.lua',
   ]
   for (const relPath of configFiles) {
     process.stdout.write(`Downloading ${relPath} … `)

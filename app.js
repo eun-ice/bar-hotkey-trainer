@@ -41,6 +41,16 @@ function keysMatch(pressed, expected) {
   return pressed === expected
 }
 
+function isEquivGridKey(key) {
+  if (!currentEntry || currentEntry.type === 'shortcut') return false
+  const equivId = WATER_EQUIVALENTS[currentEntry.unit.id]
+  if (!equivId) return false
+  const cat = currentEntry.builder.categories[currentEntry.categoryId]
+  if (!cat) return false
+  const equivUnit = cat.units.find(u => u.id === equivId && u.page === currentEntry.page)
+  return equivUnit ? keysMatch(key, equivUnit.key) : false
+}
+
 // For display: remap QWERTY scan-code key names to their physical QWERTZ labels.
 // Z and Y are swapped: the key in the QWERTY-Z position is labeled Y on QWERTZ and
 // vice versa. All other keys are unaffected.
@@ -186,8 +196,9 @@ function srPriority(card) {
 
 // ─── Data + queue ─────────────────────────────────────────────────────────────
 
-let DATA      = null   // parsed buildmenus.json
-let SHORTCUTS = []     // groups from shortcuts.json
+let DATA             = null   // parsed buildmenus.json
+let SHORTCUTS        = []     // groups from shortcuts.json
+let WATER_EQUIVALENTS = {}    // bidirectional land↔water unit ID map
 
 const SHORTCUT_CONTEXT_UNITS = {
   battle:    { armada: 'armcom',   cortex: 'corcom',   legion: 'legcom'    },
@@ -199,6 +210,8 @@ async function loadData() {
   const res = await fetch('data/buildmenus.json')
   if (!res.ok) throw new Error(`Could not load data/buildmenus.json (${res.status})`)
   DATA = await res.json()
+  const weRes = await fetch('data/water-equivalents.json')
+  if (weRes.ok) WATER_EQUIVALENTS = await weRes.json()
 }
 
 /** Return builders matching current settings */
@@ -1476,7 +1489,7 @@ function onKey(event) {
                     (event.altKey  === wantsAlt)  &&
                     keysMatch(pressedKey, currentEntry.seqKeys[lastIdx].toUpperCase())
       } else {
-        isCorrect = !event.ctrlKey && !event.altKey && keysMatch(pressedKey, currentEntry.gridKey)
+        isCorrect = !event.ctrlKey && !event.altKey && (keysMatch(pressedKey, currentEntry.gridKey) || isEquivGridKey(pressedKey))
       }
       if (isCorrect) { event.preventDefault(); advanceFromAnswer(); return }
     }
@@ -1591,7 +1604,7 @@ function handlePageKey() {
 }
 
 function handleGridKey(key) {
-  const correct = keysMatch(key, currentEntry.gridKey)
+  const correct = keysMatch(key, currentEntry.gridKey) || isEquivGridKey(key)
 
   if (correct) {
     flashSlot(key, 'flash-correct')
@@ -1739,6 +1752,17 @@ function showSlotHover(unit, elId) {
   } else {
     el.textContent = unit.name
   }
+}
+
+function showBrowseSlotHover(unit, equivUnit, isQwertz) {
+  const el = $('browse-slot-hover-info')
+  if (!el) return
+  const equivKey = display(equivUnit.key, isQwertz)
+  const desc = unit.description
+    ? `<br><span class="slot-hover-desc">${unit.description}</span>` : ''
+  el.innerHTML =
+    `${unit.name}${desc}` +
+    `<br><span class="slot-hover-equiv">≈ <kbd>${equivKey}</kbd> ${equivUnit.name}</span>`
 }
 
 function clearSlotHover(elId) {
@@ -2154,11 +2178,58 @@ function renderBrowseMenu() {
       keyLabel.textContent = display(key, isQwertz)
 
       slot.append(img, eBadge, mBadge, keyLabel)
+
+      // Water/land equivalent badge
+      const equivId   = WATER_EQUIVALENTS[unit.id]
+      const equivUnit = equivId ? cat?.units.find(u => u.id === equivId) : null
+      if (equivUnit) {
+        const equivBadge = document.createElement('span')
+        equivBadge.className = 'slot-equiv'
+        equivBadge.textContent = display(equivUnit.key, isQwertz)
+        slot.appendChild(equivBadge)
+      }
+
       slot.addEventListener('mouseenter', () => showSlotHover(unit, 'browse-slot-hover-info'))
       slot.addEventListener('mouseleave', () => clearSlotHover('browse-slot-hover-info'))
     }
 
     gridContainer.appendChild(slot)
+  }
+
+  // Water/land equivalents table
+  const equivTable = $('browse-equiv-table')
+  if (equivTable) {
+    const pairs = []
+    const seen  = new Set()
+    if (cat) {
+      for (const unit of cat.units.filter(u => u.page === browsePage)) {
+        const equivId = WATER_EQUIVALENTS[unit.id]
+        if (!equivId || seen.has(unit.id) || seen.has(equivId)) continue
+        const equivUnit = cat.units.find(u => u.id === equivId)
+        if (!equivUnit) continue
+        seen.add(unit.id); seen.add(equivId)
+        pairs.push([unit, equivUnit])
+      }
+    }
+    if (pairs.length) {
+      equivTable.classList.remove('hidden')
+      equivTable.innerHTML =
+        `<div class="equiv-title">Land / Water Equivalents</div>` +
+        pairs.map(([a, b]) => `
+        <div class="equiv-row">
+          <img src="data/${a.icon}" alt="" class="equiv-icon">
+          <span class="equiv-name">${a.name}</span>
+          <kbd class="equiv-key">${display(a.key, isQwertz)}</kbd>
+          <span class="equiv-sep">≈</span>
+          <img src="data/${b.icon}" alt="" class="equiv-icon">
+          <span class="equiv-name">${b.name}</span>
+          <kbd class="equiv-key">${display(b.key, isQwertz)}</kbd>
+        </div>`).join('') +
+        `<div class="equiv-desc">BAR automatically swaps to the matching unit when your build cursor moves between land and water — one key covers both.</div>`
+    } else {
+      equivTable.classList.add('hidden')
+      equivTable.innerHTML = ''
+    }
   }
 
   // Key hint

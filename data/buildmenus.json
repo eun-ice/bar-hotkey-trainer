@@ -1,6 +1,6 @@
 {
-  "version": "2026-05-27",
-  "generatedAt": "2026-05-27T03:51:46.011Z",
+  "version": "2026-07-16",
+  "generatedAt": "2026-07-16T21:03:33.583Z",
   "builders": {
     "armlab": {
       "id": "armlab",
@@ -277,8 +277,8 @@
               "id": "legkark",
               "name": "Karkinos",
               "description": "Medium Dual-Weapon Infantry Bot",
-              "metalCost": 330,
-              "energyCost": 2600,
+              "metalCost": 310,
+              "energyCost": 2400,
               "buildTime": 4400,
               "icon": "icons/legkark.webp",
               "key": "D",
@@ -830,9 +830,9 @@
               "id": "legshot",
               "name": "Phalanx",
               "description": "Shielded Riot Defence Bot",
-              "metalCost": 450,
-              "energyCost": 4750,
-              "buildTime": 10160,
+              "metalCost": 470,
+              "energyCost": 5000,
+              "buildTime": 11000,
               "icon": "icons/legshot.webp",
               "key": "D",
               "page": 0
@@ -987,7 +987,7 @@
               "description": "Fast Assault Tank",
               "metalCost": 110,
               "energyCost": 900,
-              "buildTime": 1960,
+              "buildTime": 2000,
               "icon": "icons/armflash.webp",
               "key": "C",
               "page": 0
@@ -998,7 +998,7 @@
               "description": "Light Scout Vehicle",
               "metalCost": 31,
               "energyCost": 370,
-              "buildTime": 950,
+              "buildTime": 1000,
               "icon": "icons/armfav.webp",
               "key": "V",
               "page": 0
@@ -1009,7 +1009,7 @@
               "description": "Medium Assault Tank",
               "metalCost": 225,
               "energyCost": 2000,
-              "buildTime": 2900,
+              "buildTime": 3100,
               "icon": "icons/armstump.webp",
               "key": "A",
               "page": 0
@@ -1142,7 +1142,7 @@
               "description": "Medium Assault Tank",
               "metalCost": 235,
               "energyCost": 2400,
-              "buildTime": 3310,
+              "buildTime": 3500,
               "icon": "icons/corraid.webp",
               "key": "A",
               "page": 0
@@ -1153,7 +1153,7 @@
               "description": "Anti-Swarm Tank",
               "metalCost": 220,
               "energyCost": 2600,
-              "buildTime": 3000,
+              "buildTime": 3100,
               "icon": "icons/corlevlr.webp",
               "key": "S",
               "page": 0
@@ -1539,7 +1539,7 @@
               "id": "correap",
               "name": "Tiger",
               "description": "Heavy Assault Tank",
-              "metalCost": 665,
+              "metalCost": 690,
               "energyCost": 10000,
               "buildTime": 16000,
               "icon": "icons/correap.webp",
@@ -1904,9 +1904,9 @@
               "id": "armthund",
               "name": "Stormbringer",
               "description": "Bomber",
-              "metalCost": 145,
-              "energyCost": 4200,
-              "buildTime": 4780,
+              "metalCost": 150,
+              "energyCost": 4400,
+              "buildTime": 5000,
               "icon": "icons/armthund.webp",
               "key": "V",
               "page": 0
@@ -2227,7 +2227,7 @@
               "name": "Abductor",
               "description": "Stealthy Armed Heavy Transport",
               "metalCost": 320,
-              "energyCost": 6600,
+              "energyCost": 10000,
               "buildTime": 19000,
               "icon": "icons/armdfly.webp",
               "key": "S",
@@ -2360,7 +2360,7 @@
               "name": "Skyhook",
               "description": "Heavy Assault Transport",
               "metalCost": 370,
-              "energyCost": 6400,
+              "energyCost": 9000,
               "buildTime": 12500,
               "icon": "icons/corseah.webp",
               "key": "S",
@@ -2471,7 +2471,7 @@
               "name": "Stronghold",
               "description": "Hybrid Heavy Transport Gunship",
               "metalCost": 550,
-              "energyCost": 11000,
+              "energyCost": 13000,
               "buildTime": 24200,
               "icon": "icons/legstronghold.webp",
               "key": "S",
@@ -4514,7 +4514,7 @@
               "id": "corshiva",
               "name": "Shiva",
               "description": "Amphibious Siege Mech",
-              "metalCost": 1550,
+              "metalCost": 1600,
               "energyCost": 23000,
               "buildTime": 40000,
               "icon": "icons/corshiva.webp",
@@ -4781,7 +4781,7 @@
               "id": "corshiva",
               "name": "Shiva",
               "description": "Amphibious Siege Mech",
-              "metalCost": 1550,
+              "metalCost": 1600,
               "energyCost": 23000,
               "buildTime": 40000,
               "icon": "icons/corshiva.webp",
@@ -5668,28 +5668,6 @@
               "icon": "icons/legctl.webp",
               "key": "Q",
               "page": 0
-            },
-            {
-              "id": "armclaw",
-              "name": "Dragon's Claw",
-              "description": "Pop-up Lightning Turret",
-              "metalCost": 340,
-              "energyCost": 1600,
-              "buildTime": 4650,
-              "icon": "icons/armclaw.webp",
-              "key": "Z",
-              "page": 1
-            },
-            {
-              "id": "armferret",
-              "name": "Ferret",
-              "description": "Pop-Up Anti-Air Missile Battery",
-              "metalCost": 360,
-              "energyCost": 5700,
-              "buildTime": 5800,
-              "icon": "icons/armferret.webp",
-              "key": "X",
-              "page": 1
             }
           ]
         },
@@ -5751,17 +5729,6 @@
               "icon": "icons/legfdrag.webp",
               "key": "S",
               "page": 0
-            },
-            {
-              "id": "legjam",
-              "name": "Nyx",
-              "description": "Medium-Range Jamming Device",
-              "metalCost": 140,
-              "energyCost": 7200,
-              "buildTime": 4570,
-              "icon": "icons/legjam.webp",
-              "key": "Z",
-              "page": 1
             }
           ]
         },
@@ -6639,7 +6606,7 @@
               "description": "Produces 100 Energy",
               "metalCost": 465,
               "energyCost": 4080,
-              "buildTime": 13580,
+              "buildTime": 12500,
               "icon": "icons/legadvsol.webp",
               "key": "V",
               "page": 0
@@ -7752,7 +7719,7 @@
               "description": "Produces 100 Energy",
               "metalCost": 465,
               "energyCost": 4080,
-              "buildTime": 13580,
+              "buildTime": 12500,
               "icon": "icons/legadvsol.webp",
               "key": "V",
               "page": 0
@@ -8889,7 +8856,7 @@
               "description": "Produces 100 Energy",
               "metalCost": 465,
               "energyCost": 4080,
-              "buildTime": 13580,
+              "buildTime": 12500,
               "icon": "icons/legadvsol.webp",
               "key": "V",
               "page": 0
@@ -11352,7 +11319,7 @@
               "description": "Produces 100 Energy",
               "metalCost": 465,
               "energyCost": 4080,
-              "buildTime": 13580,
+              "buildTime": 12500,
               "icon": "icons/legadvsol.webp",
               "key": "V",
               "page": 0
@@ -12952,7 +12919,7 @@
               "description": "Produces 100 Energy",
               "metalCost": 465,
               "energyCost": 4080,
-              "buildTime": 13580,
+              "buildTime": 12500,
               "icon": "icons/legadvsol.webp",
               "key": "V",
               "page": 0
@@ -14541,7 +14508,7 @@
               "description": "Produces 100 Energy",
               "metalCost": 465,
               "energyCost": 4080,
-              "buildTime": 13580,
+              "buildTime": 12500,
               "icon": "icons/legadvsol.webp",
               "key": "V",
               "page": 0
@@ -15109,7 +15076,7 @@
               "id": "armckfus",
               "name": "Cloakable Fusion Reactor",
               "description": "Produces 750 Energy",
-              "metalCost": 3650,
+              "metalCost": 3550,
               "energyCost": 22000,
               "buildTime": 65000,
               "icon": "icons/armckfus.webp",
@@ -16167,7 +16134,7 @@
               "id": "armckfus",
               "name": "Cloakable Fusion Reactor",
               "description": "Produces 750 Energy",
-              "metalCost": 3650,
+              "metalCost": 3550,
               "energyCost": 22000,
               "buildTime": 65000,
               "icon": "icons/armckfus.webp",
@@ -17225,7 +17192,7 @@
               "id": "armckfus",
               "name": "Cloakable Fusion Reactor",
               "description": "Produces 750 Energy",
-              "metalCost": 3650,
+              "metalCost": 3550,
               "energyCost": 22000,
               "buildTime": 65000,
               "icon": "icons/armckfus.webp",
