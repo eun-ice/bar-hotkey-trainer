@@ -1500,15 +1500,27 @@ function onKey(event) {
 
   const key = normalise(event.key, settings.keyboard === 'qwertz', event.code)
 
-  // Browse screen: category switching + pagination
+  // Browse screen: Escape/Shift = back to setup; category switching + pagination
   if (screens.browse.classList.contains('active')) {
-    if (browseBuilder) {
-      const matched = CATEGORIES.find(c => c.key === key)
-      if (matched && browseBuilder.categories[matched.id]) {
-        browseCatId = matched.id
+    if (event.key === 'Escape' || event.key === 'Shift') {
+      if (browseCatId !== null) {
+        event.preventDefault()
+        browseCatId = null
         browsePage  = 0
+        clearSlotHover('browse-slot-hover-info')
         renderBrowseMenu()
-        return
+      }
+      return
+    }
+    if (browseBuilder) {
+      if (browseCatId === null) {
+        const matched = CATEGORIES.find(c => c.key === key)
+        if (matched && browseBuilder.categories[matched.id]) {
+          browseCatId = matched.id
+          browsePage  = 0
+          renderBrowseMenu()
+          return
+        }
       }
       if (key === 'B') { browsePageDelta(+1); return }
     }
@@ -2051,7 +2063,7 @@ function renderBrowseList(filter) {
 
 function selectBrowseBuilder(id) {
   browseBuilder = DATA.builders[id]
-  browseCatId   = Object.keys(browseBuilder.categories)[0] ?? null
+  browseCatId   = null
   browsePage    = 0
 
   for (const el of $('browse-list').querySelectorAll('.browse-item'))
@@ -2147,6 +2159,20 @@ function renderBrowseMenu() {
     }
 
     gridContainer.appendChild(slot)
+  }
+
+  // Key hint
+  const hint = $('browse-key-hint')
+  if (hint) {
+    if (browseCatId === null) {
+      const catKeys = CATEGORIES
+        .filter(c => browseBuilder.categories[c.id])
+        .map(c => `<kbd>${display(c.key, isQwertz)}</kbd>`)
+        .join(' ')
+      hint.innerHTML = `Press ${catKeys} to select a category`
+    } else {
+      hint.innerHTML = `<kbd>Shift</kbd> / <kbd>Esc</kbd> · back`
+    }
   }
 
   // Page bar
