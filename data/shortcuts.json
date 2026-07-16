@@ -182,7 +182,7 @@
           "label": "Show Explosion Radius",
           "key": "X",
           "modifiers": ["Space"],
-          "description": "Hold Space and press X to preview a weapon's explosion radius"
+          "description": "Hold Space and press X to preview a unit's explosion radius"
         }
       ]
     },
