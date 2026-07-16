@@ -176,6 +176,13 @@
           "label": "Show Pathing",
           "key": "F6",
           "description": "Toggle pathfinding debug overlay"
+        },
+        {
+          "id": "show-explosion-radius",
+          "label": "Show Explosion Radius",
+          "key": "X",
+          "modifiers": ["Space"],
+          "description": "Hold Space and press X to preview a weapon's explosion radius"
         }
       ]
     },
@@ -196,6 +203,13 @@
           "key": "G",
           "modifiers": ["Ctrl"],
           "description": "Toggle whether newly built units guard the factory"
+        },
+        {
+          "id": "show-build-queue",
+          "label": "Show Build Queue",
+          "key": "Space",
+          "modifiers": ["Shift"],
+          "description": "Show the factory's current build queue overlay"
         }
       ]
     },

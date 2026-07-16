@@ -21,6 +21,7 @@ function normalise(key, isQwertz, code) {
   if (isQwertz && k === 'Z') return 'Y'
   if (isQwertz && k === 'Ö') return ';'  // physical ;/Ö key position → ; shortcut
   if (isQwertz && k === '+') return ']'  // physical ] key position → ] shortcut
+  if (k === ' ') return 'SPACE'
   // On macOS, Alt/Option composes non-ASCII characters (e.g. Alt+B → '∫', Alt++ → '±').
   // When event.key lands outside ASCII, fall back to event.code (the physical scan-code)
   // which is always the unmodified key name regardless of held modifiers or OS.
@@ -399,6 +400,7 @@ let pauseRemainingMs = 0
 let runComplete      = false
 const TIMER_CIRCUMFERENCE = 113.097
 let countingDown     = false
+let spaceHeld        = false   // Space used as a modifier key (Space+X = explosion radius)
 
 // ─── Wrong-answer correction flow ────────────────────────────────────────────
 // When the user presses a wrong key we no longer immediately show the answer.
@@ -1522,13 +1524,21 @@ function onKey(event) {
   if (trainingState === State.WAITING_SHORTCUT) {
     if (event.metaKey) return
     if (['INPUT','TEXTAREA','SELECT'].includes(event.target.tagName)) return
+    // Space held as modifier (Space+X = show explosion radius) — consume and wait for the chord key
+    if (event.key === ' ' && !event.shiftKey && !event.repeat) {
+      spaceHeld = true
+      event.preventDefault()
+      return
+    }
     // Ignore bare modifier key presses (fire before the actual key in e.g. Ctrl+S, Alt+B)
     if (['Control', 'Shift', 'Alt', 'Meta'].includes(event.key)) return
     event.preventDefault()
     const key  = normalise(event.key, settings.keyboard === 'qwertz', event.code)
     const mods = []
-    if (event.ctrlKey) mods.push('ctrl')
-    if (event.altKey)  mods.push('alt')
+    if (event.ctrlKey)  mods.push('ctrl')
+    if (event.altKey)   mods.push('alt')
+    if (event.shiftKey) mods.push('shift')
+    if (spaceHeld)      mods.push('space')
     handleShortcutKey(key, mods)
     return
   }
@@ -1549,10 +1559,12 @@ function onKey(event) {
       if (currentEntry.type === 'shortcut') {
         const lastIdx   = currentEntry.seqKeys.length - 1
         const lastMods  = currentEntry.seqMods[lastIdx] ?? []
-        const wantsCtrl = lastMods.some(m => m === 'ctrl')
-        const wantsAlt  = lastMods.some(m => m === 'alt')
-        isCorrect = (event.ctrlKey === wantsCtrl) &&
-                    (event.altKey  === wantsAlt)  &&
+        const wantsCtrl  = lastMods.some(m => m === 'ctrl')
+        const wantsAlt   = lastMods.some(m => m === 'alt')
+        const wantsShift = lastMods.some(m => m === 'shift')
+        isCorrect = (event.ctrlKey  === wantsCtrl)  &&
+                    (event.altKey   === wantsAlt)   &&
+                    (event.shiftKey === wantsShift) &&
                     keysMatch(pressedKey, currentEntry.seqKeys[lastIdx].toUpperCase())
       } else {
         isCorrect = !event.ctrlKey && !event.altKey && (keysMatch(pressedKey, currentEntry.gridKey) || isEquivGridKey(pressedKey))
@@ -1713,6 +1725,7 @@ function handleShortcutKey(key, mods) {
   } else {
     // Wrong key — reset sequence, reveal the correct key immediately
     questionHadWrong = true
+    spaceHeld = false
     entry.seqStep = 0
     shortcutKeyVisible = true
     clearShortcutKeyTimer()
@@ -2470,6 +2483,7 @@ async function init() {
   // Listening on keyup guarantees we always catch the Shift release.
   document.addEventListener('keyup', (event) => {
     if (event.key === 'Shift') handleGoBack()
+    if (event.key === ' ') spaceHeld = false
   })
 }
 
