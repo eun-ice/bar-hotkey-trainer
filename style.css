@@ -302,6 +302,15 @@ kbd {
   font-size: 13px;
 }
 .setup-hint { font-size: 12px; color: var(--text-dim) }
+.setup-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 10px;
+  font-size: 13px;
+  color: var(--text-dim);
+  cursor: pointer;
+}
 
 .setup-actions {
   display: flex;

@@ -94,6 +94,26 @@ async function main() {
   const refresh = process.argv.includes('--refresh')
   const manifestPath = join(BAR_DATA, 'manifest.json')
 
+  // Always ensure third-party sounds are present regardless of --refresh
+  const thirdPartySoundsDir = join(__dirname, 'data', 'sounds')
+  mkdirSync(thirdPartySoundsDir, { recursive: true })
+  const applausePath = join(thirdPartySoundsDir, 'applause.mp3')
+  if (!existsSync(applausePath)) {
+    process.stdout.write('Downloading applause sound (CC0 — freesound.org/s/462362 by Breviceps) … ')
+    try {
+      const res = await fetch('https://cdn.freesound.org/previews/462/462362_9159316-lq.mp3',
+        { headers: { 'User-Agent': 'bar-hotkey-trainer-extractor' } })
+      if (res.ok) {
+        writeFileSync(applausePath, Buffer.from(await res.arrayBuffer()))
+        console.log('done')
+      } else {
+        console.log(`skipped (HTTP ${res.status})`)
+      }
+    } catch (err) {
+      console.log(`skipped (${err.message})`)
+    }
+  }
+
   if (!refresh && existsSync(manifestPath)) {
     const mf = JSON.parse(readFileSync(manifestPath, 'utf8'))
     const ageDays = (Date.now() - new Date(mf.downloadedAt).getTime()) / 86_400_000

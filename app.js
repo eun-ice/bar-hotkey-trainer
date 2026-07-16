@@ -69,14 +69,15 @@ const audioCtx = (() => {
   try { return new (window.AudioContext || window.webkitAudioContext)() } catch { return null }
 })()
 
-// Loaded AudioBuffer cache: { builder: AudioBuffer|null, factory: AudioBuffer|null }
-const loadedSounds = { builder: null, factory: null }
+// Loaded AudioBuffer cache
+const loadedSounds = { builder: null, factory: null, applause: null }
 
 async function loadSounds() {
   if (!audioCtx) return
   const files = [
     { key: 'builder', path: 'data/sounds/buildbar_click.wav' },
     { key: 'factory', path: 'data/sounds/buildbar_add.wav'   },
+    { key: 'applause', path: 'data/sounds/applause.mp3'      },
   ]
   for (const { key, path } of files) {
     try {
@@ -94,7 +95,7 @@ async function loadSounds() {
 // 'builder' → constructor picks a unit to build (bright rising blip)
 // 'factory' → unit queued in factory (softer descending blip)
 function playBuildSound(type) {
-  if (!audioCtx) return
+  if (!audioCtx || !settings.soundEnabled) return
   // Resume suspended context on first user gesture
   if (audioCtx.state === 'suspended') audioCtx.resume()
   const ctx = audioCtx
@@ -134,6 +135,67 @@ function playBuildSound(type) {
   }
 }
 
+// Single countdown beep — synced to each digit in showNewRunCountdown()
+function playCountBeep(isLast) {
+  if (!audioCtx || !settings.soundEnabled) return
+  if (audioCtx.state === 'suspended') audioCtx.resume()
+  const ctx = audioCtx
+  const now = ctx.currentTime
+  const freq     = isLast ? 1320 : 880
+  const duration = isLast ? 0.45 : 0.12
+  const osc  = ctx.createOscillator()
+  const gain = ctx.createGain()
+  osc.connect(gain); gain.connect(ctx.destination)
+  osc.type = 'sine'
+  osc.frequency.setValueAtTime(freq, now)
+  gain.gain.setValueAtTime(0, now)
+  gain.gain.linearRampToValueAtTime(0.12, now + 0.01)
+  gain.gain.setValueAtTime(0.12, now + duration - 0.02)
+  gain.gain.linearRampToValueAtTime(0, now + duration)
+  osc.start(now); osc.stop(now + duration + 0.01)
+}
+
+// Applause — uses the downloaded CC0 recording, falls back to synthesised noise
+function playApplauseSound() {
+  if (!audioCtx || !settings.soundEnabled) return
+  if (audioCtx.state === 'suspended') audioCtx.resume()
+  const ctx = audioCtx
+  const now = ctx.currentTime
+
+  const buf = loadedSounds.applause
+  if (buf) {
+    const source = ctx.createBufferSource()
+    source.buffer = buf
+    const gain = ctx.createGain()
+    // Fade in quickly, hold, then fade out — keep it at comfortable volume
+    gain.gain.setValueAtTime(0, now)
+    gain.gain.linearRampToValueAtTime(0.28, now + 0.1)
+    gain.gain.setValueAtTime(0.28, now + 3.5)
+    gain.gain.linearRampToValueAtTime(0, now + 4.5)
+    source.connect(gain); gain.connect(ctx.destination)
+    source.start(now)
+    source.stop(now + 4.6)
+    return
+  }
+
+  // Fallback: synthesised crowd noise if file not loaded
+  const duration = 3.0
+  const noiseBuf = ctx.createBuffer(1, ctx.sampleRate * duration, ctx.sampleRate)
+  const data = noiseBuf.getChannelData(0)
+  for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1
+  const noise  = ctx.createBufferSource()
+  noise.buffer = noiseBuf
+  const filter = ctx.createBiquadFilter()
+  filter.type = 'bandpass'; filter.frequency.value = 1000; filter.Q.value = 0.8
+  const gain = ctx.createGain()
+  gain.gain.setValueAtTime(0, now)
+  gain.gain.linearRampToValueAtTime(0.10, now + 0.2)
+  gain.gain.linearRampToValueAtTime(0.08, now + 1.5)
+  gain.gain.linearRampToValueAtTime(0, now + duration)
+  noise.connect(filter); filter.connect(gain); gain.connect(ctx.destination)
+  noise.start(now); noise.stop(now + duration)
+}
+
 // ─── Settings (localStorage) ──────────────────────────────────────────────────
 
 const SETTINGS_KEY = 'bar-trainer-settings'
@@ -148,6 +210,7 @@ function defaultSettings() {
     timeLimit:    5,   // seconds per required key press
     runLength:    20,  // questions per run (0 = unlimited)
     shortcuts:    ['general', 'battle', 'factory', 'builder', 'blueprint', 'rezbot', 'air', 'transport', 'camera'],
+    soundEnabled: true,
   }
 }
 
@@ -1014,6 +1077,7 @@ function endRun() {
   trainingState = State.FEEDBACK
   clearAnswerTimer()
   clearShowAnswerCountdown()
+  playApplauseSound()
   // Don't archive yet — startTraining() will do it; currentRunEntries is still
   // needed by renderStatsTable() for the summary (correct[], min/max/avg).
   $('btn-skip').textContent = '↩ Skip'
@@ -1181,6 +1245,8 @@ function showNewRunCountdown() {
     }
     const text = steps[step++]
     const isGo = text === 'Go!'
+    if (text === '3' || text === '2' || text === '1') playCountBeep(false)
+    else if (isGo) playCountBeep(true)
     // Remove class, force reflow to restart CSS animation, then re-apply
     numEl.className = ''
     void numEl.offsetWidth
@@ -1790,6 +1856,7 @@ function initSetupScreen() {
   updateTimeLimitLabel(settings.timeLimit)
   $('run-length').value = settings.runLength
   updateRunLengthLabel(settings.runLength)
+  $('sound-enabled').checked = settings.soundEnabled
 
   // Restore shortcuts checkboxes
   for (const cb of document.querySelectorAll('input[name=shortcuts]'))
@@ -1816,6 +1883,11 @@ function initSetupScreen() {
     const v = Number(e.target.value)
     updateRunLengthLabel(v)
     settings.runLength = v
+    saveSettings(settings)
+  })
+
+  $('sound-enabled').addEventListener('change', e => {
+    settings.soundEnabled = e.target.checked
     saveSettings(settings)
   })
 
