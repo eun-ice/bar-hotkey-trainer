@@ -21,6 +21,10 @@ function normalise(key, isQwertz, code) {
   if (isQwertz && k === 'Z') return 'Y'
   if (isQwertz && k === 'Ö') return ';'  // physical ;/Ö key position → ; shortcut
   if (isQwertz && k === '+') return ']'  // physical ] key position → ] shortcut
+  if (isQwertz && k === '^') return '`'  // physical `/^ key (Backquote) → ` canonical
+  // ^ on QWERTZ is a dead key — event.key fires as 'Dead' on the first press.
+  // Resolve via event.code so we don't need to wait for the composition (Space follow-up).
+  if (k === 'DEAD' && code === 'Backquote') return '`'
   if (k === ' ') return 'SPACE'
   // On macOS, Alt/Option composes non-ASCII characters (e.g. Alt+B → '∫', Alt++ → '±').
   // When event.key lands outside ASCII, fall back to event.code (the physical scan-code)
@@ -34,6 +38,7 @@ function normalise(key, isQwertz, code) {
     }
     if (code === 'BracketRight') return ']'
     if (code === 'Semicolon')    return ';'
+    if (code === 'Backquote')    return '`'  // Mac Alt+` produces dead-accent; resolve via code
   }
   return k
 }
@@ -61,6 +66,7 @@ function display(key, isQwertz) {
   if (key === 'Y') return 'Z'
   if (key === ';') return 'Ö'
   if (key === ']') return '+'
+  if (key === '`') return '^'
   return key
 }
 
@@ -211,7 +217,8 @@ function defaultSettings() {
     timeLimit:    5,   // seconds per required key press
     runLength:    20,  // questions per run (0 = unlimited)
     shortcuts:    ['general', 'battle', 'factory', 'builder', 'blueprint', 'rezbot', 'air', 'transport', 'camera'],
-    soundEnabled: true,
+    soundEnabled:  true,
+    mouseEnabled:  true,
   }
 }
 
@@ -358,6 +365,7 @@ function buildShortcutQueue() {
         context:         group.context,
         seqKeys,
         seqMods,
+        mouseAction:     shortcut.mouseAction ?? 'none',
         browserReserved: (shortcut.browserReserved ?? false) || (IS_FIREFOX && (shortcut.browserReservedFirefox ?? false)) || (!IS_MAC && (shortcut.browserReservedWindows ?? false)) || (IS_MAC && (shortcut.browserReservedMac ?? false)),
       })
     }
@@ -374,6 +382,7 @@ const State = {
   WAITING_PAGE:     'page',
   WAITING_GRID:     'grid',
   WAITING_SHORTCUT: 'shortcut',
+  WAITING_MOUSE:    'mouse',
   SHOW_ANSWER:      'show_answer',
   FEEDBACK:         'feedback',
 }
@@ -399,8 +408,9 @@ let paused           = false
 let pauseRemainingMs = 0
 let runComplete      = false
 const TIMER_CIRCUMFERENCE = 113.097
-let countingDown     = false
-let spaceHeld        = false   // Space used as a modifier key (Space+X = explosion radius)
+let countingDown        = false
+let spaceHeld           = false   // Space used as a modifier key (Space+X = explosion radius)
+let currentMouseAction  = null    // active mouse interaction type during WAITING_MOUSE
 
 // ─── Wrong-answer correction flow ────────────────────────────────────────────
 // When the user presses a wrong key we no longer immediately show the answer.
@@ -773,9 +783,11 @@ function renderPageBtn(builder, activeCatId, page) {
 function renderQuestion(entry) {
   const { builder, unit } = entry
 
-  // Restore menu column (was hidden for shortcut questions)
-  const menuCol = document.querySelector('#screen-training .menu-col')
-  if (menuCol) { menuCol.style.opacity = ''; menuCol.style.pointerEvents = '' }
+  // Restore build menu (was hidden for shortcut questions)
+  const buildMenuWrap = document.querySelector('#screen-training .build-menu-wrap')
+  if (buildMenuWrap) { buildMenuWrap.style.opacity = ''; buildMenuWrap.style.pointerEvents = '' }
+  const hoverInfo = $('slot-hover-info')
+  if (hoverInfo) hoverInfo.style.opacity = ''
 
   // Restore builder-card label for build-menu questions
   document.querySelector('#screen-training .builder-card .label-small').textContent = 'Building with'
@@ -812,10 +824,11 @@ function renderQuestion(entry) {
 }
 
 function renderShortcutQuestion(entry) {
-  // opacity:0 hides the entire column including children that have visibility:visible
-  // (visibility:hidden can be overridden by child rules like .page-btn.has-pages)
-  const menuCol = document.querySelector('#screen-training .menu-col')
-  if (menuCol) { menuCol.style.opacity = '0'; menuCol.style.pointerEvents = 'none' }
+  // Hide the build menu but keep the menu-col visible so the mouse zone stays interactive
+  const buildMenuWrap = document.querySelector('#screen-training .build-menu-wrap')
+  if (buildMenuWrap) { buildMenuWrap.style.opacity = '0'; buildMenuWrap.style.pointerEvents = 'none' }
+  const hoverInfo = $('slot-hover-info')
+  if (hoverInfo) hoverInfo.style.opacity = '0'
 
   // Builder card — repurposed to show context unit
   document.querySelector('#screen-training .builder-card .label-small').textContent =
@@ -987,6 +1000,7 @@ function updateTimerDisplay(fraction) {
 function handleTimeout() {
   if (trainingState === State.FEEDBACK || trainingState === State.SHOW_ANSWER) return
   if (!screens.training.classList.contains('active')) return
+  deactivateMouseZone()
   recordResult('wrong')
   showAnswer('⏱ Time up — ')
 }
@@ -1335,6 +1349,7 @@ function preloadNextQuestion() {
 }
 
 function startTraining() {
+  deactivateMouseZone()
   const builders = filteredBuilders(settings)
   const queue0   = mergeShortcutsIntoQueue(buildQueue(builders, sr))
   if (!queue0.length) {
@@ -1407,6 +1422,7 @@ function resolveShortcutContextUnit(context) {
 }
 
 function nextQuestion() {
+  deactivateMouseZone()
   clearSlotHover('slot-hover-info')
   if (queueIndex >= queue.length) {
     // Rebuild queue from current settings every time we loop — picks up any
@@ -1432,6 +1448,7 @@ function nextQuestion() {
       return
     }
 
+    if (settings.mouseEnabled && item.mouseAction && item.mouseAction !== 'none') showMouseZonePending(item.mouseAction)
     trainingState = State.WAITING_SHORTCUT
     startShortcutKeyTimer()   // reveals key after 3 s; updateInstruction called by timer
     updateInstruction()       // shows "What is the shortcut key?" immediately
@@ -1456,6 +1473,7 @@ function nextQuestion() {
     // Constructors: no category pre-selected — grid shows units but no key labels
     trainingState = State.WAITING_CATEGORY
     activeCatId   = null
+    if (settings.mouseEnabled) showMouseZonePending('click')
   }
 
   renderQuestion(currentEntry)
@@ -1482,6 +1500,7 @@ function formatShortcutKeyHtml(seqKeys, seqMods, currentStep) {
 }
 
 function updateInstruction() {
+  if (trainingState === State.WAITING_MOUSE) return
   if (trainingState === State.WAITING_SHORTCUT) {
     if (!shortcutKeyVisible) {
       setInstruction('What is the <strong>shortcut key</strong> for this command?')
@@ -1574,6 +1593,9 @@ function onKey(event) {
     return
   }
 
+  // Block keypresses while waiting for mouse interaction
+  if (trainingState === State.WAITING_MOUSE) return
+
   // Ignore modifier combos and text input
   if (event.ctrlKey || event.altKey || event.metaKey) return
   if (['INPUT','TEXTAREA','SELECT'].includes(event.target.tagName)) return
@@ -1651,11 +1673,16 @@ function handleCategoryKey(key) {
       // The category key also activates the bottom-row slot — one press does it all
       flashSlot(currentEntry.gridKey, 'flash-correct')
       playBuildSound('builder')
-      clearAnswerTimer()
-      recordResult(questionHadWrong ? 'late' : 'correct')
-      setInstruction('✓ Correct!', 'state-correct')
-      trainingState = State.FEEDBACK
-      setTimeout(() => checkRunEnd(), 900)
+      if (settings.mouseEnabled) {
+        trainingState = State.WAITING_MOUSE
+        activateMouseZone('click')
+      } else {
+        clearAnswerTimer()
+        recordResult(questionHadWrong ? 'late' : 'correct')
+        setInstruction('✓ Correct!', 'state-correct')
+        trainingState = State.FEEDBACK
+        setTimeout(() => checkRunEnd(), 900)
+      }
     } else {
       trainingState = State.WAITING_GRID
       updateInstruction()
@@ -1686,13 +1713,26 @@ function handleGridKey(key) {
 
   if (correct) {
     flashSlot(key, 'flash-correct')
-    playBuildSound(isFactory(currentEntry.builder) ? 'factory' : 'builder')
-    clearAnswerTimer()
-    // Count as 'wrong' if any key was pressed incorrectly during this question
-    recordResult(questionHadWrong ? 'late' : 'correct')
-    setInstruction('✓ Correct!', 'state-correct')
-    trainingState = State.FEEDBACK
-    setTimeout(() => checkRunEnd(), 900)
+    if (isFactory(currentEntry.builder)) {
+      playBuildSound('factory')
+      clearAnswerTimer()
+      recordResult(questionHadWrong ? 'late' : 'correct')
+      setInstruction('✓ Correct!', 'state-correct')
+      trainingState = State.FEEDBACK
+      setTimeout(() => checkRunEnd(), 900)
+    } else {
+      playBuildSound('builder')
+      if (settings.mouseEnabled) {
+        trainingState = State.WAITING_MOUSE
+        activateMouseZone('click')
+      } else {
+        clearAnswerTimer()
+        recordResult(questionHadWrong ? 'late' : 'correct')
+        setInstruction('✓ Correct!', 'state-correct')
+        trainingState = State.FEEDBACK
+        setTimeout(() => checkRunEnd(), 900)
+      }
+    }
   } else {
     // Silently ignore wrong grid key — no flash, no message
     questionHadWrong = true
@@ -1714,13 +1754,19 @@ function handleShortcutKey(key, mods) {
       updateInstruction()
     } else {
       // Final key — correct!
-      playBuildSound('builder')
-      clearAnswerTimer()
       clearShortcutKeyTimer()
-      recordResult(questionHadWrong ? 'late' : 'correct')
-      setInstruction('✓ Correct!', 'state-correct')
-      trainingState = State.FEEDBACK
-      setTimeout(() => checkRunEnd(), 900)
+      const action = entry.mouseAction ?? 'none'
+      if (settings.mouseEnabled && action && action !== 'none') {
+        trainingState = State.WAITING_MOUSE
+        activateMouseZone(action)
+      } else {
+        playBuildSound('builder')
+        clearAnswerTimer()
+        recordResult(questionHadWrong ? 'late' : 'correct')
+        setInstruction('✓ Correct!', 'state-correct')
+        trainingState = State.FEEDBACK
+        setTimeout(() => checkRunEnd(), 900)
+      }
     }
   } else {
     // Wrong key — reset sequence, reveal the correct key immediately
@@ -1797,6 +1843,185 @@ function recordResult(outcome) {
   updateStats()
 }
 
+// ─── Mouse zone ───────────────────────────────────────────────────────────────
+
+const MOUSE_TARGET_POSITIONS = [
+  { x: 60,  y: 65  },
+  { x: 150, y: 55  },
+  { x: 110, y: 100 },
+  { x: 55,  y: 108 },
+  { x: 175, y: 98  },
+]
+
+const MOUSE_ACTION_LABELS = {
+  'click':              'Click to place',
+  'click-unit':         'Click the unit',
+  'drag':               'Drag to set area',
+  'click-or-drag':      'Click or drag',
+  'click-unit-or-drag': 'Click unit or drag',
+}
+
+function showMouseZonePending(action) {
+  currentMouseAction = action
+  const zone = $('mouse-zone')
+  if (!zone) return
+  zone.classList.remove('mouse-zone-active')
+  zone.classList.add('mouse-zone-pending')
+  const targetEl = $('mouse-zone-target')
+  if (targetEl) targetEl.style.display = 'none'
+  const labelEl = $('mouse-zone-label')
+  if (labelEl) labelEl.textContent = MOUSE_ACTION_LABELS[action] || ''
+}
+
+function activateMouseZone(action) {
+  currentMouseAction = action
+  const zone = $('mouse-zone')
+  if (!zone) return
+  zone.classList.remove('mouse-zone-pending')
+  zone.classList.add('mouse-zone-active')
+
+  const needsUnitTarget = action === 'click-unit' || action === 'click-unit-or-drag'
+  const targetEl = $('mouse-zone-target')
+
+  if (needsUnitTarget && targetEl) {
+    const pos = MOUSE_TARGET_POSITIONS[Math.floor(Math.random() * MOUSE_TARGET_POSITIONS.length)]
+    targetEl.style.left    = `${pos.x}px`
+    targetEl.style.top     = `${pos.y}px`
+    targetEl.style.display = 'flex'
+    const iconEl = $('mouse-zone-target-icon')
+    if (iconEl) iconEl.src = currentEntry?.contextIcon || unitIconSrc(currentEntry?.contextUnitId) || ''
+  } else if (targetEl) {
+    targetEl.style.display = 'none'
+  }
+
+  const labelEl = $('mouse-zone-label')
+  if (labelEl) labelEl.textContent = MOUSE_ACTION_LABELS[action] || ''
+
+  setInstruction(MOUSE_ACTION_LABELS[action] || 'Click to place', 'state-correct')
+
+  // Give a fresh timer window for the mouse phase so leftover keyboard time doesn't cut it short
+  if (settings.timeLimit) {
+    const mouseMs = settings.timeLimit * 1000
+    answerTimerEnd   = Date.now() + mouseMs
+    currentTimeLimitMs = mouseMs
+    updateTimerDisplay(1)
+    if (answerTimerId === null) {
+      $('timer-wrap').classList.remove('hidden')
+      answerTimerId = setInterval(tickAnswerTimer, 50)
+    }
+  }
+}
+
+function deactivateMouseZone() {
+  currentMouseAction = null
+  const zone = $('mouse-zone')
+  if (!zone) return
+  zone.classList.remove('mouse-zone-active', 'mouse-zone-pending')
+  const svgEl = $('mouse-zone-svg')
+  if (svgEl) svgEl.innerHTML = ''
+  const targetEl = $('mouse-zone-target')
+  if (targetEl) targetEl.style.display = 'none'
+  const labelEl = $('mouse-zone-label')
+  if (labelEl) labelEl.textContent = ''
+}
+
+function handleMouseComplete(wasClick) {
+  deactivateMouseZone()
+  playBuildSound(wasClick ? 'builder' : 'factory')
+  clearAnswerTimer()
+  recordResult(questionHadWrong ? 'late' : 'correct')
+  setInstruction('✓ Correct!', 'state-correct')
+  trainingState = State.FEEDBACK
+  setTimeout(() => checkRunEnd(), 900)
+}
+
+function initMouseZone() {
+  const zone = $('mouse-zone')
+  if (!zone) return
+
+  let dragOrigin = null   // { x, y } zone-local px, set on mousedown
+
+  zone.addEventListener('mousedown', e => {
+    if (trainingState !== State.WAITING_MOUSE) return
+    const rect = zone.getBoundingClientRect()
+    dragOrigin = { x: e.clientX - rect.left, y: e.clientY - rect.top }
+    e.preventDefault()
+  })
+
+  zone.addEventListener('mousemove', e => {
+    if (!dragOrigin || trainingState !== State.WAITING_MOUSE) return
+    const action = currentMouseAction
+    if (action !== 'drag' && action !== 'click-or-drag' && action !== 'click-unit-or-drag') return
+
+    const rect = zone.getBoundingClientRect()
+    const mx   = e.clientX - rect.left
+    const my   = e.clientY - rect.top
+    const r    = Math.hypot(mx - dragOrigin.x, my - dragOrigin.y)
+    if (r < 5) return
+
+    const svg = $('mouse-zone-svg')
+    if (svg) svg.innerHTML =
+      `<circle cx="${dragOrigin.x}" cy="${dragOrigin.y}" r="${r}"
+        fill="rgba(0,200,0,0.10)" stroke="rgba(0,210,0,0.75)"
+        stroke-width="1.5" stroke-dasharray="6 3"/>
+      <circle cx="${dragOrigin.x}" cy="${dragOrigin.y}" r="4"
+        fill="rgba(0,210,0,0.9)"/>`
+  })
+
+  zone.addEventListener('mouseup', e => {
+    if (!dragOrigin || trainingState !== State.WAITING_MOUSE) return
+
+    const rect   = zone.getBoundingClientRect()
+    const mx     = e.clientX - rect.left
+    const my     = e.clientY - rect.top
+    const dist   = Math.hypot(mx - dragOrigin.x, my - dragOrigin.y)
+    const origin = dragOrigin
+    dragOrigin   = null
+    const svg    = $('mouse-zone-svg')
+    if (svg) svg.innerHTML = ''
+
+    const action  = currentMouseAction
+    const isDrag  = dist >= 20
+    const isClick = dist < 10
+
+    if (action === 'drag') {
+      if (isDrag) handleMouseComplete(false)
+    } else if (action === 'click') {
+      if (isClick) handleMouseComplete(true)
+    } else if (action === 'click-unit') {
+      if (!isClick) return
+      const targetEl = $('mouse-zone-target')
+      if (targetEl && targetEl.style.display !== 'none') {
+        const hitDist = Math.hypot(mx - parseFloat(targetEl.style.left), my - parseFloat(targetEl.style.top))
+        if (hitDist > 44) return
+      }
+      handleMouseComplete(true)
+    } else if (action === 'click-or-drag') {
+      if (isDrag)       handleMouseComplete(false)
+      else if (isClick) handleMouseComplete(true)
+    } else if (action === 'click-unit-or-drag') {
+      if (isDrag) {
+        handleMouseComplete(false)
+      } else if (isClick) {
+        const targetEl = $('mouse-zone-target')
+        if (targetEl && targetEl.style.display !== 'none') {
+          const hitDist = Math.hypot(mx - parseFloat(targetEl.style.left), my - parseFloat(targetEl.style.top))
+          if (hitDist > 44) return
+        }
+        handleMouseComplete(true)
+      }
+    }
+  })
+
+  // Cancel drag if mouse leaves the zone mid-gesture
+  zone.addEventListener('mouseleave', () => {
+    if (!dragOrigin) return
+    dragOrigin = null
+    const svg = $('mouse-zone-svg')
+    if (svg) svg.innerHTML = ''
+  })
+}
+
 // ─── Flash helpers ────────────────────────────────────────────────────────────
 
 function flashTab(catId, cls) {
@@ -1870,6 +2095,7 @@ function initSetupScreen() {
   $('run-length').value = settings.runLength
   updateRunLengthLabel(settings.runLength)
   $('sound-enabled').checked = settings.soundEnabled
+  $('mouse-enabled').checked = settings.mouseEnabled
 
   // Restore shortcuts checkboxes
   for (const cb of document.querySelectorAll('input[name=shortcuts]'))
@@ -1901,6 +2127,11 @@ function initSetupScreen() {
 
   $('sound-enabled').addEventListener('change', e => {
     settings.soundEnabled = e.target.checked
+    saveSettings(settings)
+  })
+
+  $('mouse-enabled').addEventListener('change', e => {
+    settings.mouseEnabled = e.target.checked
     saveSettings(settings)
   })
 
@@ -2458,6 +2689,7 @@ async function init() {
   initSetupScreen()
   initBrowseScreen()
   initShortcutsScreen()
+  initMouseZone()
   showScreen('setup')
   // Prevent browser-reserved keys from closing the tab/app while training.
   // Ctrl+W closes tabs and Ctrl+Q quits the browser on Linux/Windows.

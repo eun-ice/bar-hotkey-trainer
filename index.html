@@ -139,6 +139,10 @@
             <input type="checkbox" id="sound-enabled" checked>
             Sound effects
           </label>
+          <label class="setup-checkbox-row">
+            <input type="checkbox" id="mouse-enabled" checked>
+            Mouse interactions
+          </label>
         </div>
       </section>
 
@@ -250,6 +254,15 @@
 
       <!-- Hovered unit name — fixed 2-line area directly below the build menu -->
       <div id="slot-hover-info" class="slot-hover-info"></div>
+
+      <!-- Mouse interaction zone — always visible, active when click/drag needed -->
+      <div id="mouse-zone" class="mouse-zone">
+        <svg id="mouse-zone-svg" class="mouse-zone-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+        <div id="mouse-zone-target" class="mouse-zone-target" style="display:none">
+          <img id="mouse-zone-target-icon" src="" alt="">
+        </div>
+        <div id="mouse-zone-label" class="mouse-zone-label"></div>
+      </div>
 
     </div>
 

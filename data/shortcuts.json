@@ -71,13 +71,15 @@
           "id": "attack",
           "label": "Attack",
           "key": "A",
-          "description": "Order selected units to attack a target"
+          "description": "Order selected units to attack a target",
+          "mouseAction": "click-or-drag"
         },
         {
           "id": "target-set",
           "label": "Target Set",
           "key": "S",
-          "description": "Set a manual fire target"
+          "description": "Set a manual fire target",
+          "mouseAction": "click-or-drag"
         },
         {
           "id": "target-cancel",
@@ -90,31 +92,36 @@
           "id": "fight",
           "label": "Fight",
           "key": "F",
-          "description": "Move while engaging enemies along the way"
+          "description": "Move while engaging enemies along the way",
+          "mouseAction": "click"
         },
         {
           "id": "patrol",
           "label": "Patrol",
           "key": "H",
-          "description": "Patrol between current position and a target point"
+          "description": "Patrol between current position and a target point",
+          "mouseAction": "click"
         },
         {
           "id": "guard",
           "label": "Guard",
           "key": "O",
-          "description": "Follow and protect another unit"
+          "description": "Follow and protect another unit",
+          "mouseAction": "click-unit"
         },
         {
           "id": "reclaim",
           "label": "Reclaim",
           "key": "E",
-          "description": "Reclaim a wreck or feature for metal"
+          "description": "Reclaim a wreck or feature for metal",
+          "mouseAction": "click-or-drag"
         },
         {
           "id": "repair",
           "label": "Repair",
           "key": "R",
-          "description": "Repair a friendly unit or structure"
+          "description": "Repair a friendly unit or structure",
+          "mouseAction": "click-unit-or-drag"
         },
         {
           "id": "repeat",
@@ -132,7 +139,8 @@
           "id": "gather-wait",
           "label": "Gather Wait",
           "key": "P",
-          "description": "Wait at current position until a certain number of units gather"
+          "description": "Wait at current position until a certain number of units gather",
+          "mouseAction": "click"
         },
         {
           "id": "on-off",
@@ -163,13 +171,15 @@
           "id": "dgun",
           "label": "D-Gun",
           "key": "D",
-          "description": "Fire the commander's disintegrator gun"
+          "description": "Fire the commander's disintegrator gun",
+          "mouseAction": "click"
         },
         {
           "id": "capture",
           "label": "Capture",
           "key": "W",
-          "description": "Capture an enemy unit or structure"
+          "description": "Capture an enemy unit or structure",
+          "mouseAction": "click-unit"
         },
         {
           "id": "show-pathing",
@@ -243,7 +253,8 @@
           "label": "Area MEX",
           "keys": ["Z", "Z"],
           "note": "QWERTY: ZZ (bottom-left twice), QWERTZ: YY (same physical position)",
-          "description": "Place metal extractors on all available spots in a dragged area"
+          "description": "Place metal extractors on all available spots in a dragged area",
+          "mouseAction": "drag"
         }
       ]
     },
@@ -257,7 +268,8 @@
           "label": "Place Blueprint",
           "key": "B",
           "modifiers": ["Alt"],
-          "description": "Place a blueprint for a structure to be built later"
+          "description": "Place a blueprint for a structure to be built later",
+          "mouseAction": "click"
         },
         {
           "id": "next-blueprint",
@@ -278,7 +290,8 @@
           "id": "resurrect",
           "label": "Resurrect",
           "key": "W",
-          "description": "Resurrect a destroyed unit from its wreck"
+          "description": "Resurrect a destroyed unit from its wreck",
+          "mouseAction": "click-or-drag"
         }
       ]
     },
@@ -291,13 +304,15 @@
           "id": "load",
           "label": "Load",
           "key": "J",
-          "description": "Order the transport to load nearby units"
+          "description": "Order the transport to load nearby units",
+          "mouseAction": "click-unit-or-drag"
         },
         {
           "id": "unload",
           "label": "Unload",
           "key": "U",
-          "description": "Drop transported units at a target location"
+          "description": "Drop transported units at a target location",
+          "mouseAction": "click-or-drag"
         }
       ]
     },
