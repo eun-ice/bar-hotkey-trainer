@@ -12,6 +12,6 @@
     "node": ">=18"
   },
   "dependencies": {
-    "vercel": "^56.5.0"
+    "vercel": "^57.0.0"
   }
 }
