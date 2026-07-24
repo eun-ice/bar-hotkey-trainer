@@ -219,6 +219,7 @@ function defaultSettings() {
     shortcuts:    ['general', 'battle', 'factory', 'builder', 'blueprint', 'rezbot', 'air', 'transport', 'camera'],
     soundEnabled:  true,
     mouseEnabled:  true,
+    swapCmdAlt:    IS_MAC,
   }
 }
 
@@ -233,6 +234,10 @@ function loadSettings() {
 function saveSettings(s) {
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(s))
 }
+
+// When swapCmdAlt is on (Mac default), Cmd acts as Alt and vice versa
+function effectiveAlt(event)  { return (settings.swapCmdAlt && IS_MAC) ? event.metaKey : event.altKey  }
+function effectiveMeta(event) { return (settings.swapCmdAlt && IS_MAC) ? event.altKey  : event.metaKey }
 
 // ─── Spaced repetition (SM-2 simplified) ─────────────────────────────────────
 
@@ -1111,12 +1116,17 @@ function endRun() {
 }
 
 /** Return the ordered key labels the user needs to press for the current question. */
+function displayMod(m) {
+  if (m === 'alt' && settings.swapCmdAlt && IS_MAC) return '⌘ Cmd'
+  return capitalize(m)
+}
+
 function correctKeySequence() {
   const isQwertz = settings.keyboard === 'qwertz'
   if (currentEntry.type === 'shortcut') {
     return currentEntry.seqKeys.map((key, idx) => {
       const mods  = currentEntry.seqMods[idx] ?? []
-      const parts = [...mods.map(m => capitalize(m)), display(key.toUpperCase(), isQwertz)]
+      const parts = [...mods.map(displayMod), display(key.toUpperCase(), isQwertz)]
       return parts.join('+')
     })
   }
@@ -1493,7 +1503,7 @@ function formatShortcutKeyHtml(seqKeys, seqMods, currentStep) {
     // For single chars use display() so QWERTZ users see their physical key (Z→Y, :→Ö, ]→+)
     const rawLabel = key.length === 1 ? key.toUpperCase() : key  // Tab, F6 keep their casing
     const keyLabel = display(rawLabel, isQwertz)
-    const parts = [...mods.map(m => `<kbd>${capitalize(m)}</kbd>`), `<kbd>${keyLabel}</kbd>`]
+    const parts = [...mods.map(m => `<kbd>${displayMod(m)}</kbd>`), `<kbd>${keyLabel}</kbd>`]
     const keyHtml = parts.join('+')
     return idx === currentStep ? `<strong>${keyHtml}</strong>` : keyHtml
   }).join(' → ')
@@ -1541,7 +1551,7 @@ function onKey(event) {
 
   // Handle shortcut state BEFORE the modifier-key bail-out, so Ctrl/Alt+key shortcuts work
   if (trainingState === State.WAITING_SHORTCUT) {
-    if (event.metaKey) return
+    if (effectiveMeta(event)) return
     if (['INPUT','TEXTAREA','SELECT'].includes(event.target.tagName)) return
     // Space held as modifier (Space+X = show explosion radius) — consume and wait for the chord key
     if (event.key === ' ' && !event.shiftKey && !event.repeat) {
@@ -1554,17 +1564,17 @@ function onKey(event) {
     event.preventDefault()
     const key  = normalise(event.key, settings.keyboard === 'qwertz', event.code)
     const mods = []
-    if (event.ctrlKey)  mods.push('ctrl')
-    if (event.altKey)   mods.push('alt')
-    if (event.shiftKey) mods.push('shift')
-    if (spaceHeld)      mods.push('space')
+    if (event.ctrlKey)      mods.push('ctrl')
+    if (effectiveAlt(event)) mods.push('alt')
+    if (event.shiftKey)     mods.push('shift')
+    if (spaceHeld)          mods.push('space')
     handleShortcutKey(key, mods)
     return
   }
 
   // SHOW_ANSWER: checked before the Ctrl/Alt guard so modifier+key shortcuts can also advance
   if (trainingState === State.SHOW_ANSWER) {
-    if (event.metaKey) return
+    if (effectiveMeta(event)) return
     if (['INPUT','TEXTAREA','SELECT'].includes(event.target.tagName)) return
     if (['Control', 'Shift', 'Alt', 'Meta'].includes(event.key)) return
     if (event.key === 'Enter' || event.key === ' ') {
@@ -1581,8 +1591,8 @@ function onKey(event) {
         const wantsCtrl  = lastMods.some(m => m === 'ctrl')
         const wantsAlt   = lastMods.some(m => m === 'alt')
         const wantsShift = lastMods.some(m => m === 'shift')
-        isCorrect = (event.ctrlKey  === wantsCtrl)  &&
-                    (event.altKey   === wantsAlt)   &&
+        isCorrect = (event.ctrlKey       === wantsCtrl)  &&
+                    (effectiveAlt(event) === wantsAlt)   &&
                     (event.shiftKey === wantsShift) &&
                     keysMatch(pressedKey, currentEntry.seqKeys[lastIdx].toUpperCase())
       } else {
@@ -2096,6 +2106,8 @@ function initSetupScreen() {
   updateRunLengthLabel(settings.runLength)
   $('sound-enabled').checked = settings.soundEnabled
   $('mouse-enabled').checked = settings.mouseEnabled
+  if (!IS_MAC) $('swap-cmd-alt-row').style.display = 'none'
+  $('swap-cmd-alt').checked = settings.swapCmdAlt
 
   // Restore shortcuts checkboxes
   for (const cb of document.querySelectorAll('input[name=shortcuts]'))
@@ -2132,6 +2144,11 @@ function initSetupScreen() {
 
   $('mouse-enabled').addEventListener('change', e => {
     settings.mouseEnabled = e.target.checked
+    saveSettings(settings)
+  })
+
+  $('swap-cmd-alt').addEventListener('change', e => {
+    settings.swapCmdAlt = e.target.checked
     saveSettings(settings)
   })
 
@@ -2589,7 +2606,7 @@ let activeShortcutsGroupId = null
 function formatShortcutKey(shortcut, isQwertz) {
   const mods = shortcut.modifiers ?? []
   const renderCombo = (key) => {
-    const parts = [...mods, display(key, isQwertz)]
+    const parts = [...mods.map(m => displayMod(m.toLowerCase())), display(key, isQwertz)]
     return parts.map(p => `<kbd>${p}</kbd>`).join('+')
   }
   if (shortcut.keys) {
