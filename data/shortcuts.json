@@ -24,6 +24,21 @@
           "description": "Jump to and select your commander"
         },
         {
+          "id": "select-all",
+          "label": "Select All Units",
+          "key": "E",
+          "modifiers": ["Ctrl"],
+          "description": "Select every unit on the map"
+        },
+        {
+          "id": "select-idle-builders",
+          "label": "Select Idle Builders",
+          "key": "Tab",
+          "modifiers": ["Ctrl"],
+          "browserReservedWindows": true,
+          "description": "Select the next idle construction unit"
+        },
+        {
           "id": "select-all-same-type",
           "label": "Select All Same Type",
           "key": "W",
@@ -71,14 +86,23 @@
           "id": "attack",
           "label": "Attack",
           "key": "A",
-          "description": "Order selected units to attack a target",
+          "description": "Left-click to attack a unit; drag to attack in a line",
           "mouseAction": "click-or-drag"
+        },
+        {
+          "id": "attack-area",
+          "label": "Attack Area",
+          "key": "A",
+          "modifiers": ["Ctrl"],
+          "browserReservedWindows": true,
+          "description": "Hold Ctrl and drag to issue attack orders across a circular area",
+          "mouseAction": "drag"
         },
         {
           "id": "target-set",
           "label": "Target Set",
           "key": "S",
-          "description": "Set a manual fire target",
+          "description": "Set a preferred target to attack, even while moving",
           "mouseAction": "click-or-drag"
         },
         {
@@ -86,27 +110,28 @@
           "label": "Target Cancel",
           "key": "S",
           "modifiers": ["Ctrl"],
-          "description": "Clear the manual fire target"
+          "browserReservedWindows": true,
+          "description": "Clear the preferred fire target"
         },
         {
           "id": "fight",
           "label": "Fight",
           "key": "F",
-          "description": "Move while engaging enemies along the way",
+          "description": "Attack-move command — units stop to engage enemies within range",
           "mouseAction": "click"
         },
         {
           "id": "patrol",
           "label": "Patrol",
           "key": "H",
-          "description": "Patrol between current position and a target point",
+          "description": "Make a looping patrol route for selected units",
           "mouseAction": "click"
         },
         {
           "id": "guard",
           "label": "Guard",
           "key": "O",
-          "description": "Follow and protect another unit",
+          "description": "Guard a friendly unit or building to help fight, repair, or construct",
           "mouseAction": "click-unit"
         },
         {
@@ -114,6 +139,7 @@
           "label": "Reclaim",
           "key": "E",
           "description": "Reclaim a wreck or feature for metal",
+          "contextOverride": "builder",
           "mouseAction": "click-or-drag"
         },
         {
@@ -146,7 +172,13 @@
           "id": "on-off",
           "label": "On / Off",
           "key": "B",
-          "description": "Toggle unit active state (e.g. shields, cloak fields)"
+          "description": "Toggle unit active state (shields, cloak fields, etc.)"
+        },
+        {
+          "id": "trajectory",
+          "label": "Trajectory",
+          "key": "B",
+          "description": "Toggle high / low trajectory for artillery and ballistic units"
         },
         {
           "id": "stance",
@@ -228,6 +260,35 @@
       "name": "Builder Commands",
       "context": "builder",
       "shortcuts": [
+        {
+          "id": "rotate-ccw",
+          "label": "Rotate Building Left",
+          "key": "[",
+          "note": "QWERTY: [   QWERTZ: ü (same physical key position)",
+          "description": "Rotate the building placement preview counter-clockwise"
+        },
+        {
+          "id": "rotate-cw",
+          "label": "Rotate Building Right",
+          "key": "]",
+          "note": "QWERTY: ]   QWERTZ: + (same physical key position)",
+          "description": "Rotate the building placement preview clockwise"
+        },
+        {
+          "id": "build-spacing-increase",
+          "label": "Build Spacing +",
+          "key": "Z",
+          "modifiers": ["Shift", "Alt"],
+          "note": "QWERTY: Shift+Alt+Z   QWERTZ: Shift+Alt+Y (same physical key)",
+          "description": "Increase spacing when placing a line or grid of structures"
+        },
+        {
+          "id": "build-spacing-decrease",
+          "label": "Build Spacing −",
+          "key": "X",
+          "modifiers": ["Shift", "Alt"],
+          "description": "Decrease spacing when placing a line or grid of structures"
+        },
         {
           "id": "queue-next",
           "label": "Queue Next",
@@ -313,6 +374,55 @@
           "key": "U",
           "description": "Drop transported units at a target location",
           "mouseAction": "click-or-drag"
+        }
+      ]
+    },
+    {
+      "id": "groups",
+      "name": "Unit Groups",
+      "context": "none",
+      "shortcuts": [
+        {
+          "id": "group-1",
+          "label": "Select Group 1",
+          "key": "1",
+          "description": "Select units previously assigned to group 1"
+        },
+        {
+          "id": "group-2",
+          "label": "Select Group 2",
+          "key": "2",
+          "description": "Select units previously assigned to group 2"
+        },
+        {
+          "id": "group-3",
+          "label": "Select Group 3",
+          "key": "3",
+          "description": "Select units previously assigned to group 3"
+        },
+        {
+          "id": "group-set-1",
+          "label": "Create Group 1",
+          "key": "1",
+          "modifiers": ["Ctrl"],
+          "browserReservedWindows": true,
+          "description": "Assign all selected units to group 1"
+        },
+        {
+          "id": "group-set-2",
+          "label": "Create Group 2",
+          "key": "2",
+          "modifiers": ["Ctrl"],
+          "browserReservedWindows": true,
+          "description": "Assign all selected units to group 2"
+        },
+        {
+          "id": "group-set-3",
+          "label": "Create Group 3",
+          "key": "3",
+          "modifiers": ["Ctrl"],
+          "browserReservedWindows": true,
+          "description": "Assign all selected units to group 3"
         }
       ]
     },
