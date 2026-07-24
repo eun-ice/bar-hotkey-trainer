@@ -147,6 +147,10 @@
             <input type="checkbox" id="mouse-enabled" checked>
             Mouse interactions
           </label>
+          <label class="setup-checkbox-row" id="build-modifiers-row">
+            <input type="checkbox" id="build-modifiers">
+            Build queue modifiers (Shift / Space)
+          </label>
         </div>
       </section>
 
@@ -158,6 +162,9 @@
         <button id="btn-browse" class="btn-action">📖 Learn Menus</button>
         <button id="btn-browse-shortcuts" class="btn-action">⌨ Learn Shortcuts</button>
         <button id="btn-start" class="btn-action btn-action-primary">▶ Start Training</button>
+      </div>
+      <div class="setup-reference-link">
+        <a href="https://www.beyondallreason.info/commands-2-0-grid" target="_blank" rel="noopener">BAR Command Reference ↗</a>
       </div>
     </div>
 
@@ -205,9 +212,10 @@
       </div>
 
       <div class="target-card">
-        <div class="label-small">Build:</div>
+        <div id="build-action-label" class="label-small build-action-label">Build</div>
         <div class="target-icon-wrap">
           <img id="target-icon" class="unit-portrait" src="" alt="">
+          <div id="build-mod-badge" class="build-mod-badge hidden"></div>
         </div>
         <div id="target-name" class="name-large">—</div>
         <div id="target-description" class="target-description"></div>
@@ -265,7 +273,7 @@
         <div id="mouse-zone-target" class="mouse-zone-target" style="display:none">
           <img id="mouse-zone-target-icon" src="" alt="">
         </div>
-        <div id="mouse-zone-label" class="mouse-zone-label"></div>
+<div id="mouse-zone-label" class="mouse-zone-label"></div>
       </div>
 
     </div>

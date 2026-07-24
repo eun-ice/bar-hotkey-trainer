@@ -320,6 +320,9 @@ kbd {
   padding: 4px 0 0;
 }
 .builder-count { color: var(--text-dim); font-size: 13px; min-height: 18px }
+.setup-reference-link { font-size: 12px; color: var(--text-dim) }
+.setup-reference-link a { color: var(--text-dim); text-decoration: none; opacity: .7 }
+.setup-reference-link a:hover { opacity: 1; text-decoration: underline }
 .setup-action-btns {
   display: flex;
   gap: 12px;
@@ -499,7 +502,9 @@ kbd {
 }
 
 .target-card { display: flex; flex-direction: column; gap: 8px }
-.target-icon-wrap { display: flex; justify-content: center }
+.target-icon-wrap { display: flex; justify-content: center; align-items: center; gap: 6px }
+.build-mod-badge { line-height: 0; flex-shrink: 0; pointer-events: none }
+.build-mod-badge.hidden { display: none }
 .target-card .unit-portrait { width: 88px; height: 88px }
 .target-card .name-large { text-align: center; font-size: 17px; white-space: normal }
 .target-description {
@@ -1328,7 +1333,9 @@ kbd {
 .sc-desc   { color: var(--text-dim); font-size: 12px; margin-top: 3px }
 
 .sc-seq-arrow { color: var(--text-dim); padding: 0 2px }
-.sc-reserved  { font-size: 11px; color: var(--text-dim); font-style: italic; display: block; margin-top: 3px }
+.sc-reserved    { font-size: 11px; color: var(--text-dim); font-style: italic; display: block; margin-top: 3px }
+.sc-mac-practice { font-size: 11px; color: var(--text-dim); display: block; margin-top: 4px }
+.mod-swap-note { font-size: 11px; color: var(--text-dim) }
 
 /* ─── Shortcut training mode ─────────────────────────────────────────────────── */
 #screen-training.shortcut-mode .build-menu-wrap,
@@ -1436,7 +1443,7 @@ kbd {
 }
 
 .mouse-zone-pending .mouse-zone-label {
-  opacity: 0.5;
+  opacity: 0.85;
 }
 
 /* Active — keyboard done, awaiting mouse interaction */
@@ -1483,13 +1490,40 @@ kbd {
 
 .mouse-zone-label {
   position: absolute;
-  bottom: 5px;
+  bottom: 6px;
   left: 0;
   right: 0;
   text-align: center;
-  font-size: 11px;
-  color: rgba(80, 200, 80, 0.75);
-  letter-spacing: .05em;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(80, 210, 80, 0.9);
+  letter-spacing: .06em;
   text-transform: uppercase;
   pointer-events: none;
+  text-shadow: 0 0 6px rgba(0, 200, 0, 0.4);
+}
+
+/* Unit ghost — shown centered in zone for build actions */
+.slot.is-selected {
+  border-color: #fff;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.35) inset;
+  animation: none;  /* cancel flash-correct so white border appears immediately */
+}
+
+/* Build action label — replaces the static "Build:" */
+.build-action-label {
+  font-size: 12px;
+  color: #f0c830;
+  letter-spacing: 0.06em;
+}
+
+/* Modifier hint shown inline in the instruction during keyboard phase */
+.mod-hint-inline {
+  display: block;
+  margin-top: 5px;
+  font-size: 0.82em;
+  font-weight: 400;
+  color: rgba(100, 210, 100, 0.85);
+  letter-spacing: 0;
+  text-transform: none;
 }

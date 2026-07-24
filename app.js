@@ -22,6 +22,7 @@ function normalise(key, isQwertz, code) {
   if (isQwertz && k === 'Ö') return ';'  // physical ;/Ö key position → ; shortcut
   if (isQwertz && k === '+') return ']'  // physical ] key position → ] shortcut
   if (isQwertz && k === '^') return '`'  // physical `/^ key (Backquote) → ` canonical
+  if (isQwertz && k === 'Ü') return '['  // physical [ key position on QWERTZ is labeled ü
   // ^ on QWERTZ is a dead key — event.key fires as 'Dead' on the first press.
   // Resolve via event.code so we don't need to wait for the composition (Space follow-up).
   if (k === 'DEAD' && code === 'Backquote') return '`'
@@ -36,6 +37,7 @@ function normalise(key, isQwertz, code) {
       if (isQwertz && letter === 'Z') return 'Y'
       return letter
     }
+    if (code === 'BracketLeft')  return '['
     if (code === 'BracketRight') return ']'
     if (code === 'Semicolon')    return ';'
     if (code === 'Backquote')    return '`'  // Mac Alt+` produces dead-accent; resolve via code
@@ -65,6 +67,7 @@ function display(key, isQwertz) {
   if (key === 'Z') return 'Y'
   if (key === 'Y') return 'Z'
   if (key === ';') return 'Ö'
+  if (key === '[') return 'ü'
   if (key === ']') return '+'
   if (key === '`') return '^'
   return key
@@ -216,10 +219,11 @@ function defaultSettings() {
     hintTimeout:  0,
     timeLimit:    5,   // seconds per required key press
     runLength:    20,  // questions per run (0 = unlimited)
-    shortcuts:    ['general', 'battle', 'factory', 'builder', 'blueprint', 'rezbot', 'air', 'transport', 'camera'],
-    soundEnabled:  true,
-    mouseEnabled:  true,
-    swapCmdAlt:    IS_MAC,
+    shortcuts:    ['general', 'groups', 'battle', 'factory', 'builder', 'blueprint', 'rezbot', 'air', 'transport', 'camera'],
+    soundEnabled:    true,
+    mouseEnabled:    true,
+    swapCmdAlt:      IS_MAC,
+    buildModifiers:  true,
   }
 }
 
@@ -367,7 +371,7 @@ function buildShortcutQueue() {
         id:              shortcut.id,
         label:           shortcut.label,
         description:     shortcut.description ?? '',
-        context:         group.context,
+        context:         shortcut.contextOverride ?? group.context,
         seqKeys,
         seqMods,
         mouseAction:     shortcut.mouseAction ?? 'none',
@@ -799,7 +803,6 @@ function renderQuestion(entry) {
 
   // Remove shortcut-target class from target card and restore hidden elements
   document.querySelector('#screen-training .target-card').classList.remove('shortcut-target')
-  document.querySelector('#screen-training .target-card .label-small').textContent = 'Build:'
   document.querySelector('#screen-training .target-costs').style.display     = ''
   document.querySelector('#screen-training .target-icon-wrap').style.display = ''
   $('target-icon').style.display  = ''
@@ -826,6 +829,7 @@ function renderQuestion(entry) {
   descEl.classList.toggle('hidden', !unit.description)
   $('target-metal').textContent  = unit.metalCost.toLocaleString()
   $('target-energy').textContent = unit.energyCost.toLocaleString()
+  updateBuildModBadge()
 }
 
 function renderShortcutQuestion(entry) {
@@ -857,9 +861,13 @@ function renderShortcutQuestion(entry) {
     ? capitalize(entry.contextFaction) + ' · ' + entry.context
     : ''
 
+  // Hide build-mod badge for shortcut questions
+  const bmbShortcut = $('build-mod-badge')
+  if (bmbShortcut) { bmbShortcut.innerHTML = ''; bmbShortcut.classList.add('hidden') }
+
   // Target card — show shortcut info, hide costs/icon via inline style (reliable)
   document.querySelector('#screen-training .target-card').classList.add('shortcut-target')
-  document.querySelector('#screen-training .target-card .label-small').textContent = 'Command:'
+  $('build-action-label').textContent = 'Command:'
   $('target-name').textContent = entry.label
   const descEl = $('target-description')
   descEl.textContent = entry.description || ''
@@ -1021,6 +1029,8 @@ function showAnswer(prefix = '') {
     const keys = correctKeySequence()
     showAnswerPrefix   = prefix
     showAnswerKeysHtml = keys.map(k => `<kbd>${k}</kbd>`).join(' → ')
+    const answerMods = currentEntry.seqMods?.flat() ?? []
+    showAnswerKeysHtml += macSwapNote(answerMods)
     trainingState = State.SHOW_ANSWER
     $('btn-skip').textContent = 'OK Next'
     showAnswerCountdownSec = 10
@@ -1044,6 +1054,9 @@ function showAnswer(prefix = '') {
   const keys = correctKeySequence()
   showAnswerPrefix   = prefix
   showAnswerKeysHtml = keys.map(k => `<kbd>${k}</kbd>`).join(' ')
+  if (isFactory(currentEntry.builder) && currentEntry.buildModifier === 'alt') {
+    showAnswerKeysHtml += macSwapNote(['alt'])
+  }
 
   trainingState = State.SHOW_ANSWER
   $('btn-skip').textContent = 'OK Next'
@@ -1121,12 +1134,19 @@ function displayMod(m) {
   return capitalize(m)
 }
 
+function macSwapNote(mods) {
+  if (!IS_MAC || !settings.swapCmdAlt) return ''
+  const hasMacAlt = (mods ?? ['alt']).some(m => m.toLowerCase() === 'alt')
+  if (!hasMacAlt) return ''
+  return ` <span class="mod-swap-note">(⌘ Cmd in trainer)</span>`
+}
+
 function correctKeySequence() {
   const isQwertz = settings.keyboard === 'qwertz'
   if (currentEntry.type === 'shortcut') {
     return currentEntry.seqKeys.map((key, idx) => {
       const mods  = currentEntry.seqMods[idx] ?? []
-      const parts = [...mods.map(displayMod), display(key.toUpperCase(), isQwertz)]
+      const parts = [...mods.map(m => m.toLowerCase() === 'alt' ? 'Alt' : displayMod(m)), display(key.toUpperCase(), isQwertz)]
       return parts.join('+')
     })
   }
@@ -1140,7 +1160,17 @@ function correctKeySequence() {
     }
   }
   for (let page = 0; page < currentEntry.page; page++) keys.push('B')
-  keys.push(display(currentEntry.gridKey, isQwertz))
+  const gridKey = display(currentEntry.gridKey, isQwertz)
+  if (isFactory(currentEntry.builder)) {
+    const mod = currentEntry.buildModifier
+    if (mod === 'shift')           keys.push(`Shift+${gridKey}`)
+    else if (mod === 'ctrl')       keys.push(`Ctrl+${gridKey}`)
+    else if (mod === 'ctrl-shift') keys.push(`Ctrl+Shift+${gridKey}`)
+    else if (mod === 'alt')        keys.push(`Alt+${gridKey}`)
+    else                           keys.push(gridKey)
+  } else {
+    keys.push(gridKey)
+  }
   return keys
 }
 
@@ -1431,6 +1461,23 @@ function resolveShortcutContextUnit(context) {
   }
 }
 
+// Q, W, S, F, C, V trigger browser shortcuts (close tab, save, find, copy, paste) with
+// Ctrl on non-Mac — never assign Ctrl-based factory modifiers to those grid keys there.
+const BROWSER_CTRL_KEYS = new Set(['Q', 'W', 'S', 'F', 'X', 'C', 'V', 'D'])
+
+function pickFactoryBuildMod(gridKey) {
+  if (!settings.buildModifiers) return 'none'
+  const allMods = ['none', 'shift', 'ctrl', 'ctrl-shift', 'alt']
+  const key = (gridKey ?? '').toUpperCase()
+  if (!BROWSER_CTRL_KEYS.has(key)) return allMods[Math.floor(Math.random() * allMods.length)]
+  let mods = allMods
+  // Ctrl+key triggers browser shortcuts (save, find, copy…) on Windows/Linux
+  if (!IS_MAC) mods = mods.filter(m => m !== 'ctrl' && m !== 'ctrl-shift')
+  // With swapCmdAlt, the 'alt' modifier sends Cmd — Cmd+key closes tabs/quits on Mac
+  if (IS_MAC && settings.swapCmdAlt) mods = mods.filter(m => m !== 'alt')
+  return mods[Math.floor(Math.random() * mods.length)]
+}
+
 function nextQuestion() {
   deactivateMouseZone()
   clearSlotHover('slot-hover-info')
@@ -1479,12 +1526,19 @@ function nextQuestion() {
     // Factories have no category tabs in-game — go straight to grid key
     trainingState = item.page > 0 ? State.WAITING_PAGE : State.WAITING_GRID
     activeCatId   = item.categoryId   // show the correct category immediately
+    currentEntry.buildModifier = pickFactoryBuildMod(unit?.key)
+    // No mouse zone for factory builds — modifier is held on the grid key itself
   } else {
     // Constructors: no category pre-selected — grid shows units but no key labels
     trainingState = State.WAITING_CATEGORY
     activeCatId   = null
-    if (settings.mouseEnabled) showMouseZonePending('click')
+    const buildMod = (settings.mouseEnabled && settings.buildModifiers)
+      ? ['click', 'shift-click', 'space-click'][Math.floor(Math.random() * 3)]
+      : 'click'
+    currentEntry.buildModifier = buildMod
+    if (settings.mouseEnabled) showMouseZonePending(buildMod)
   }
+  updateBuildActionLabel()
 
   renderQuestion(currentEntry)
   renderMenu(builder, activeCatId, 0)
@@ -1503,9 +1557,10 @@ function formatShortcutKeyHtml(seqKeys, seqMods, currentStep) {
     // For single chars use display() so QWERTZ users see their physical key (Z→Y, :→Ö, ]→+)
     const rawLabel = key.length === 1 ? key.toUpperCase() : key  // Tab, F6 keep their casing
     const keyLabel = display(rawLabel, isQwertz)
-    const parts = [...mods.map(m => `<kbd>${displayMod(m)}</kbd>`), `<kbd>${keyLabel}</kbd>`]
+    const parts = [...mods.map(m => `<kbd>${m.toLowerCase() === 'alt' ? 'Alt' : displayMod(m)}</kbd>`), `<kbd>${keyLabel}</kbd>`]
     const keyHtml = parts.join('+')
-    return idx === currentStep ? `<strong>${keyHtml}</strong>` : keyHtml
+    const note = idx === currentStep ? macSwapNote(mods) : ''
+    return idx === currentStep ? `<strong>${keyHtml}</strong>${note}` : keyHtml
   }).join(' → ')
 }
 
@@ -1522,14 +1577,80 @@ function updateInstruction() {
     return
   }
   if (trainingState === State.WAITING_CATEGORY) {
-    setInstruction(`Press the <strong>category key</strong> for this unit`)
+    setInstruction('Press the <strong>category key</strong>')
   } else if (trainingState === State.WAITING_SHIFT) {
     setInstruction(`Wrong category — press <kbd>Shift</kbd> or <kbd>Esc</kbd> to go back`, 'state-wrong')
   } else if (trainingState === State.WAITING_PAGE) {
     setInstruction(`Press <kbd>B</kbd> to advance to page ${currentEntry.page + 1}`)
   } else if (trainingState === State.WAITING_GRID) {
-    setInstruction(`Press the <strong>grid key</strong> for this unit`)
+    setInstruction(`${buildModHint()}Press the <strong>grid key</strong>`)
   }
+}
+
+function buildModHint() {
+  if (trainingState !== State.WAITING_GRID) return ''
+  const mod = currentEntry?.buildModifier
+  if (!mod || mod === 'none') return ''
+  if (!currentEntry?.builder || !isFactory(currentEntry.builder)) return ''
+  const modLabels = {
+    'shift':      `<kbd>Shift</kbd>`,
+    'ctrl':       `<kbd>Ctrl</kbd>`,
+    'ctrl-shift': `<kbd>Ctrl</kbd>+<kbd>Shift</kbd>`,
+    'alt':        `<kbd>Alt</kbd>${macSwapNote(['alt'])}`,
+  }
+  const label = modLabels[mod]
+  return label ? `Hold ${label} · ` : ''
+}
+
+const SVG_QUEUE = `<svg width="44" height="44" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg"><g clip-path="url(#bmbq_clip)"><path d="M64 54.5C64 61.9558 70.0442 68 77.5 68C84.9558 68 91 61.9558 91 54.5C91 47.0442 84.9558 41 77.5 41C70.0442 41 64 47.0442 64 54.5Z" fill="#2B682A" fill-opacity="0.32" stroke="#00FF00" stroke-width="2"/><g filter="url(#bmbq_f0)"><path d="M17 22L17 20L15 20L15 22L17 22ZM78 22L80 22L80 20L78 20L78 22ZM78 54.9999L89.547 34.9999L66.453 34.9999L78 54.9999ZM18.9999 54.9999L19 22L15 22L14.9999 54.9999L18.9999 54.9999ZM17 24L78 24L78 20L17 20L17 24ZM76 22L76 36.9999L80 36.9999L80 22L76 22Z" fill="white"/></g><path d="M4 54.5C4 61.9558 10.0442 68 17.5 68C24.9558 68 31 61.9558 31 54.5C31 47.0442 24.9558 41 17.5 41C10.0442 41 4 47.0442 4 54.5Z" fill="#2B682A" fill-opacity="0.32" stroke="#00FF00" stroke-width="2"/><path d="M34 23.5C34 30.9558 40.0442 37 47.5 37C54.9558 37 61 30.9558 61 23.5C61 16.0442 54.9558 10 47.5 10C40.0442 10 34 16.0442 34 23.5Z" fill="#2B682A" fill-opacity="0.32" stroke="#00FF00" stroke-width="2"/></g><defs><filter id="bmbq_f0" x="13" y="20" width="78.5471" height="43.9999" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/><feOffset dy="5"/><feGaussianBlur stdDeviation="1"/><feComposite in2="hardAlpha" operator="out"/><feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.76 0"/><feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow"/><feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/><feOffset dy="9"/><feComposite in2="hardAlpha" operator="out"/><feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.5 0"/><feBlend mode="normal" in2="effect1_dropShadow" result="effect2_dropShadow"/><feBlend mode="normal" in="SourceGraphic" in2="effect2_dropShadow" result="shape"/></filter><clipPath id="bmbq_clip"><rect width="96" height="96" fill="white"/></clipPath></defs></svg>`
+
+const SVG_QUEUE_FRONT = `<svg width="44" height="44" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg"><g clip-path="url(#bmbqf_clip)"><path d="M4.5 48C4.5 55.4558 10.5442 61.5 18 61.5C25.4558 61.5 31.5 55.4558 31.5 48C31.5 40.5442 25.4558 34.5 18 34.5C10.5442 34.5 4.5 40.5442 4.5 48Z" fill="#2B682A" fill-opacity="0.32" stroke="#00FF00" stroke-width="2"/><path d="M34.5 17C34.5 24.4558 40.5442 30.5 48 30.5C55.4558 30.5 61.5 24.4558 61.5 17C61.5 9.54416 55.4558 3.5 48 3.5C40.5442 3.5 34.5 9.54416 34.5 17Z" fill="#2B682A" fill-opacity="0.32" stroke="#00FF00" stroke-width="2"/><g filter="url(#bmbqf_f0)"><path fill-rule="evenodd" clip-rule="evenodd" d="M19.4546 40H16.5454V46.5454H10V49.4546H16.5454V56H19.4546V49.4546H26V46.5454H19.4546V40Z" stroke="white" stroke-width="4"/></g><g filter="url(#bmbqf_f1)"><path d="M78.5 90.5V92.5H80.5V90.5H78.5ZM18 90.5H16V92.5H18V90.5ZM18 62L6.45296 82H29.547L18 62ZM78.5 88.5H18V92.5H78.5V88.5ZM20 90.5V80H16V90.5H20ZM80.5 90.5V48.5H76.5V90.5H80.5Z" fill="white"/></g><path d="M64.5 48C64.5 55.4558 70.5442 61.5 78 61.5C85.4558 61.5 91.5 55.4558 91.5 48C91.5 40.5442 85.4558 34.5 78 34.5C70.5442 34.5 64.5 40.5442 64.5 48Z" fill="#2B682A" fill-opacity="0.32" stroke="#00FF00" stroke-width="2"/></g><defs><filter id="bmbqf_f0" x="5" y="38" width="24" height="24" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/><feOffset dx="-1" dy="2"/><feGaussianBlur stdDeviation="1"/><feComposite in2="hardAlpha" operator="out"/><feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.76 0"/><feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow"/><feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow" result="shape"/></filter><filter id="bmbqf_f1" x="4.45288" y="48.5" width="78.0471" height="53" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/><feOffset dy="5"/><feGaussianBlur stdDeviation="1"/><feComposite in2="hardAlpha" operator="out"/><feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.76 0"/><feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow"/><feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/><feOffset dy="9"/><feComposite in2="hardAlpha" operator="out"/><feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.5 0"/><feBlend mode="normal" in2="effect1_dropShadow" result="effect2_dropShadow"/><feBlend mode="normal" in="SourceGraphic" in2="effect2_dropShadow" result="shape"/></filter><clipPath id="bmbqf_clip"><rect width="96" height="96" fill="white"/></clipPath></defs></svg>`
+
+function buildModBadgeSvg(mod, factory) {
+  const img = (src) => `<img src="data/${src}" width="44" height="44" alt="">`
+  if (factory) {
+    if (mod === 'shift')      return img('badge-p5.avif')
+    if (mod === 'ctrl')       return img('badge-p20.avif')
+    if (mod === 'ctrl-shift') return img('badge-p100.avif')
+    if (mod === 'alt')        return img('badge-front.avif')
+    return ''
+  } else {
+    if (mod === 'shift-click') return SVG_QUEUE
+    if (mod === 'space-click') return SVG_QUEUE_FRONT
+    return ''
+  }
+}
+
+function updateBuildModBadge() {
+  const badge = $('build-mod-badge')
+  if (!badge) return
+  const mod = currentEntry?.buildModifier
+  const factory = currentEntry?.builder ? isFactory(currentEntry.builder) : false
+  const svg = (mod && mod !== 'none' && mod !== 'click') ? buildModBadgeSvg(mod, factory) : ''
+  if (svg) {
+    badge.innerHTML = svg
+    badge.classList.remove('hidden')
+  } else {
+    badge.innerHTML = ''
+    badge.classList.add('hidden')
+  }
+}
+
+function updateBuildActionLabel() {
+  const el = $('build-action-label')
+  if (!el) return
+  const mod = currentEntry?.buildModifier
+  let text = 'Build'
+  if (isFactory(currentEntry?.builder)) {
+    if (mod === 'shift')      text = 'Queue Build ×5'
+    else if (mod === 'ctrl')       text = 'Queue Build ×20'
+    else if (mod === 'ctrl-shift') text = 'Queue Build ×100'
+    else if (mod === 'alt')        text = 'Queue to Front'
+  } else {
+    if (mod === 'shift-click') text = 'Queue Build'
+    else if (mod === 'space-click') text = 'Build (instant)'
+  }
+  el.textContent = text
 }
 
 // ─── Key handling ─────────────────────────────────────────────────────────────
@@ -1603,11 +1724,24 @@ function onKey(event) {
     return
   }
 
+  // Global Space tracking — Space is always a modifier key, never a direct action.
+  // Track it here so Space held before pressing the grid key carries into the mouse phase.
+  if (event.key === ' ' && !event.repeat) {
+    spaceHeld = true
+    event.preventDefault()
+    if (trainingState === State.WAITING_MOUSE) mouseZoneSpaceHeld = true
+    return
+  }
+
   // Block keypresses while waiting for mouse interaction
   if (trainingState === State.WAITING_MOUSE) return
 
-  // Ignore modifier combos and text input
-  if (event.ctrlKey || event.altKey || event.metaKey) return
+  // Allow modifier+key for factory grid builds (Shift/Ctrl/Alt held with grid key)
+  const isFactoryGridMod = (trainingState === State.WAITING_GRID)
+    && currentEntry?.builder && isFactory(currentEntry.builder)
+    && currentEntry?.buildModifier && currentEntry.buildModifier !== 'none'
+  // Ignore modifier combos everywhere else
+  if (!isFactoryGridMod && (event.ctrlKey || event.altKey || event.metaKey)) return
   if (['INPUT','TEXTAREA','SELECT'].includes(event.target.tagName)) return
 
   // Escape: go back from wrong category first; fall through to pause toggle otherwise
@@ -1659,7 +1793,7 @@ function onKey(event) {
     if (key === 'B') {
       handlePageKey()
     } else if (trainingState === State.WAITING_GRID && GRID_KEYS.includes(key)) {
-      handleGridKey(key)
+        handleGridKey(key, event)
     }
   }
 }
@@ -1685,7 +1819,7 @@ function handleCategoryKey(key) {
       playBuildSound('builder')
       if (settings.mouseEnabled) {
         trainingState = State.WAITING_MOUSE
-        activateMouseZone('click')
+        activateMouseZone(currentEntry.buildModifier ?? 'click')
       } else {
         clearAnswerTimer()
         recordResult(questionHadWrong ? 'late' : 'correct')
@@ -1718,35 +1852,68 @@ function handlePageKey() {
   updateInstruction()
 }
 
-function handleGridKey(key) {
+function handleGridKey(key, event) {
   const correct = keysMatch(key, currentEntry.gridKey) || isEquivGridKey(key)
 
-  if (correct) {
-    flashSlot(key, 'flash-correct')
-    if (isFactory(currentEntry.builder)) {
-      playBuildSound('factory')
-      clearAnswerTimer()
-      recordResult(questionHadWrong ? 'late' : 'correct')
-      setInstruction('✓ Correct!', 'state-correct')
-      trainingState = State.FEEDBACK
-      setTimeout(() => checkRunEnd(), 900)
-    } else {
-      playBuildSound('builder')
-      if (settings.mouseEnabled) {
-        trainingState = State.WAITING_MOUSE
-        activateMouseZone('click')
-      } else {
-        clearAnswerTimer()
-        recordResult(questionHadWrong ? 'late' : 'correct')
-        setInstruction('✓ Correct!', 'state-correct')
-        trainingState = State.FEEDBACK
-        setTimeout(() => checkRunEnd(), 900)
-      }
-    }
-  } else {
+  if (!correct) {
     // Silently ignore wrong grid key — no flash, no message
     questionHadWrong = true
     // Stay in WAITING_GRID — timer keeps running, user can self-correct
+    return
+  }
+
+  // For factory builds: modifier must be held on the grid key itself
+  if (isFactory(currentEntry.builder)) {
+    const mod = currentEntry.buildModifier ?? 'none'
+    if (mod !== 'none') {
+      let modOk = false
+      let modHint = ''
+      if (mod === 'shift') {
+        modOk = !!(event?.shiftKey && !event?.ctrlKey && !effectiveAlt(event))
+        modHint = 'Hold <kbd>Shift</kbd> while pressing the grid key!'
+      } else if (mod === 'ctrl') {
+        modOk = !!(event?.ctrlKey && !event?.shiftKey && !effectiveAlt(event))
+        modHint = 'Hold <kbd>Ctrl</kbd> while pressing the grid key!'
+      } else if (mod === 'ctrl-shift') {
+        modOk = !!(event?.ctrlKey && event?.shiftKey && !effectiveAlt(event))
+        modHint = 'Hold <kbd>Ctrl+Shift</kbd> while pressing the grid key!'
+      } else if (mod === 'alt') {
+        modOk = !!(effectiveAlt(event) && !event?.ctrlKey && !event?.shiftKey)
+        modHint = `Hold <kbd>Alt</kbd>${macSwapNote(['alt'])} while pressing the grid key!`
+      }
+      if (!modOk) {
+        questionHadWrong = true
+        setInstruction(modHint, 'state-wrong')
+        return  // stay in WAITING_GRID, user can retry with correct modifier
+      }
+    }
+    // Factory: correct key (+modifier) — done, no mouse phase
+    flashSlot(key, 'flash-correct')
+    const selectedSlot = document.querySelector(`#menu-grid .slot[data-key="${key}"]`)
+    if (selectedSlot) selectedSlot.classList.add('is-selected')
+    playBuildSound('factory')
+    clearAnswerTimer()
+    recordResult(questionHadWrong ? 'late' : 'correct')
+    setInstruction('✓ Correct!', 'state-correct')
+    trainingState = State.FEEDBACK
+    setTimeout(() => checkRunEnd(), 900)
+    return
+  }
+
+  // Constructor: correct grid key — show mouse zone
+  flashSlot(key, 'flash-correct')
+  const selectedSlot = document.querySelector(`#menu-grid .slot[data-key="${key}"]`)
+  if (selectedSlot) selectedSlot.classList.add('is-selected')
+  playBuildSound('builder')
+  if (settings.mouseEnabled) {
+    trainingState = State.WAITING_MOUSE
+    activateMouseZone(currentEntry.buildModifier ?? 'click')
+  } else {
+    clearAnswerTimer()
+    recordResult(questionHadWrong ? 'late' : 'correct')
+    setInstruction('✓ Correct!', 'state-correct')
+    trainingState = State.FEEDBACK
+    setTimeout(() => checkRunEnd(), 900)
   }
 }
 
@@ -1865,11 +2032,15 @@ const MOUSE_TARGET_POSITIONS = [
 
 const MOUSE_ACTION_LABELS = {
   'click':              'Click to place',
+  'shift-click':        'Shift + Click (queue)',
+  'space-click':        'Space + Click (instant)',
   'click-unit':         'Click the unit',
   'drag':               'Drag to set area',
   'click-or-drag':      'Click or drag',
   'click-unit-or-drag': 'Click unit or drag',
 }
+
+let mouseZoneSpaceHeld = false
 
 function showMouseZonePending(action) {
   currentMouseAction = action
@@ -1881,10 +2052,12 @@ function showMouseZonePending(action) {
   if (targetEl) targetEl.style.display = 'none'
   const labelEl = $('mouse-zone-label')
   if (labelEl) labelEl.textContent = MOUSE_ACTION_LABELS[action] || ''
+
 }
 
 function activateMouseZone(action) {
   currentMouseAction = action
+  mouseZoneSpaceHeld = spaceHeld  // carry over Space held before the grid key was pressed
   const zone = $('mouse-zone')
   if (!zone) return
   zone.classList.remove('mouse-zone-pending')
@@ -1905,9 +2078,10 @@ function activateMouseZone(action) {
   }
 
   const labelEl = $('mouse-zone-label')
-  if (labelEl) labelEl.textContent = MOUSE_ACTION_LABELS[action] || ''
+  const labelText = MOUSE_ACTION_LABELS[action] || ''
+  if (labelEl) labelEl.textContent = labelText
 
-  setInstruction(MOUSE_ACTION_LABELS[action] || 'Click to place', 'state-correct')
+  setInstruction(labelText || 'Click to place', 'state-correct')
 
   // Give a fresh timer window for the mouse phase so leftover keyboard time doesn't cut it short
   if (settings.timeLimit) {
@@ -1924,6 +2098,7 @@ function activateMouseZone(action) {
 
 function deactivateMouseZone() {
   currentMouseAction = null
+  mouseZoneSpaceHeld = false
   const zone = $('mouse-zone')
   if (!zone) return
   zone.classList.remove('mouse-zone-active', 'mouse-zone-pending')
@@ -1931,6 +2106,7 @@ function deactivateMouseZone() {
   if (svgEl) svgEl.innerHTML = ''
   const targetEl = $('mouse-zone-target')
   if (targetEl) targetEl.style.display = 'none'
+  document.querySelectorAll('#menu-grid .slot.is-selected').forEach(s => s.classList.remove('is-selected'))
   const labelEl = $('mouse-zone-label')
   if (labelEl) labelEl.textContent = ''
 }
@@ -1996,6 +2172,22 @@ function initMouseZone() {
 
     if (action === 'drag') {
       if (isDrag) handleMouseComplete(false)
+    } else if (action === 'shift-click') {
+      if (!isClick) return
+      if (!e.shiftKey) {
+        questionHadWrong = true
+        setInstruction('Hold <kbd>Shift</kbd> while clicking!', 'state-wrong')
+        return
+      }
+      handleMouseComplete(true)
+    } else if (action === 'space-click') {
+      if (!isClick) return
+      if (!mouseZoneSpaceHeld) {
+        questionHadWrong = true
+        setInstruction('Hold <kbd>Space</kbd> while clicking!', 'state-wrong')
+        return
+      }
+      handleMouseComplete(true)
     } else if (action === 'click') {
       if (isClick) handleMouseComplete(true)
     } else if (action === 'click-unit') {
@@ -2142,8 +2334,19 @@ function initSetupScreen() {
     saveSettings(settings)
   })
 
+  $('build-modifiers').checked  = settings.buildModifiers
+  $('build-modifiers-row').style.opacity = settings.mouseEnabled ? '1' : '0.4'
+  $('build-modifiers').disabled = !settings.mouseEnabled
+
   $('mouse-enabled').addEventListener('change', e => {
     settings.mouseEnabled = e.target.checked
+    saveSettings(settings)
+    $('build-modifiers-row').style.opacity = e.target.checked ? '1' : '0.4'
+    $('build-modifiers').disabled = !e.target.checked
+  })
+
+  $('build-modifiers').addEventListener('change', e => {
+    settings.buildModifiers = e.target.checked
     saveSettings(settings)
   })
 
@@ -2229,7 +2432,8 @@ function initSetupScreen() {
     }
   })
   $('btn-reset-stats').addEventListener('click', resetRunStats)
-  $('btn-newrun').addEventListener('click', () => {
+  $('btn-newrun').addEventListener('click', (e) => {
+    e.currentTarget.blur()  // prevent Space from re-triggering the button mid-training
     precacheIcons(filteredBuilders(settings))
     showNewRunCountdown()
   })
@@ -2605,14 +2809,35 @@ let activeShortcutsGroupId = null
 
 function formatShortcutKey(shortcut, isQwertz) {
   const mods = shortcut.modifiers ?? []
-  const renderCombo = (key) => {
-    const parts = [...mods.map(m => displayMod(m.toLowerCase())), display(key, isQwertz)]
+  const hasAlt = mods.some(m => m.toLowerCase() === 'alt')
+
+  // Canonical combo: always show "Alt" — the game's actual key name, never "⌘ Cmd".
+  // The Mac Cmd↔Alt swap is a practice aid; players must memorize "Alt" as the shortcut.
+  const canonicalCombo = (key) => {
+    const parts = [
+      ...mods.map(m => m.toLowerCase() === 'alt' ? 'Alt' : capitalize(m)),
+      display(key, isQwertz),
+    ]
     return parts.map(p => `<kbd>${p}</kbd>`).join('+')
   }
-  if (shortcut.keys) {
-    return shortcut.keys.map(renderCombo).join(' <span class="sc-seq-arrow">→</span> ')
+  const canonical = shortcut.keys
+    ? shortcut.keys.map(canonicalCombo).join(' <span class="sc-seq-arrow">→</span> ')
+    : canonicalCombo(shortcut.key)
+
+  // When swapCmdAlt is active on Mac, Alt shortcuts are practiced with Cmd.
+  // Show a small note so the user knows which key to press in this trainer.
+  if (IS_MAC && settings.swapCmdAlt && hasAlt) {
+    const practiceCombo = (key) => {
+      const parts = [...mods.map(m => displayMod(m.toLowerCase())), display(key, isQwertz)]
+      return parts.map(p => `<kbd>${p}</kbd>`).join('+')
+    }
+    const practice = shortcut.keys
+      ? shortcut.keys.map(practiceCombo).join(' → ')
+      : practiceCombo(shortcut.key)
+    return `${canonical}<span class="sc-mac-practice">Practice here: ${practice}</span>`
   }
-  return renderCombo(shortcut.key)
+
+  return canonical
 }
 
 function initShortcutsScreen() {
@@ -2697,7 +2922,7 @@ async function init() {
   }
 
   try {
-    const scResp = await fetch('data/shortcuts.json')
+    const scResp = await fetch('data/shortcuts.json', { cache: 'no-cache' })
     SHORTCUTS = (await scResp.json()).groups || []
   } catch {}
 
@@ -2732,7 +2957,7 @@ async function init() {
   // Listening on keyup guarantees we always catch the Shift release.
   document.addEventListener('keyup', (event) => {
     if (event.key === 'Shift') handleGoBack()
-    if (event.key === ' ') spaceHeld = false
+    if (event.key === ' ') { spaceHeld = false; mouseZoneSpaceHeld = false }
   })
 }
 
