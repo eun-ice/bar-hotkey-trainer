@@ -888,7 +888,25 @@ async function main() {
       .map(([f]) => f)
   }
 
-  // 6. Write JSON
+  // 6. Extract shared unit metadata and slim down category slots
+  output.units = {}
+  for (const builder of Object.values(output.builders)) {
+    for (const cat of Object.values(builder.categories)) {
+      for (let i = 0; i < cat.units.length; i++) {
+        const u = cat.units[i]
+        if (!output.units[u.id]) {
+          const { id, key, page, trainingExcluded, ...meta } = u
+          output.units[u.id] = meta
+        }
+        const slim = { id: u.id, key: u.key, page: u.page }
+        if (u.trainingExcluded) slim.trainingExcluded = true
+        cat.units[i] = slim
+      }
+    }
+  }
+  console.log(`Units map: ${Object.keys(output.units).length} unique units`)
+
+  // 7. Write JSON
   const jsonPath = join(__dirname, 'data', 'buildmenus.json')
   writeFileSync(jsonPath, JSON.stringify(output, null, 2))
   console.log(`Wrote data/buildmenus.json  (${afterCount} builders)`)

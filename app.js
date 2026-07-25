@@ -334,8 +334,10 @@ const SHORTCUT_CONTEXT_UNITS = {
   transport: { armada: 'armatlas', cortex: 'corvalk',  legion: 'legatrans' },
 }
 
+function uInfo(id) { return DATA.units[id] ?? {} }
+
 async function loadData() {
-  const res = await fetch('data/buildmenus.json')
+  const res = await fetch('data/buildmenus.json', { cache: 'reload' })
   if (!res.ok) throw new Error(`Could not load data/buildmenus.json (${res.status})`)
   DATA = await res.json()
   const weRes = await fetch('data/water-equivalents.json')
@@ -786,23 +788,24 @@ function renderGrid(builder, activeCatId, page, highlightUnitId, isQwertz) {
     slot.dataset.key = key
 
     if (unit) {
+      const info = uInfo(unit.id)
       slot.dataset.unitId = unit.id
       if (unit.id === highlightUnitId) slot.classList.add('is-target')
 
       const img = document.createElement('img')
-      img.src = `data/${unit.icon}`
-      img.alt = unit.name
+      img.src = `data/${info.icon}`
+      img.alt = info.name
       img.addEventListener('error', () => img.remove())
       slot.appendChild(img)
 
       // Cost badges
       const eBadge = document.createElement('span')
       eBadge.className = 'slot-energy'
-      eBadge.textContent = fmtCost(unit.energyCost)
+      eBadge.textContent = fmtCost(info.energyCost)
 
       const mBadge = document.createElement('span')
       mBadge.className = 'slot-metal'
-      mBadge.textContent = fmtCost(unit.metalCost)
+      mBadge.textContent = fmtCost(info.metalCost)
 
       slot.append(eBadge, mBadge)
 
@@ -866,17 +869,18 @@ function renderQuestion(entry) {
   $('builder-meta').textContent = `${capitalize(builder.faction)} · T${builder.tier}`
 
   // Target card
+  const unitInfo = uInfo(unit.id)
   const ti = $('target-icon')
-  ti.src = `data/${unit.icon}`
-  ti.alt = unit.name
+  ti.src = `data/${unitInfo.icon}`
+  ti.alt = unitInfo.name
   ti.className = 'unit-portrait'
   ti.onerror = () => ti.classList.add('err')
-  $('target-name').textContent = unit.name
+  $('target-name').textContent = unitInfo.name
   const descEl = $('target-description')
-  descEl.textContent = unit.description ?? ''
-  descEl.classList.toggle('hidden', !unit.description)
-  $('target-metal').textContent  = unit.metalCost.toLocaleString()
-  $('target-energy').textContent = unit.energyCost.toLocaleString()
+  descEl.textContent = unitInfo.description ?? ''
+  descEl.classList.toggle('hidden', !unitInfo.description)
+  $('target-metal').textContent  = unitInfo.metalCost.toLocaleString()
+  $('target-energy').textContent = unitInfo.energyCost.toLocaleString()
   updateBuildModBadge()
 }
 
@@ -1421,8 +1425,10 @@ function precacheIcons(builders) {
   for (const builder of builders) {
     if (builder.icon) paths.add(`data/${builder.icon}`)
     for (const cat of Object.values(builder.categories))
-      for (const unit of cat.units)
-        if (unit.icon) paths.add(`data/${unit.icon}`)
+      for (const unit of cat.units) {
+        const icon = uInfo(unit.id).icon
+        if (icon) paths.add(`data/${icon}`)
+      }
   }
 
   // Shortcut context unit icons (commanders, rezbots, transports) for all selected factions
@@ -1455,7 +1461,7 @@ function preloadNextQuestion() {
     const builder = DATA.builders[next.builderId]
     if (builder?.icon) srcs.push(`data/${builder.icon}`)
     const unit = builder?.categories[next.categoryId]?.units.find(u => u.id === next.unitId)
-    if (unit?.icon) srcs.push(`data/${unit.icon}`)
+    if (unit) { const icon = uInfo(unit.id).icon; if (icon) srcs.push(`data/${icon}`) }
   }
   for (const src of srcs) if (src) fetch(src).catch(() => {})
 }
@@ -1492,17 +1498,12 @@ function startTraining() {
   nextQuestion()
 }
 
-/** Look up the icon src for any unit ID, checking builders then build menus. */
+/** Look up the icon src for any unit ID. */
 function unitIconSrc(unitId) {
   if (!unitId) return ''
   if (DATA.builders[unitId]?.icon) return `data/${DATA.builders[unitId].icon}`
-  for (const bld of Object.values(DATA.builders)) {
-    for (const cat of Object.values(bld.categories)) {
-      const found = cat.units.find(u => u.id === unitId)
-      if (found?.icon) return `data/${found.icon}`
-    }
-  }
-  return `data/icons/${unitId}.webp`  // best-guess fallback
+  if (DATA.units[unitId]?.icon)    return `data/${DATA.units[unitId].icon}`
+  return `data/icons/${unitId}.webp`
 }
 
 function resolveShortcutContextUnit(context) {
@@ -2083,7 +2084,7 @@ function recordResult(outcome) {
   currentRunEntries.push({
     unitId:      currentEntry.unitId,
     builderId:   currentEntry.builderId,
-    unitName:    currentEntry.unit.name,
+    unitName:    uInfo(currentEntry.unitId).name,
     builderName: currentEntry.builder.name,
     ms,
     outcome,
@@ -2348,23 +2349,26 @@ function flashSlot(key, cls) {
 function showSlotHover(unit, elId) {
   const el = $(elId)
   if (!el) return
-  if (unit.description) {
+  const info = uInfo(unit.id)
+  if (info.description) {
     el.innerHTML =
-      `${unit.name}<br><span class="slot-hover-desc">${unit.description}</span>`
+      `${info.name}<br><span class="slot-hover-desc">${info.description}</span>`
   } else {
-    el.textContent = unit.name
+    el.textContent = info.name
   }
 }
 
 function showBrowseSlotHover(unit, equivUnit, isQwertz) {
   const el = $('browse-slot-hover-info')
   if (!el) return
-  const equivKey = display(equivUnit.key, isQwertz)
-  const desc = unit.description
-    ? `<br><span class="slot-hover-desc">${unit.description}</span>` : ''
+  const info      = uInfo(unit.id)
+  const equivInfo = uInfo(equivUnit.id)
+  const equivKey  = display(equivUnit.key, isQwertz)
+  const desc = info.description
+    ? `<br><span class="slot-hover-desc">${info.description}</span>` : ''
   el.innerHTML =
-    `${unit.name}${desc}` +
-    `<br><span class="slot-hover-equiv">≈ <kbd>${equivKey}</kbd> ${equivUnit.name}</span>`
+    `${info.name}${desc}` +
+    `<br><span class="slot-hover-equiv">≈ <kbd>${equivKey}</kbd> ${equivInfo.name}</span>`
 }
 
 function clearSlotHover(elId) {
@@ -2720,7 +2724,7 @@ function renderBrowseList(filter) {
 
 function selectBrowseBuilder(id) {
   browseBuilder = DATA.builders[id]
-  browseCatId   = null
+  browseCatId   = isFactory(browseBuilder) ? 'build' : null
   browsePage    = 0
 
   for (const el of $('browse-list').querySelectorAll('.browse-item'))
@@ -2793,18 +2797,19 @@ function renderBrowseMenu() {
     slot.dataset.key = key
 
     if (unit) {
+      const info = uInfo(unit.id)
       const img = document.createElement('img')
-      img.src = `data/${unit.icon}`
-      img.alt = unit.name
+      img.src = `data/${info.icon}`
+      img.alt = info.name
       img.addEventListener('error', () => img.remove())
 
       const eBadge = document.createElement('span')
       eBadge.className = 'slot-energy'
-      eBadge.textContent = fmtCost(unit.energyCost)
+      eBadge.textContent = fmtCost(info.energyCost)
 
       const mBadge = document.createElement('span')
       mBadge.className = 'slot-metal'
-      mBadge.textContent = fmtCost(unit.metalCost)
+      mBadge.textContent = fmtCost(info.metalCost)
 
       const keyLabel = document.createElement('span')
       keyLabel.className = 'slot-key'
@@ -2848,16 +2853,20 @@ function renderBrowseMenu() {
       equivTable.classList.remove('hidden')
       equivTable.innerHTML =
         `<div class="equiv-title">Land / Water Equivalents</div>` +
-        pairs.map(([a, b]) => `
+        pairs.map(([a, b]) => {
+          const aInfo = uInfo(a.id)
+          const bInfo = uInfo(b.id)
+          return `
         <div class="equiv-row">
-          <img src="data/${a.icon}" alt="" class="equiv-icon">
-          <span class="equiv-name">${a.name}</span>
+          <img src="data/${aInfo.icon}" alt="" class="equiv-icon">
+          <span class="equiv-name">${aInfo.name}</span>
           <kbd class="equiv-key">${display(a.key, isQwertz)}</kbd>
           <span class="equiv-sep">≈</span>
-          <img src="data/${b.icon}" alt="" class="equiv-icon">
-          <span class="equiv-name">${b.name}</span>
+          <img src="data/${bInfo.icon}" alt="" class="equiv-icon">
+          <span class="equiv-name">${bInfo.name}</span>
           <kbd class="equiv-key">${display(b.key, isQwertz)}</kbd>
-        </div>`).join('') +
+        </div>`
+        }).join('') +
         `<div class="equiv-desc">BAR automatically swaps to the matching unit when your build cursor moves between land and water — one key covers both.</div>`
     } else {
       equivTable.classList.add('hidden')
