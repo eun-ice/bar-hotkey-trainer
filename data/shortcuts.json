@@ -319,7 +319,7 @@
         },
         {
           "id": "upgrade-area-mex",
-          "label": "Upgrade Area MEX",
+          "label": "Area Upgrade Own MEX",
           "keys": ["Z", "Z"],
           "note": "QWERTY: ZZ, QWERTZ: YY — same keys as Area MEX; Alt+drag to select circle",
           "description": "Upgrade T1 metal extractors to T2 in a circle — own mexes only, not allied",
