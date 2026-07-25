@@ -857,8 +857,9 @@ function renderShortcutQuestion(entry) {
     bi.style.display   = 'none'
   }
   $('builder-name').textContent = entry.contextUnitName ?? '—'
+  const ctxLabel = { factory: 'Factory', builder: 'Constructor', 'builder-t2': 'T2 Constructor' }
   $('builder-meta').textContent = entry.contextFaction
-    ? capitalize(entry.contextFaction) + ' · ' + entry.context
+    ? capitalize(entry.contextFaction) + (ctxLabel[entry.context] ? ' · ' + ctxLabel[entry.context] : '')
     : ''
 
   // Hide build-mod badge for shortcut questions
@@ -1438,17 +1439,21 @@ function resolveShortcutContextUnit(context) {
   const factions = settings.factions?.length ? settings.factions : ['armada', 'cortex', 'legion']
   const faction  = factions[Math.floor(Math.random() * factions.length)]
   if (context === 'factory') {
+    const allFactories = Object.values(DATA.builders).filter(isFactory)
     const factories = filteredBuilders(settings).filter(isFactory)
-    if (!factories.length) return { contextUnitId: null, contextUnitName: null, contextFaction: faction, contextIcon: '' }
-    const picked = factories[Math.floor(Math.random() * factories.length)]
-    return { contextUnitId: picked.id, contextUnitName: picked.name, contextFaction: faction, contextIcon: `data/${picked.icon}` }
+    const pool = factories.length ? factories : allFactories
+    if (!pool.length) return { contextUnitId: null, contextUnitName: null, contextFaction: faction, contextIcon: '' }
+    const picked = pool[Math.floor(Math.random() * pool.length)]
+    return { contextUnitId: picked.id, contextUnitName: picked.name, contextFaction: picked.faction ?? faction, contextIcon: `data/${picked.icon}` }
   }
   if (context === 'builder' || context === 'builder-t2') {
     const tier2Only = context === 'builder-t2'
-    const builders = filteredBuilders(settings).filter(b => !isFactory(b) && (!tier2Only || b.tier === 2))
-    if (!builders.length) return { contextUnitId: null, contextUnitName: null, contextFaction: faction, contextIcon: '' }
-    const picked = builders[Math.floor(Math.random() * builders.length)]
-    return { contextUnitId: picked.id, contextUnitName: picked.name, contextFaction: faction, contextIcon: `data/${picked.icon}` }
+    const isMatch = b => !isFactory(b) && (!tier2Only || b.tier === 2)
+    const builders = filteredBuilders(settings).filter(isMatch)
+    const pool = builders.length ? builders : Object.values(DATA.builders).filter(isMatch)
+    if (!pool.length) return { contextUnitId: null, contextUnitName: null, contextFaction: faction, contextIcon: '' }
+    const picked = pool[Math.floor(Math.random() * pool.length)]
+    return { contextUnitId: picked.id, contextUnitName: picked.name, contextFaction: picked.faction ?? faction, contextIcon: `data/${picked.icon}` }
   }
   // battle / rezbot / transport
   const ctxMap = SHORTCUT_CONTEXT_UNITS[context]
