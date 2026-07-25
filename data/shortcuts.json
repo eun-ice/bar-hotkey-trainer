@@ -35,7 +35,7 @@
           "label": "Select Idle Builders",
           "key": "Tab",
           "modifiers": ["Ctrl"],
-          "browserReservedWindows": true,
+          "browserReserved": true,
           "description": "Select the next idle construction unit"
         },
         {
@@ -117,8 +117,8 @@
           "id": "fight",
           "label": "Fight",
           "key": "F",
-          "description": "Attack-move command — units stop to engage enemies within range",
-          "mouseAction": "click"
+          "description": "Attack-move command — units stop to engage enemies within range; drag to set a line formation",
+          "mouseAction": "click-or-drag"
         },
         {
           "id": "patrol",
@@ -316,6 +316,14 @@
           "note": "QWERTY: ZZ (bottom-left twice), QWERTZ: YY (same physical position)",
           "description": "Place metal extractors on all available spots in a dragged area",
           "mouseAction": "drag"
+        },
+        {
+          "id": "upgrade-area-mex",
+          "label": "Upgrade Area MEX",
+          "keys": ["Z", "Z"],
+          "note": "QWERTY: ZZ, QWERTZ: YY — same keys as Area MEX; Alt+drag to select circle",
+          "description": "Upgrade T1 metal extractors to T2 in a circle — own mexes only, not allied",
+          "mouseAction": "alt-drag"
         }
       ]
     },

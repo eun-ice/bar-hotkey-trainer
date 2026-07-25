@@ -219,7 +219,7 @@ function defaultSettings() {
     hintTimeout:  0,
     timeLimit:    5,   // seconds per required key press
     runLength:    20,  // questions per run (0 = unlimited)
-    shortcuts:    ['general', 'groups', 'battle', 'factory', 'builder', 'blueprint', 'rezbot', 'air', 'transport', 'camera'],
+    shortcuts:    ['general', 'groups', 'battle', 'factory', 'builder', 'blueprint', 'rezbot', 'transport', 'camera'],
     soundEnabled:    true,
     mouseEnabled:    true,
     swapCmdAlt:      IS_MAC,
@@ -1461,20 +1461,25 @@ function resolveShortcutContextUnit(context) {
   }
 }
 
-// Q, W, S, F, C, V trigger browser shortcuts (close tab, save, find, copy, paste) with
-// Ctrl on non-Mac — never assign Ctrl-based factory modifiers to those grid keys there.
-const BROWSER_CTRL_KEYS = new Set(['Q', 'W', 'S', 'F', 'X', 'C', 'V', 'D'])
+// Ctrl+key triggers browser shortcuts (select all, close tab, save, find, copy…) on non-Mac.
+// A is also included: on Mac+swapCmdAlt, Alt+A = Cmd+A = Select All.
+const BROWSER_CTRL_KEYS = new Set(['Q', 'W', 'S', 'F', 'X', 'C', 'V', 'D', 'A'])
+// Ctrl+Shift+key opens Chrome Tab Search on all platforms.
+const BROWSER_CTRLSHIFT_KEYS = new Set(['A'])
 
 function pickFactoryBuildMod(gridKey) {
   if (!settings.buildModifiers) return 'none'
-  const allMods = ['none', 'shift', 'ctrl', 'ctrl-shift', 'alt']
+  let mods = ['none', 'shift', 'ctrl', 'ctrl-shift', 'alt']
   const key = (gridKey ?? '').toUpperCase()
-  if (!BROWSER_CTRL_KEYS.has(key)) return allMods[Math.floor(Math.random() * allMods.length)]
-  let mods = allMods
-  // Ctrl+key triggers browser shortcuts (save, find, copy…) on Windows/Linux
-  if (!IS_MAC) mods = mods.filter(m => m !== 'ctrl' && m !== 'ctrl-shift')
-  // With swapCmdAlt, the 'alt' modifier sends Cmd — Cmd+key closes tabs/quits on Mac
-  if (IS_MAC && settings.swapCmdAlt) mods = mods.filter(m => m !== 'alt')
+  const isCtrl      = BROWSER_CTRL_KEYS.has(key)
+  const isCtrlShift = BROWSER_CTRLSHIFT_KEYS.has(key)
+  if (!isCtrl && !isCtrlShift) return mods[Math.floor(Math.random() * mods.length)]
+  // Ctrl+key triggers browser shortcuts on non-Mac
+  if (!IS_MAC && isCtrl) mods = mods.filter(m => m !== 'ctrl' && m !== 'ctrl-shift')
+  // Ctrl+Shift+key (Tab Search) is browser-reserved on all platforms
+  if (isCtrlShift) mods = mods.filter(m => m !== 'ctrl-shift')
+  // With swapCmdAlt, Alt+key sends Cmd+key — reserved on Mac
+  if (IS_MAC && settings.swapCmdAlt && isCtrl) mods = mods.filter(m => m !== 'alt')
   return mods[Math.floor(Math.random() * mods.length)]
 }
 
@@ -1816,6 +1821,8 @@ function handleCategoryKey(key) {
     } else if (isBottomRowItem(currentEntry)) {
       // The category key also activates the bottom-row slot — one press does it all
       flashSlot(currentEntry.gridKey, 'flash-correct')
+      const autoSlot = $('menu-grid').querySelector(`[data-key="${currentEntry.gridKey}"]`)
+      if (autoSlot && !autoSlot.classList.contains('empty')) autoSlot.classList.add('is-selected')
       playBuildSound('builder')
       if (settings.mouseEnabled) {
         trainingState = State.WAITING_MOUSE
@@ -2036,6 +2043,7 @@ const MOUSE_ACTION_LABELS = {
   'space-click':        'Space + Click (instant)',
   'click-unit':         'Click the unit',
   'drag':               'Drag to set area',
+  'alt-drag':           'Hold Alt · Drag area',
   'click-or-drag':      'Click or drag',
   'click-unit-or-drag': 'Click unit or drag',
 }
@@ -2081,7 +2089,10 @@ function activateMouseZone(action) {
   const labelText = MOUSE_ACTION_LABELS[action] || ''
   if (labelEl) labelEl.textContent = labelText
 
-  setInstruction(labelText || 'Click to place', 'state-correct')
+  const instrHtml = action === 'alt-drag'
+    ? `Hold <kbd>Alt</kbd>${macSwapNote(['alt'])} · Drag area`
+    : (labelText || 'Click to place')
+  setInstruction(instrHtml, 'state-correct')
 
   // Give a fresh timer window for the mouse phase so leftover keyboard time doesn't cut it short
   if (settings.timeLimit) {
@@ -2137,7 +2148,7 @@ function initMouseZone() {
   zone.addEventListener('mousemove', e => {
     if (!dragOrigin || trainingState !== State.WAITING_MOUSE) return
     const action = currentMouseAction
-    if (action !== 'drag' && action !== 'click-or-drag' && action !== 'click-unit-or-drag') return
+    if (action !== 'drag' && action !== 'alt-drag' && action !== 'click-or-drag' && action !== 'click-unit-or-drag') return
 
     const rect = zone.getBoundingClientRect()
     const mx   = e.clientX - rect.left
@@ -2172,6 +2183,14 @@ function initMouseZone() {
 
     if (action === 'drag') {
       if (isDrag) handleMouseComplete(false)
+    } else if (action === 'alt-drag') {
+      if (!isDrag) return
+      if (!effectiveAlt(e)) {
+        questionHadWrong = true
+        setInstruction(`Hold <kbd>Alt</kbd>${macSwapNote(['alt'])} while dragging!`, 'state-wrong')
+        return
+      }
+      handleMouseComplete(false)
     } else if (action === 'shift-click') {
       if (!isClick) return
       if (!e.shiftKey) {
