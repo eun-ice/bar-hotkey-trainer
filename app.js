@@ -206,6 +206,54 @@ function playApplauseSound() {
   noise.start(now); noise.stop(now + duration)
 }
 
+// Flawless-run fanfare — synthesised triumphant chord + crowd roar
+function playFanfareSound() {
+  if (!audioCtx || !settings.soundEnabled) return
+  if (audioCtx.state === 'suspended') audioCtx.resume()
+  const ctx = audioCtx
+  const now = ctx.currentTime
+
+  const buf = loadedSounds.applause
+  if (buf) {
+    const src = ctx.createBufferSource()
+    src.buffer = buf
+    const ag = ctx.createGain()
+    ag.gain.setValueAtTime(0, now)
+    ag.gain.linearRampToValueAtTime(0.45, now + 0.2)
+    ag.gain.setValueAtTime(0.45, now + 4)
+    ag.gain.linearRampToValueAtTime(0, now + 5.5)
+    src.connect(ag); ag.connect(ctx.destination)
+    src.start(now); src.stop(now + 5.5)
+  }
+
+  // Triumphant fanfare: G4 → C5 → E5 → G5+C6 chord hold
+  const fanfare = [
+    { freq: 392.0, t: 0.05, dur: 0.18 },   // G4
+    { freq: 523.3, t: 0.20, dur: 0.18 },   // C5
+    { freq: 659.3, t: 0.35, dur: 0.18 },   // E5
+    { freq: 784.0, t: 0.50, dur: 1.60 },   // G5 (hold)
+    { freq: 1046.5,t: 0.50, dur: 1.60 },   // C6 (harmony)
+    { freq: 587.3, t: 0.50, dur: 1.60 },   // D5 (extra body)
+  ]
+  for (const n of fanfare) {
+    // Two detuned oscillators per note for warmth
+    for (const detune of [-5, 5]) {
+      const osc = ctx.createOscillator()
+      osc.type = 'triangle'
+      osc.frequency.value = n.freq
+      osc.detune.value = detune
+      const og = ctx.createGain()
+      const t = now + n.t
+      og.gain.setValueAtTime(0, t)
+      og.gain.linearRampToValueAtTime(0.18, t + 0.03)
+      og.gain.setValueAtTime(0.18, t + n.dur - 0.08)
+      og.gain.linearRampToValueAtTime(0, t + n.dur)
+      osc.connect(og); og.connect(ctx.destination)
+      osc.start(t); osc.stop(t + n.dur + 0.01)
+    }
+  }
+}
+
 // ─── Settings (localStorage) ──────────────────────────────────────────────────
 
 const SETTINGS_KEY = 'bar-trainer-settings'
@@ -1112,7 +1160,14 @@ function endRun() {
   trainingState = State.FEEDBACK
   clearAnswerTimer()
   clearShowAnswerCountdown()
-  playApplauseSound()
+
+  const flawless = session.wrong === 0 && session.late === 0 && session.totalAnswered > 0
+  if (flawless) {
+    playFanfareSound()
+  } else {
+    playApplauseSound()
+  }
+
   // Don't archive yet — startTraining() will do it; currentRunEntries is still
   // needed by renderStatsTable() for the summary (correct[], min/max/avg).
   $('btn-skip').textContent = '↩ Skip'
@@ -1125,8 +1180,21 @@ function endRun() {
   document.querySelector('.menu-col').classList.add('hidden')
   $('run-complete-col').classList.remove('hidden')
 
+  const content = document.querySelector('.run-complete-content')
+  const trophy  = document.querySelector('.run-complete-trophy')
+  const title   = document.querySelector('.run-complete-title')
+  if (flawless) {
+    content?.classList.add('flawless')
+    if (trophy) trophy.textContent = '🌟'
+    if (title)  title.textContent  = 'Flawless!'
+  } else {
+    content?.classList.remove('flawless')
+    if (trophy) trophy.textContent = '🏆'
+    if (title)  title.textContent  = 'Run Complete!'
+  }
+
   renderStatsTable()
-  startConfetti()
+  startConfetti(flawless)
 }
 
 /** Return the ordered key labels the user needs to press for the current question. */
@@ -1225,7 +1293,7 @@ function togglePause() {
 
 let confettiRaf = null
 
-function startConfetti() {
+function startConfetti(flawless = false) {
   const canvas = $('confetti-canvas')
   if (!canvas) return
   const ctx  = canvas.getContext('2d')
@@ -1234,8 +1302,11 @@ function startConfetti() {
   canvas.width  = rect.width
   canvas.height = rect.height
 
-  const COLORS = ['#4ade80','#60a5fa','#f59e0b','#e879f9','#f87171','#34d399','#fbbf24']
-  const particles = Array.from({ length: 140 }, () => ({
+  const COLORS = flawless
+    ? ['#fbbf24','#fcd34d','#fde68a','#f59e0b','#fff','#e879f9','#60a5fa','#4ade80']
+    : ['#4ade80','#60a5fa','#f59e0b','#e879f9','#f87171','#34d399','#fbbf24']
+  const count = flawless ? 260 : 140
+  const particles = Array.from({ length: count }, () => ({
     x:        Math.random() * rect.width,
     y:        -20 - Math.random() * rect.height * 0.4,
     vx:       (Math.random() - 0.5) * 3,

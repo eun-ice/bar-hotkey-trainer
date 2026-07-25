@@ -1390,12 +1390,37 @@ kbd {
   to   { transform: scale(1) rotate(0);     opacity: 1 }
 }
 
+.flawless .run-complete-trophy {
+  font-size: 88px;
+  animation: trophy-pop .5s cubic-bezier(.34,1.56,.64,1) both,
+             trophy-pulse 1.6s .5s ease-in-out infinite alternate;
+  filter: drop-shadow(0 0 18px rgba(251,191,36,.9)) drop-shadow(0 0 40px rgba(251,191,36,.5));
+}
+@keyframes trophy-pulse {
+  from { filter: drop-shadow(0 0 14px rgba(251,191,36,.8)) drop-shadow(0 0 30px rgba(251,191,36,.4)); transform: scale(1) }
+  to   { filter: drop-shadow(0 0 28px rgba(253,211,77,1))  drop-shadow(0 0 60px rgba(251,191,36,.7)); transform: scale(1.06) }
+}
+
 .run-complete-title {
   font-size: 32px;
   font-weight: 700;
   color: var(--text-bright);
   letter-spacing: .02em;
   animation: fade-up .4s .15s ease both;
+}
+
+.flawless .run-complete-title {
+  font-size: 38px;
+  background: linear-gradient(90deg, #f59e0b, #fcd34d, #fff, #fcd34d, #f59e0b);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: fade-up .4s .15s ease both, gold-shimmer 2s .6s linear infinite;
+}
+@keyframes gold-shimmer {
+  from { background-position: 0% center }
+  to   { background-position: 200% center }
 }
 
 .run-complete-hint {
