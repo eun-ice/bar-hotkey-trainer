@@ -1443,8 +1443,9 @@ function resolveShortcutContextUnit(context) {
     const picked = factories[Math.floor(Math.random() * factories.length)]
     return { contextUnitId: picked.id, contextUnitName: picked.name, contextFaction: faction, contextIcon: `data/${picked.icon}` }
   }
-  if (context === 'builder') {
-    const builders = filteredBuilders(settings).filter(b => !isFactory(b))
+  if (context === 'builder' || context === 'builder-t2') {
+    const tier2Only = context === 'builder-t2'
+    const builders = filteredBuilders(settings).filter(b => !isFactory(b) && (!tier2Only || b.tier === 2))
     if (!builders.length) return { contextUnitId: null, contextUnitName: null, contextFaction: faction, contextIcon: '' }
     const picked = builders[Math.floor(Math.random() * builders.length)]
     return { contextUnitId: picked.id, contextUnitName: picked.name, contextFaction: faction, contextIcon: `data/${picked.icon}` }
