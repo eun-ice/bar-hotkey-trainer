@@ -88,7 +88,6 @@
           "level": 1,
           "key": "Tab",
           "modifiers": ["Ctrl"],
-          "browserReserved": true,
           "description": "Select the next idle construction unit"
         },
         {
@@ -97,7 +96,6 @@
           "level": 1,
           "key": "W",
           "modifiers": ["Ctrl"],
-          "browserReservedWindows": true,
           "description": "Select every unit of the same type as the currently selected unit"
         },
         {
@@ -113,7 +111,6 @@
           "level": 1,
           "key": "Q",
           "modifiers": ["Ctrl"],
-          "browserReservedFirefox": true,
           "description": "Split the selected group into two halves"
         },
         {
@@ -152,7 +149,6 @@
           "level": 1,
           "key": "A",
           "modifiers": ["Ctrl"],
-          "browserReservedWindows": true,
           "description": "Hold Ctrl and drag to issue attack orders across a circular area",
           "mouseAction": "drag"
         },
@@ -170,7 +166,6 @@
           "level": 1,
           "key": "S",
           "modifiers": ["Ctrl"],
-          "browserReservedWindows": true,
           "description": "Clear the preferred fire target"
         },
         {
@@ -507,7 +502,6 @@
           "level": 0,
           "key": "1",
           "modifiers": ["Ctrl"],
-          "browserReservedWindows": true,
           "description": "Assign all selected units to group 1"
         },
         {
@@ -516,7 +510,6 @@
           "level": 0,
           "key": "2",
           "modifiers": ["Ctrl"],
-          "browserReservedWindows": true,
           "description": "Assign all selected units to group 2"
         },
         {
@@ -525,7 +518,6 @@
           "level": 0,
           "key": "3",
           "modifiers": ["Ctrl"],
-          "browserReservedWindows": true,
           "description": "Assign all selected units to group 3"
         }
       ]
@@ -555,8 +547,6 @@
           "level": 1,
           "key": "F1",
           "modifiers": ["Ctrl"],
-          "browserReservedFirefox": true,
-          "browserReservedMac": true,
           "description": "Save the current camera position to slot 1"
         },
         {
@@ -565,8 +555,6 @@
           "level": 1,
           "key": "F2",
           "modifiers": ["Ctrl"],
-          "browserReservedFirefox": true,
-          "browserReservedMac": true,
           "description": "Save the current camera position to slot 2"
         }
       ]

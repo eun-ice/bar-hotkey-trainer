@@ -448,7 +448,7 @@ function buildShortcutQueue() {
         seqKeys,
         seqMods,
         mouseAction:     shortcut.mouseAction ?? 'none',
-        browserReserved: (shortcut.browserReserved ?? false) || (IS_FIREFOX && (shortcut.browserReservedFirefox ?? false)) || (!IS_MAC && (shortcut.browserReservedWindows ?? false)) || (IS_MAC && (shortcut.browserReservedMac ?? false)),
+        browserReserved: isBrowserReserved(shortcut.key, shortcut.modifiers ?? []),
       })
     }
   }
@@ -1562,11 +1562,41 @@ function resolveShortcutContextUnit(context) {
   }
 }
 
-// Ctrl+key triggers browser shortcuts (select all, close tab, save, find, copy…) on non-Mac.
-// A is also included: on Mac+swapCmdAlt, Alt+A = Cmd+A = Select All.
-const BROWSER_CTRL_KEYS = new Set(['Q', 'W', 'S', 'F', 'X', 'C', 'V', 'D', 'A'])
-// Ctrl+Shift+key opens Chrome Tab Search on all platforms.
-const BROWSER_CTRLSHIFT_KEYS = new Set(['A'])
+const BROWSER_RESERVED_KEYS = {
+  all:      { ctrl:      new Set(['Tab']),
+              ctrlShift: new Set(['Tab']) },
+  winlinux: { ctrl:      new Set(['W','R','T','S','F','X','C','V','D','A','H','L','J','U','P','N','O','1','2','3','4','5','6','7','8']),
+              ctrlShift: new Set(['A','T','N','J','I','W']) },
+  mac:      { ctrl:      new Set(['F1','F2','F3','F4']),
+              ctrlShift: new Set() },
+  firefox:  { ctrl:      new Set(['Q','F1','F2']),
+              ctrlShift: new Set(['K']) },
+}
+
+function isBrowserReserved(key, mods) {
+  if (!mods.some(m => m === 'Ctrl')) return false
+  const type = mods.some(m => m === 'Shift') ? 'ctrlShift' : 'ctrl'
+  if (BROWSER_RESERVED_KEYS.all[type].has(key))                    return true
+  if (!IS_MAC    && BROWSER_RESERVED_KEYS.winlinux[type].has(key)) return true
+  if (IS_MAC     && BROWSER_RESERVED_KEYS.mac[type].has(key))      return true
+  if (IS_FIREFOX && BROWSER_RESERVED_KEYS.firefox[type].has(key))  return true
+  return false
+}
+
+function browserReservedScope(key, mods) {
+  if (!mods.some(m => m === 'Ctrl')) return null
+  const type  = mods.some(m => m === 'Shift') ? 'ctrlShift' : 'ctrl'
+  const inAll = BROWSER_RESERVED_KEYS.all[type].has(key)
+  const inWin = BROWSER_RESERVED_KEYS.winlinux[type].has(key)
+  const inMac = BROWSER_RESERVED_KEYS.mac[type].has(key)
+  const inFF  = BROWSER_RESERVED_KEYS.firefox[type].has(key)
+  if (inAll || (inWin && inMac)) return 'all'
+  if (inMac && inFF)             return 'mac-firefox'
+  if (inWin)                     return 'winlinux'
+  if (inMac)                     return 'mac'
+  if (inFF)                      return 'firefox'
+  return null
+}
 
 function pickFactoryBuildMod(gridKey) {
   if (!settings.buildModifiers) return 'none'
@@ -1575,16 +1605,13 @@ function pickFactoryBuildMod(gridKey) {
     .filter(([, lvl]) => threshold === Infinity || lvl <= threshold)
     .map(([mod]) => mod)
   if (!mods.length) mods = ['none']
-  const key = (gridKey ?? '').toUpperCase()
-  const isCtrl      = BROWSER_CTRL_KEYS.has(key)
-  const isCtrlShift = BROWSER_CTRLSHIFT_KEYS.has(key)
-  if (!isCtrl && !isCtrlShift) return mods[Math.floor(Math.random() * mods.length)]
-  // Ctrl+key triggers browser shortcuts on non-Mac
-  if (!IS_MAC && isCtrl) mods = mods.filter(m => m !== 'ctrl' && m !== 'ctrl-shift')
-  // Ctrl+Shift+key (Tab Search) is browser-reserved on all platforms
-  if (isCtrlShift) mods = mods.filter(m => m !== 'ctrl-shift')
-  // With swapCmdAlt, Alt+key sends Cmd+key — reserved on Mac
-  if (IS_MAC && settings.swapCmdAlt && isCtrl) mods = mods.filter(m => m !== 'alt')
+  const key    = (gridKey ?? '').toUpperCase()
+  const ctrlR  = isBrowserReserved(key, ['Ctrl'])
+  const csR    = isBrowserReserved(key, ['Ctrl', 'Shift'])
+  if (ctrlR) mods = mods.filter(m => m !== 'ctrl' && m !== 'ctrl-shift')
+  if (csR)   mods = mods.filter(m => m !== 'ctrl-shift')
+  if (IS_MAC && settings.swapCmdAlt && ctrlR) mods = mods.filter(m => m !== 'alt')
+  if (!mods.length) mods = ['none']
   return mods[Math.floor(Math.random() * mods.length)]
 }
 
@@ -3064,15 +3091,13 @@ function selectShortcutsGroup(id) {
   content.classList.remove('hidden')
 
   const rows = group.shortcuts.map(sc => {
-    const reserved = (sc.browserReserved ?? false)
-      ? '<span class="sc-reserved">study card — all browsers</span>'
-      : (IS_MAC && (sc.browserReservedMac ?? false))
-        ? '<span class="sc-reserved">study card — Mac only</span>'
-        : (IS_FIREFOX && (sc.browserReservedFirefox ?? false))
-          ? '<span class="sc-reserved">study card — Firefox only</span>'
-          : (!IS_MAC && (sc.browserReservedWindows ?? false))
-            ? '<span class="sc-reserved">study card — Windows only</span>'
-            : ''
+    const scope    = sc.keys ? null : browserReservedScope(sc.key, sc.modifiers ?? [])
+    const reserved = scope === 'all'          ? '<span class="sc-reserved">study card — all browsers</span>'
+      : scope === 'winlinux'    ? '<span class="sc-reserved">study card — Windows/Linux</span>'
+      : scope === 'mac'         ? '<span class="sc-reserved">study card — Mac only</span>'
+      : scope === 'mac-firefox' ? '<span class="sc-reserved">study card — Mac &amp; Firefox</span>'
+      : scope === 'firefox'     ? '<span class="sc-reserved">study card — Firefox only</span>'
+      : ''
     const desc = sc.description
       ? `<div class="sc-desc">${sc.description}</div>` : ''
     const lvlBadge = sc.level === 0
