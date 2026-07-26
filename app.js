@@ -268,6 +268,7 @@ function defaultSettings() {
     timeLimit:    5,   // seconds per required key press
     runLength:    20,  // questions per run (0 = unlimited)
     shortcuts:    ['general', 'groups', 'battle', 'factory', 'builder', 'blueprint', 'rezbot', 'transport', 'camera'],
+    difficulty:      'commander',
     soundEnabled:    true,
     mouseEnabled:    true,
     swapCmdAlt:      IS_MAC,
@@ -324,9 +325,13 @@ function srPriority(card) {
 
 // ─── Data + queue ─────────────────────────────────────────────────────────────
 
-let DATA             = null   // parsed buildmenus.json
-let SHORTCUTS        = []     // groups from shortcuts.json
+let DATA              = null  // parsed buildmenus.json
+let SHORTCUTS         = []    // groups from shortcuts.json
 let WATER_EQUIVALENTS = {}    // bidirectional land↔water unit ID map
+let UNIT_LEVELS       = {}    // { unitId → level } inverted from shortcuts.json unitLevels
+let FACTORY_LEVELS    = {}    // { builderId → level } inverted from shortcuts.json factoryLevels
+let CONSTRUCTOR_MODS  = { 'click': 0, 'shift-click': 1, 'space-click': 1 }
+let FACTORY_MODS      = { 'none': 0, 'shift': 1, 'ctrl': 1, 'alt': 1, 'ctrl-shift': 2 }
 
 const SHORTCUT_CONTEXT_UNITS = {
   battle:    { armada: 'armcom',   cortex: 'corcom',   legion: 'legcom'    },
@@ -335,6 +340,10 @@ const SHORTCUT_CONTEXT_UNITS = {
 }
 
 function uInfo(id) { return DATA.units[id] ?? {} }
+
+function difficultyThreshold() {
+  return settings.difficulty === 'noob' ? 0 : settings.difficulty === 'mid' ? 1 : Infinity
+}
 
 async function loadData() {
   const res = await fetch('data/buildmenus.json', { cache: 'reload' })
@@ -347,7 +356,12 @@ async function loadData() {
 /** Return builders matching current settings */
 function filteredBuilders(settings) {
   const types = settings.builderTypes ?? ['factory', 'constructor']
+  const threshold = difficultyThreshold()
   return Object.values(DATA.builders).filter(b => {
+    if (threshold < Infinity) {
+      const fLvl = FACTORY_LEVELS[b.id]
+      if (fLvl === undefined || fLvl > threshold) return false
+    }
     // A builder is included if at least one of its reachable factions is selected.
     // (Legion shares all Cortex factories, so cor* builders have factions ['cortex','legion'])
     const factions = b.factions ?? [b.faction]
@@ -370,8 +384,13 @@ function buildQueue(builders, sr) {
   const items = []
   for (const builder of builders) {
     for (const [catId, cat] of Object.entries(builder.categories)) {
+      const threshold = difficultyThreshold()
       for (const unit of cat.units) {
         if (unit.trainingExcluded) continue
+        if (threshold < Infinity) {
+          const lvl = UNIT_LEVELS[unit.id]
+          if (lvl === undefined || lvl > threshold) continue
+        }
         items.push({
           builderId:  builder.id,
           unitId:     unit.id,
@@ -404,7 +423,11 @@ function buildShortcutQueue() {
   const items = []
   for (const group of SHORTCUTS) {
     if (!settings.shortcuts?.includes(group.id)) continue
+    const threshold = difficultyThreshold()
     for (const shortcut of group.shortcuts) {
+      if (threshold < Infinity) {
+        if (shortcut.level === undefined || shortcut.level > threshold) continue
+      }
       // Normalise keys and per-key modifier arrays
       const seqKeys = shortcut.keys ?? (shortcut.key ? [shortcut.key] : null)
       if (!seqKeys) continue
@@ -1547,7 +1570,11 @@ const BROWSER_CTRLSHIFT_KEYS = new Set(['A'])
 
 function pickFactoryBuildMod(gridKey) {
   if (!settings.buildModifiers) return 'none'
-  let mods = ['none', 'shift', 'ctrl', 'ctrl-shift', 'alt']
+  const threshold = difficultyThreshold()
+  let mods = Object.entries(FACTORY_MODS)
+    .filter(([, lvl]) => threshold === Infinity || lvl <= threshold)
+    .map(([mod]) => mod)
+  if (!mods.length) mods = ['none']
   const key = (gridKey ?? '').toUpperCase()
   const isCtrl      = BROWSER_CTRL_KEYS.has(key)
   const isCtrlShift = BROWSER_CTRLSHIFT_KEYS.has(key)
@@ -1615,9 +1642,14 @@ function nextQuestion() {
     // Constructors: no category pre-selected — grid shows units but no key labels
     trainingState = State.WAITING_CATEGORY
     activeCatId   = null
-    const buildMod = (settings.mouseEnabled && settings.buildModifiers)
-      ? ['click', 'shift-click', 'space-click'][Math.floor(Math.random() * 3)]
-      : 'click'
+    let buildMod = 'click'
+    if (settings.mouseEnabled && settings.buildModifiers) {
+      const threshold = difficultyThreshold()
+      const availMods = Object.entries(CONSTRUCTOR_MODS)
+        .filter(([, lvl]) => threshold === Infinity || lvl <= threshold)
+        .map(([mod]) => mod)
+      buildMod = availMods[Math.floor(Math.random() * availMods.length)] ?? 'click'
+    }
     currentEntry.buildModifier = buildMod
     if (settings.mouseEnabled) showMouseZonePending(buildMod)
   }
@@ -1843,7 +1875,7 @@ function onKey(event) {
   // Browse screen: Escape/Shift = back to setup; category switching + pagination
   if (screens.browse.classList.contains('active')) {
     if (event.key === 'Escape' || event.key === 'Shift') {
-      if (browseCatId !== null) {
+      if (browseCatId !== null && !isFactory(browseBuilder)) {
         event.preventDefault()
         browseCatId = null
         browsePage  = 0
@@ -2350,12 +2382,8 @@ function showSlotHover(unit, elId) {
   const el = $(elId)
   if (!el) return
   const info = uInfo(unit.id)
-  if (info.description) {
-    el.innerHTML =
-      `${info.name}<br><span class="slot-hover-desc">${info.description}</span>`
-  } else {
-    el.textContent = info.name
-  }
+  const desc = info.description ? `<br><span class="slot-hover-desc">${info.description}</span>` : ''
+  el.innerHTML = `${info.name}${desc}<br><span class="slot-hover-id">${unit.id}</span>`
 }
 
 function showBrowseSlotHover(unit, equivUnit, isQwertz) {
@@ -2401,6 +2429,11 @@ function initSetupScreen() {
   if (!IS_MAC) $('swap-cmd-alt-row').style.display = 'none'
   $('swap-cmd-alt').checked = settings.swapCmdAlt
 
+  // Restore difficulty radio
+  const diff = settings.difficulty ?? 'commander'
+  const diffRadio = document.querySelector(`input[name=difficulty][value="${diff}"]`)
+  if (diffRadio) diffRadio.checked = true
+
   // Restore shortcuts checkboxes
   for (const cb of document.querySelectorAll('input[name=shortcuts]'))
     cb.checked = (settings.shortcuts ?? []).includes(cb.value)
@@ -2428,6 +2461,13 @@ function initSetupScreen() {
     settings.runLength = v
     saveSettings(settings)
   })
+
+  for (const radio of document.querySelectorAll('input[name=difficulty]'))
+    radio.addEventListener('change', e => {
+      settings.difficulty = e.target.value
+      saveSettings(settings)
+      updateBuilderCount()
+    })
 
   $('sound-enabled').addEventListener('change', e => {
     settings.soundEnabled = e.target.checked
@@ -2566,12 +2606,27 @@ function updateRunLengthLabel(val) {
 
 function updateBuilderCount() {
   if (!DATA) return
-  const count   = filteredBuilders(settings).length
-  const scCount = SHORTCUTS.reduce((total, grp) =>
-    (settings.shortcuts?.includes(grp.id) ? total + grp.shortcuts.length : total), 0)
+  const threshold = difficultyThreshold()
+  const builders  = filteredBuilders(settings)
+  const unitCount = builders.reduce((total, b) =>
+    total + Object.values(b.categories).reduce((n, cat) =>
+      n + cat.units.filter(u => {
+        if (u.trainingExcluded) return false
+        if (threshold < Infinity) {
+          const lvl = UNIT_LEVELS[u.id]
+          if (lvl === undefined || lvl > threshold) return false
+        }
+        return true
+      }).length, 0), 0)
+  const scCount = SHORTCUTS.reduce((total, grp) => {
+    if (!settings.shortcuts?.includes(grp.id)) return total
+    return total + grp.shortcuts.filter(sc =>
+      threshold === Infinity || (sc.level !== undefined && sc.level <= threshold)
+    ).length
+  }, 0)
   $('builder-count').textContent =
-    `${count} builder${count !== 1 ? 's' : ''} · ${scCount} shortcut${scCount !== 1 ? 's' : ''} selected`
-  $('btn-start').disabled = (count === 0 && scCount === 0)
+    `${unitCount} unit${unitCount !== 1 ? 's' : ''} · ${scCount} shortcut${scCount !== 1 ? 's' : ''}`
+  $('btn-start').disabled = (unitCount === 0 && scCount === 0)
 }
 
 const ADV_OPEN_KEY = 'bar-trainer-adv-open'
@@ -2636,13 +2691,26 @@ function showKbdDetect(callback) {
 
 // ─── Browse screen ─────────────────────────────────────────────────────────────
 
-let browseBuilder = null
-let browseCatId   = null
-let browsePage    = 0
+let browseBuilder    = null
+let browseCatId      = null
+let browsePage       = 0
+let browseDifficulty = 'commander'
 
 function initBrowseScreen() {
   $('btn-browse-back').addEventListener('click', () => showScreen('setup'))
   $('browse-search').addEventListener('input', e => renderBrowseList(e.target.value))
+
+  browseDifficulty = settings.difficulty ?? 'commander'
+  const diffRadio = document.querySelector(`input[name="browse-diff"][value="${browseDifficulty}"]`)
+  if (diffRadio) diffRadio.checked = true
+  for (const r of document.querySelectorAll('input[name="browse-diff"]')) {
+    r.addEventListener('change', e => {
+      browseDifficulty = e.target.value
+      renderBrowseList($('browse-search').value)
+      renderBrowseMenu()
+    })
+  }
+
   renderBrowseList('')
 }
 
@@ -2715,7 +2783,15 @@ function renderBrowseList(filter) {
       sub.className = 'browse-subsection-heading'
       sub.textContent = label
       section.appendChild(sub)
-      for (const builder of items) section.appendChild(makeBrowseItem(builder))
+      const browseThr = browseDifficulty === 'noob' ? 0 : browseDifficulty === 'mid' ? 1 : Infinity
+      for (const builder of items) {
+        const item = makeBrowseItem(builder)
+        if (browseThr < Infinity) {
+          const fLvl = FACTORY_LEVELS[builder.id]
+          if (fLvl === undefined || fLvl > browseThr) item.classList.add('item-dim')
+        }
+        section.appendChild(item)
+      }
     }
 
     out.appendChild(section)
@@ -2797,6 +2873,11 @@ function renderBrowseMenu() {
     slot.dataset.key = key
 
     if (unit) {
+      const browseThr = browseDifficulty === 'noob' ? 0 : browseDifficulty === 'mid' ? 1 : Infinity
+      if (browseThr < Infinity) {
+        const uLvl = UNIT_LEVELS[unit.id]
+        if (uLvl === undefined || uLvl > browseThr) slot.classList.add('slot-dim')
+      }
       const info = uInfo(unit.id)
       const img = document.createElement('img')
       img.src = `data/${info.icon}`
@@ -2994,10 +3075,16 @@ function selectShortcutsGroup(id) {
             : ''
     const desc = sc.description
       ? `<div class="sc-desc">${sc.description}</div>` : ''
+    const lvlBadge = sc.level === 0
+      ? '<span class="sc-lvl sc-lvl-0">Noob</span>'
+      : sc.level === 1
+        ? '<span class="sc-lvl sc-lvl-1">Mid</span>'
+        : '<span class="sc-lvl sc-lvl-cmd">Commander</span>'
     return `
       <tr>
         <td class="sc-action"><span class="sc-label">${sc.label}</span>${desc}</td>
         <td class="sc-key">${formatShortcutKey(sc, isQwertz)}${reserved}</td>
+        <td class="sc-level">${lvlBadge}</td>
       </tr>`
   }).join('')
 
@@ -3008,6 +3095,7 @@ function selectShortcutsGroup(id) {
         <tr>
           <th>Action</th>
           <th>Key</th>
+          <th>Level</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
@@ -3028,7 +3116,26 @@ async function init() {
 
   try {
     const scResp = await fetch('data/shortcuts.json', { cache: 'no-cache' })
-    SHORTCUTS = (await scResp.json()).groups || []
+    const scData = await scResp.json()
+    SHORTCUTS = scData.groups || []
+    if (scData.constructorModifiers) CONSTRUCTOR_MODS = scData.constructorModifiers
+    if (scData.factoryModifiers)     FACTORY_MODS     = scData.factoryModifiers
+    if (scData.unitLevels) {
+      UNIT_LEVELS = {}
+      for (const [lvl, ids] of Object.entries(scData.unitLevels)) {
+        const n = Number(lvl)
+        for (const id of ids)
+          if (UNIT_LEVELS[id] === undefined || n < UNIT_LEVELS[id]) UNIT_LEVELS[id] = n
+      }
+    }
+    if (scData.factoryLevels) {
+      FACTORY_LEVELS = {}
+      for (const [lvl, ids] of Object.entries(scData.factoryLevels)) {
+        const n = Number(lvl)
+        for (const id of ids)
+          if (FACTORY_LEVELS[id] === undefined || n < FACTORY_LEVELS[id]) FACTORY_LEVELS[id] = n
+      }
+    }
   } catch {}
 
   await loadSounds()

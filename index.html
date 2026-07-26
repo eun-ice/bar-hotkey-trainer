@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
 
@@ -30,6 +30,35 @@
     </header>
 
     <div class="setup-form">
+
+      <section class="setup-section difficulty-section">
+        <div class="difficulty-cards">
+          <label class="difficulty-card">
+            <input type="radio" name="difficulty" value="noob">
+            <span class="difficulty-inner">
+              <span class="difficulty-icon">🌱</span>
+              <span class="difficulty-name">Noob</span>
+              <span class="difficulty-desc">Core units &amp; basics</span>
+            </span>
+          </label>
+          <label class="difficulty-card">
+            <input type="radio" name="difficulty" value="mid">
+            <span class="difficulty-inner">
+              <span class="difficulty-icon">⚔️</span>
+              <span class="difficulty-name">Mid</span>
+              <span class="difficulty-desc">Extended units &amp; tactics</span>
+            </span>
+          </label>
+          <label class="difficulty-card">
+            <input type="radio" name="difficulty" value="commander">
+            <span class="difficulty-inner">
+              <span class="difficulty-icon">⭐</span>
+              <span class="difficulty-name">Commander</span>
+              <span class="difficulty-desc">Everything</span>
+            </span>
+          </label>
+        </div>
+      </section>
 
       <section class="setup-section">
         <div class="setup-section-head">
@@ -365,6 +394,11 @@
     <button class="btn-secondary browse-back-btn" id="btn-browse-back">← Back</button>
     <h2 class="browse-title">Build Menu Reference</h2>
     <input type="search" id="browse-search" class="browse-search" placeholder="Filter builders…">
+    <div class="browse-diff-switch" id="browse-diff-switch">
+      <label class="browse-diff-option"><input type="radio" name="browse-diff" value="noob"><span class="browse-diff-btn">🌱 Noob</span></label>
+      <label class="browse-diff-option"><input type="radio" name="browse-diff" value="mid"><span class="browse-diff-btn">⚔️ Mid</span></label>
+      <label class="browse-diff-option"><input type="radio" name="browse-diff" value="commander" checked><span class="browse-diff-btn">⭐ All</span></label>
+    </div>
   </div>
 
   <div class="browse-layout">

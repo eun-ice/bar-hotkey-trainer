@@ -3,6 +3,57 @@
   "note": "Key values match browser event.key (uppercase letters, special keys by name).",
   "note_zy": "Z and Y are always treated as equivalent — handles QWERTY/QWERTZ confusion.",
   "note_colon": "Position uses ':' — on QWERTY: Shift+; — on QWERTZ: Shift+. — both produce event.key ':' so no special handling needed.",
+  "unitLevels": {
+    "0": ["armaap","legamph","coraap","armalab","coralab","armaca","coraca","legaca","armack","corack","legack","armacsub","coracsub","leganavyconsub","armacv","coracv","legacv","armmmkr","cormmkr","legadveconv","armmoho","cormoho","legmoho","armarad","corarad","legarad","armasy","corasy","legadvshipyard","armadvsol","coradvsol","legadvsol","leganavaladvgeo","leganavalmex","armavp","coravp","legavp","legabm","corstorm","corpun","armap","corap","legafigdef","leghades","armmerl","legcluster","armdl","legadvaabot","armflak","corhrk","armaak","leganavybattlesub","legnavyfrigate","legsrail","corarch","legbal","corban","armsubk","legbar","armbeamer","legbart","corflak","armpeep","armflash","legavroc","armlab","corlab","legrl","corfship","corraid","armbull","cordoom","legmg","armwar","legamphtank","armcir","legvflak","legapopupdef","legamcluster","armca","corca","armck","corck","armcsa","corcsa","legspcon","armcs","corcs","legnavyconship","armnanotc","cornanotc","legnanotc","armcv","corcv","armroy","armjeth","correcl","leggat","corbats","legnavyrezsub","armdecade","armclaw","legdtr","cormaw","armdrag","cordrag","legdrag","armbats","coramph","armsub","armpship","armmakr","cormakr","legeconv","corerad","legctl","armfig","armfboy","armferret","corpyro","corfink","armfort","corfort","legforti","corgarp","legfmg","legaskirmtank","leggob","cornecro","armgremlin","armrecl","corak","corllt","armmav","corhurc","armtl","leghelios","corpt","armhawk","legnavyscout","legstr","armfido","corgator","leginf","armlatnk","armjanus","cordl","legkark","armgate","cormist","armrectr","legaap","legalab","leglab","legca","legck","legcv","legap","legvp","leganavyantiswarm","leglupara","armham","armlship","corsumo","coraak","armmart","legmed","armmercury","cormship","armmex","cormex","legmex","corseap","armatl","legmos","armuwmmm","coruwmmm","leganavaleconv","armuwmme","coruwmme","armfflak","corenaa","armnanotcplat","cornanotcplat","legnanotcplat","armfmkr","corfmkr","legfeconv","armuwfus","coruwfus","leganavalfusion","armfrt","armfrad","corfrad","legfrad","corvroc","leganavyflagship","armrl","corvamp","legfig","leganavyaaship","legjam","corantiship","legnavyartyship","armuwgeo","coruwgeo","leguwgeo","corroy","armawac","corsub","armhlt","armcrus","armpw","legperdition","cortoast","legshot","leglht","legcen","legphoenix","armpincer","armpb","armamph","legflak","legfrl","corlevlr","legeshotgunmech","corshark","corfmd","legaheattank","armseap","armanni","cormart","legmrv","armrad","corrad","legrad","corfav","armamb","legrhapsis","corpship","armrock","armbrawl","armfav","corsala","cormadsam","leglob","corvipe","corscreamer","leganavybattleship","armllt","armserp","armsnipe","cormort","armart","armsy","corsy","legsy","armyork","corshroud","corbw","armpt","corfrt","armjamt","armsolar","corsolar","legsolar","legdeflector","leganavyheavysub","armfast","armmanni","legtl","armthund","armstump","corcan","coresupp","legnavydestro","leghrk","corrl","corthud","armflea","armtide","cortide","legtide","correap","legaabot","corcrash","corhllt","corgol","leganavymissileship","cortl","corveng","armvp","corvp","armveil","legvenator","corhlt","legrail","corape","corhunt","armzeus","legscout","corshad","legfloat","legwhisper","armsam","armwin","corwin","legwin","corwolv","leglraa","legrezbot","armcroc","corparrow","corsent","armfdrag","corfdrag","legfdrag","legeyes","armeyes","coreyes","corjamt","legacluster"],
+    "1": ["legcib","armafus","corafus","legafus","armdfly","legafcv","cormexp","armageo","corageo","legageo","armuwageo","coruwageo","legmohocon","armason","corspec","corason","leglts","legatorpbomber","legah","armamsub","coramsub","legamphlab","cortitan","legeyes","leganavyengineer","corvoyr","leganavalsonarstation","armkam","legbastion","corroach","armeyes","coreter","coreyes","armsjam","armpnix","corcrus","armfark","corvrad","corjamt","corbhmth","legavjam","armamd","armmark","corawac","armconsul","corfhlt","leganavyartyship","armlance","leganavaltorpturret","corfdoom","leganavyradjamship","armaas","legaspy","armestor","corestor","legestor","legajam","legaradk","corexp","leganavalaaturret","armfus","corfus","legfus","armguard","armgeo","armuwes","coruwes","leguwestore","corgeo","leggeo","armspy","armkraken","armmlv","armuwadves","coruwadves","legadvestore","armuwadvms","coruwadvms","legamstor","armantiship","armmine3","cormine3","legmine3","armfmine3","corfmine3","leganavyantinukecarrier","corhvytrans","legavantinuke","corvalk","legatrans","leghive","armblade","legnavyaaship","legsd","leginc","leginfestor","leganavaldefturret","armjuno","corjuno","legjuno","legnavysub","corssub","coratl","armliche","armmine1","cormine1","legmine1","armmship","armfhlt","legvcarry","legkam","armmine2","cormine2","legmine2","armmstor","cormstor","legmstor","legfhive","armuwms","coruwms","leguwmstore","armfatf","corfatf","leganavalpinpointer","corsd","leglrpc","armhvytrans","legmext15","corgate","armemp","cormls","corsjam","legavrad","armtarg","cortarg","legtarg","armseer","legaceb","armgmm","legrampart","armsptk","legmlv","cormabm","armfdrag","corfdrag","legfdrag","corsktl","corseah","armaser","legsnapper","corspy","armstil","armatlas","legstronghold","cortermite","leganavycruiser","legajamk","armsd","cormlv","cortrem","armvader","armamex","corfast","legfort","armjam","armscab","armmls","armspid","cortron"]
+  },
+  "factoryLevels": {
+    "0": [
+      "armlab",  "corlab",  "leglab",
+      "armalab", "coralab", "legalab",
+      "armvp",   "corvp",   "legvp",
+      "armavp",  "coravp",  "legavp",
+      "armap",   "corap",   "legap",
+      "armaap",  "coraap",  "legaap",
+      "armsy",   "corsy",   "legsy",
+      "armasy",  "corasy",  "legadvshipyard",
+      "armplat", "corplat", "legsplab",
+      "armck",   "corck",   "legck",
+      "armack",  "corack",  "legack",
+      "armcv",   "corcv",   "legcv",
+      "armacv",  "coracv",  "legacv",
+      "armca",   "corca",   "legca",
+      "armaca",  "coraca",  "legaca",
+      "armcs",   "corcs",   "legnavyconship",
+      "armacsub","coracsub","leganavyconsub",
+      "armcom",  "corcom",  "legcom"
+    ],
+    "1": [
+      "armhp",   "corhp",   "leghp",
+      "armfhp",  "corfhp",  "legfhp",
+      "armshltx","armshltxuw",
+      "corgant", "corgantuw","leggant",
+      "armch",   "corch",   "legch",
+      "armcsa",  "corcsa",  "legspcon",
+      "armbeaver","armconsul",
+      "corfast", "cormuskrat","legotter",
+      "armmls",  "armmlv",
+      "cormls",  "cormlv",  "legmlv",
+      "legafcv", "legaceb", "leganavyengineer"
+    ]
+  },
+  "constructorModifiers": {
+    "click": 0,
+    "shift-click": 1,
+    "space-click": 1
+  },
+  "factoryModifiers": {
+    "none": 0,
+    "shift": 1,
+    "ctrl": 2,
+    "alt": 1,
+    "ctrl-shift": 2
+  },
   "contexts": {
     "none":      "No unit selected — show prompt text only",
     "battle":    "Show commander (represents any combat unit)",
@@ -20,6 +71,7 @@
         {
           "id": "select-commander",
           "label": "Select Commander",
+          "level": 0,
           "key": "Tab",
           "description": "Jump to and select your commander"
         },
@@ -33,6 +85,7 @@
         {
           "id": "select-idle-builders",
           "label": "Select Idle Builders",
+          "level": 1,
           "key": "Tab",
           "modifiers": ["Ctrl"],
           "browserReserved": true,
@@ -41,6 +94,7 @@
         {
           "id": "select-all-same-type",
           "label": "Select All Same Type",
+          "level": 1,
           "key": "W",
           "modifiers": ["Ctrl"],
           "browserReservedWindows": true,
@@ -49,12 +103,14 @@
         {
           "id": "select-all-same-type-screen",
           "label": "Select All Same Type on Screen",
+          "level": 1,
           "key": "Q",
           "description": "Select all units of the same type visible on screen"
         },
         {
           "id": "split-army",
           "label": "Split Army",
+          "level": 1,
           "key": "Q",
           "modifiers": ["Ctrl"],
           "browserReservedFirefox": true,
@@ -85,6 +141,7 @@
         {
           "id": "attack",
           "label": "Attack",
+          "level": 0,
           "key": "A",
           "description": "Left-click to attack a unit; drag to attack in a line",
           "mouseAction": "click-or-drag"
@@ -92,6 +149,7 @@
         {
           "id": "attack-area",
           "label": "Attack Area",
+          "level": 1,
           "key": "A",
           "modifiers": ["Ctrl"],
           "browserReservedWindows": true,
@@ -101,6 +159,7 @@
         {
           "id": "target-set",
           "label": "Target Set",
+          "level": 1,
           "key": "S",
           "description": "Set a preferred target to attack, even while moving",
           "mouseAction": "click-or-drag"
@@ -108,6 +167,7 @@
         {
           "id": "target-cancel",
           "label": "Target Cancel",
+          "level": 1,
           "key": "S",
           "modifiers": ["Ctrl"],
           "browserReservedWindows": true,
@@ -116,6 +176,7 @@
         {
           "id": "fight",
           "label": "Fight",
+          "level": 0,
           "key": "F",
           "description": "Attack-move command — units stop to engage enemies within range; drag to set a line formation",
           "mouseAction": "click-or-drag"
@@ -123,6 +184,7 @@
         {
           "id": "patrol",
           "label": "Patrol",
+          "level": 0,
           "key": "H",
           "description": "Make a looping patrol route for selected units",
           "mouseAction": "click"
@@ -130,6 +192,7 @@
         {
           "id": "guard",
           "label": "Guard",
+          "level": 0,
           "key": "O",
           "description": "Guard a friendly unit or building to help fight, repair, or construct",
           "mouseAction": "click-unit"
@@ -137,6 +200,7 @@
         {
           "id": "reclaim",
           "label": "Reclaim",
+          "level": 0,
           "key": "E",
           "description": "Reclaim a wreck or feature for metal",
           "contextOverride": "builder",
@@ -145,6 +209,7 @@
         {
           "id": "repair",
           "label": "Repair",
+          "level": 0,
           "key": "R",
           "description": "Repair a friendly unit or structure",
           "mouseAction": "click-unit-or-drag"
@@ -158,6 +223,7 @@
         {
           "id": "stop",
           "label": "Stop",
+          "level": 1,
           "key": "G",
           "description": "Clear all orders and stop the unit"
         },
@@ -171,6 +237,7 @@
         {
           "id": "on-off",
           "label": "On / Off",
+          "level": 1,
           "key": "B",
           "description": "Toggle unit active state (shields, cloak fields, etc.)"
         },
@@ -189,6 +256,7 @@
         {
           "id": "position",
           "label": "Position",
+          "level": 1,
           "key": ";",
           "note": "';' — QWERTY: ; key  QWERTZ: Ö key (same physical position)",
           "description": "Cycle movement stance: Hold Position → Maneuver → Roam"
@@ -196,12 +264,14 @@
         {
           "id": "cloak",
           "label": "Cloak",
+          "level": 0,
           "key": "K",
           "description": "Toggle cloaking on units that support it"
         },
         {
           "id": "dgun",
           "label": "D-Gun",
+          "level": 0,
           "key": "D",
           "description": "Fire the commander's disintegrator gun",
           "mouseAction": "click"
@@ -209,6 +279,7 @@
         {
           "id": "capture",
           "label": "Capture",
+          "level": 1,
           "key": "W",
           "description": "Capture an enemy unit or structure",
           "mouseAction": "click-unit"
@@ -222,6 +293,7 @@
         {
           "id": "show-explosion-radius",
           "label": "Show Explosion Radius",
+          "level": 1,
           "key": "X",
           "modifiers": ["Space"],
           "description": "Hold Space and press X to preview a unit's explosion radius"
@@ -236,12 +308,14 @@
         {
           "id": "factory-cycle",
           "label": "Factory Cycle",
+          "level": 1,
           "key": ".",
           "description": "Cycle through available build queues / factory modes"
         },
         {
           "id": "factory-guard",
           "label": "Factory Guard Toggle",
+          "level": 1,
           "key": "G",
           "modifiers": ["Ctrl"],
           "description": "Toggle whether newly built units guard the factory"
@@ -249,6 +323,7 @@
         {
           "id": "show-build-queue",
           "label": "Show Build Queue",
+          "level": 1,
           "key": "Space",
           "modifiers": ["Shift"],
           "description": "Show the factory's current build queue overlay"
@@ -263,6 +338,7 @@
         {
           "id": "rotate-ccw",
           "label": "Rotate Building Left",
+          "level": 0,
           "key": "[",
           "note": "QWERTY: [   QWERTZ: ü (same physical key position)",
           "description": "Rotate the building placement preview counter-clockwise"
@@ -270,6 +346,7 @@
         {
           "id": "rotate-cw",
           "label": "Rotate Building Right",
+          "level": 0,
           "key": "]",
           "note": "QWERTY: ]   QWERTZ: + (same physical key position)",
           "description": "Rotate the building placement preview clockwise"
@@ -277,6 +354,7 @@
         {
           "id": "build-spacing-increase",
           "label": "Build Spacing +",
+          "level": 1,
           "key": "Z",
           "modifiers": ["Shift", "Alt"],
           "note": "QWERTY: Shift+Alt+Z   QWERTZ: Shift+Alt+Y (same physical key)",
@@ -285,6 +363,7 @@
         {
           "id": "build-spacing-decrease",
           "label": "Build Spacing −",
+          "level": 1,
           "key": "X",
           "modifiers": ["Shift", "Alt"],
           "description": "Decrease spacing when placing a line or grid of structures"
@@ -292,12 +371,14 @@
         {
           "id": "queue-next",
           "label": "Queue Next",
+          "level": 0,
           "key": "N",
           "description": "Move to the next item in the build queue"
         },
         {
           "id": "wait",
           "label": "Wait",
+          "level": 1,
           "key": "Y",
           "note": "QWERTY: Y (top row), QWERTZ: Z (same physical position, Y/Z swapped)",
           "description": "Pause the unit until further orders"
@@ -305,6 +386,7 @@
         {
           "id": "self-destruct",
           "label": "Self Destruct",
+          "level": 0,
           "key": "B",
           "modifiers": ["Ctrl"],
           "description": "Order the unit to self-destruct"
@@ -312,6 +394,7 @@
         {
           "id": "area-mex",
           "label": "Area MEX",
+          "level": 0,
           "keys": ["Z", "Z"],
           "note": "QWERTY: ZZ (bottom-left twice), QWERTZ: YY (same physical position)",
           "description": "Place metal extractors on all available spots in a dragged area",
@@ -320,6 +403,7 @@
         {
           "id": "upgrade-area-mex",
           "label": "Area Upgrade Own MEX",
+          "level": 1,
           "keys": ["Z", "Z"],
           "note": "QWERTY: ZZ, QWERTZ: YY — same keys as Area MEX; Alt+drag to select circle",
           "description": "Upgrade T1 metal extractors to T2 in a circle — own mexes only, not allied",
@@ -336,6 +420,7 @@
         {
           "id": "place-blueprint",
           "label": "Place Blueprint",
+          "level": 1,
           "key": "B",
           "modifiers": ["Alt"],
           "description": "Place a blueprint for a structure to be built later",
@@ -344,6 +429,7 @@
         {
           "id": "next-blueprint",
           "label": "Next Blueprint",
+          "level": 1,
           "key": "]",
           "modifiers": ["Alt"],
           "note": "QWERTY: Alt+]  QWERTZ: Alt++ (same physical key; normalised in trainer)",
@@ -359,6 +445,7 @@
         {
           "id": "resurrect",
           "label": "Resurrect",
+          "level": 0,
           "key": "W",
           "description": "Resurrect a destroyed unit from its wreck",
           "mouseAction": "click-or-drag"
@@ -373,6 +460,7 @@
         {
           "id": "load",
           "label": "Load",
+          "level": 1,
           "key": "J",
           "description": "Order the transport to load nearby units",
           "mouseAction": "click-unit-or-drag"
@@ -380,6 +468,7 @@
         {
           "id": "unload",
           "label": "Unload",
+          "level": 1,
           "key": "U",
           "description": "Drop transported units at a target location",
           "mouseAction": "click-or-drag"
@@ -394,24 +483,28 @@
         {
           "id": "group-1",
           "label": "Select Group 1",
+          "level": 0,
           "key": "1",
           "description": "Select units previously assigned to group 1"
         },
         {
           "id": "group-2",
           "label": "Select Group 2",
+          "level": 0,
           "key": "2",
           "description": "Select units previously assigned to group 2"
         },
         {
           "id": "group-3",
           "label": "Select Group 3",
+          "level": 0,
           "key": "3",
           "description": "Select units previously assigned to group 3"
         },
         {
           "id": "group-set-1",
           "label": "Create Group 1",
+          "level": 0,
           "key": "1",
           "modifiers": ["Ctrl"],
           "browserReservedWindows": true,
@@ -420,6 +513,7 @@
         {
           "id": "group-set-2",
           "label": "Create Group 2",
+          "level": 0,
           "key": "2",
           "modifiers": ["Ctrl"],
           "browserReservedWindows": true,
@@ -428,6 +522,7 @@
         {
           "id": "group-set-3",
           "label": "Create Group 3",
+          "level": 0,
           "key": "3",
           "modifiers": ["Ctrl"],
           "browserReservedWindows": true,
@@ -443,18 +538,21 @@
         {
           "id": "camera-recall-1",
           "label": "Select Camera 1",
+          "level": 1,
           "key": "F1",
           "description": "Jump to stored camera position 1"
         },
         {
           "id": "camera-recall-2",
           "label": "Select Camera 2",
+          "level": 1,
           "key": "F2",
           "description": "Jump to stored camera position 2"
         },
         {
           "id": "camera-store-1",
           "label": "Store Camera 1",
+          "level": 1,
           "key": "F1",
           "modifiers": ["Ctrl"],
           "browserReservedFirefox": true,
@@ -464,6 +562,7 @@
         {
           "id": "camera-store-2",
           "label": "Store Camera 2",
+          "level": 1,
           "key": "F2",
           "modifiers": ["Ctrl"],
           "browserReservedFirefox": true,
