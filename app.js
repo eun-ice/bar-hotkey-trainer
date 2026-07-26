@@ -578,9 +578,8 @@ function renderStatsTable() {
 
       let html = `<div class="run-summary-title">Run complete — ${trainCount} question${trainCount !== 1 ? 's' : ''}${studyCount ? ` + ${studyCount} studied` : ''}</div>`
       html += `<div class="run-summary-stats">`
-      html += `<span class="rs-item"><span class="rs-val success">${session.correct}</span> correct</span>`
-      if (session.late > 0)
-        html += `<span class="rs-item"><span class="rs-val warn">${session.late}</span> retried</span>`
+      html += `<span class="rs-item"><span class="rs-val success">${session.correct}</span> first try</span>`
+      html += `<span class="rs-item"><span class="rs-val warn">${session.late}</span> correct</span>`
       html += `<span class="rs-item"><span class="rs-val error">${session.wrong}</span> wrong</span>`
 
       if (times.length) {
@@ -840,7 +839,19 @@ function renderGrid(builder, activeCatId, page, highlightUnitId, isQwertz) {
       }
 
       slot.addEventListener('mouseenter', () => showSlotHover(unit, 'slot-hover-info'))
-      slot.addEventListener('mouseleave', () => clearSlotHover('slot-hover-info'))
+      slot.addEventListener('mouseleave', () => {
+        if (learnPinnedUnit) showSlotHover(learnPinnedUnit, 'slot-hover-info')
+        else clearSlotHover('slot-hover-info')
+      })
+      slot.addEventListener('click', () => {
+        const wasPinned = learnPinnedUnit === unit
+        clearLearnPin()
+        if (!wasPinned) {
+          learnPinnedUnit = unit
+          slot.classList.add('slot-pinned')
+          showSlotHover(unit, 'slot-hover-info')
+        }
+      })
     }
 
     container.appendChild(slot)
@@ -1617,7 +1628,7 @@ function pickFactoryBuildMod(gridKey) {
 
 function nextQuestion() {
   deactivateMouseZone()
-  clearSlotHover('slot-hover-info')
+  clearLearnPin()
   if (queueIndex >= queue.length) {
     // Rebuild queue from current settings every time we loop — picks up any
     // faction/tier/shortcut changes made since the last rebuild.
@@ -1906,7 +1917,7 @@ function onKey(event) {
         event.preventDefault()
         browseCatId = null
         browsePage  = 0
-        clearSlotHover('browse-slot-hover-info')
+        clearBrowsePin()
         renderBrowseMenu()
       }
       return
@@ -2410,7 +2421,8 @@ function showSlotHover(unit, elId) {
   if (!el) return
   const info = uInfo(unit.id)
   const desc = info.description ? `<br><span class="slot-hover-desc">${info.description}</span>` : ''
-  el.innerHTML = `${info.name}${desc}<br><span class="slot-hover-id">${unit.id}</span>`
+  const link = `<a href="https://www.beyondallreason.info/unit/${unit.id}" target="_blank" rel="noopener noreferrer" class="slot-hover-link">↗ beyondallreason.info</a>`
+  el.innerHTML = `${info.name}${desc}<br><span class="slot-hover-id">${unit.id}</span> ${link}`
 }
 
 function showBrowseSlotHover(unit, equivUnit, isQwertz) {
@@ -2429,6 +2441,18 @@ function showBrowseSlotHover(unit, equivUnit, isQwertz) {
 function clearSlotHover(elId) {
   const el = $(elId)
   if (el) el.textContent = ''
+}
+
+function clearLearnPin() {
+  learnPinnedUnit = null
+  document.querySelector('#screen-training .slot-pinned')?.classList.remove('slot-pinned')
+  clearSlotHover('slot-hover-info')
+}
+
+function clearBrowsePin() {
+  browsePinnedUnit = null
+  document.querySelector('#screen-browse .slot-pinned')?.classList.remove('slot-pinned')
+  clearSlotHover('browse-slot-hover-info')
 }
 
 // ─── Setup screen ─────────────────────────────────────────────────────────────
@@ -2722,6 +2746,8 @@ let browseBuilder    = null
 let browseCatId      = null
 let browsePage       = 0
 let browseDifficulty = 'commander'
+let learnPinnedUnit  = null
+let browsePinnedUnit = null
 
 function initBrowseScreen() {
   $('btn-browse-back').addEventListener('click', () => showScreen('setup'))
@@ -2826,6 +2852,7 @@ function renderBrowseList(filter) {
 }
 
 function selectBrowseBuilder(id) {
+  clearBrowsePin()
   browseBuilder = DATA.builders[id]
   browseCatId   = isFactory(browseBuilder) ? 'build' : null
   browsePage    = 0
@@ -2856,6 +2883,7 @@ function selectBrowseBuilder(id) {
 
 function renderBrowseMenu() {
   if (!browseBuilder) return
+  clearBrowsePin()
   const isQwertz = settings.keyboard === 'qwertz'
 
   // Tabs
@@ -2936,7 +2964,19 @@ function renderBrowseMenu() {
       }
 
       slot.addEventListener('mouseenter', () => showSlotHover(unit, 'browse-slot-hover-info'))
-      slot.addEventListener('mouseleave', () => clearSlotHover('browse-slot-hover-info'))
+      slot.addEventListener('mouseleave', () => {
+        if (browsePinnedUnit) showSlotHover(browsePinnedUnit, 'browse-slot-hover-info')
+        else clearSlotHover('browse-slot-hover-info')
+      })
+      slot.addEventListener('click', () => {
+        const wasPinned = browsePinnedUnit === unit
+        clearBrowsePin()
+        if (!wasPinned) {
+          browsePinnedUnit = unit
+          slot.classList.add('slot-pinned')
+          showSlotHover(unit, 'browse-slot-hover-info')
+        }
+      })
     }
 
     gridContainer.appendChild(slot)

@@ -1010,16 +1010,13 @@ kbd {
 
 /* ─── Slot hover info ───────────────────────────────────────────────────────── */
 .slot-hover-info {
-  /* Always reserves exactly 2 lines so layout never shifts on hover */
-  height: 40px;
-  /* Browse screen override (below) allows a third line for the equiv */
-  padding: 4px 6px 2px;
+  min-height: 40px;
+  padding: 4px 6px 4px;
   font-size: 12px;
   line-height: 1.4;
   font-weight: 600;
   color: var(--text-bright);
   text-align: center;
-  overflow: hidden;
 }
 .slot-hover-desc {
   font-weight: 400;
@@ -1042,6 +1039,22 @@ kbd {
 .slot-hover-equiv kbd {
   font-size: 10px;
   padding: 0 3px;
+}
+.slot-hover-link {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--accent-dim);
+  text-decoration: none;
+  opacity: .8;
+}
+.slot-hover-link:hover {
+  color: var(--accent);
+  opacity: 1;
+  text-decoration: underline;
+}
+.slot.slot-pinned {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
 }
 
 /* ─── Answer countdown (inline in instruction after wrong/timeout) ──────────── */
