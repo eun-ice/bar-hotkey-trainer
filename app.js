@@ -1579,7 +1579,8 @@ const BROWSER_RESERVED_KEYS = {
   winlinux: { ctrl:      new Set(['W','R','T','S','F','X','C','V','D','A','H','L','J','U','P','N','O','1','2','3','4','5','6','7','8']),
               ctrlShift: new Set(['A','T','N','J','I','W']) },
   mac:      { ctrl:      new Set(['F1','F2','F3','F4']),
-              ctrlShift: new Set() },
+              ctrlShift: new Set(),
+              cmd:       new Set(['Q','W','R','A','S','D','F','Z','X','C','V']) },
   firefox:  { ctrl:      new Set(['Q','F1','F2']),
               ctrlShift: new Set(['K']) },
 }
@@ -1617,11 +1618,12 @@ function pickFactoryBuildMod(gridKey) {
     .map(([mod]) => mod)
   if (!mods.length) mods = ['none']
   const key    = (gridKey ?? '').toUpperCase()
-  const ctrlR  = isBrowserReserved(key, ['Ctrl'])
-  const csR    = isBrowserReserved(key, ['Ctrl', 'Shift'])
-  if (ctrlR) mods = mods.filter(m => m !== 'ctrl' && m !== 'ctrl-shift')
-  if (csR)   mods = mods.filter(m => m !== 'ctrl-shift')
-  if (IS_MAC && settings.swapCmdAlt && ctrlR) mods = mods.filter(m => m !== 'alt')
+  const ctrlR   = isBrowserReserved(key, ['Ctrl'])
+  const csR     = isBrowserReserved(key, ['Ctrl', 'Shift'])
+  const macCmdR = IS_MAC && settings.swapCmdAlt && (BROWSER_RESERVED_KEYS.mac.cmd.has(key) || ctrlR)
+  if (ctrlR)   mods = mods.filter(m => m !== 'ctrl' && m !== 'ctrl-shift')
+  if (csR)     mods = mods.filter(m => m !== 'ctrl-shift')
+  if (macCmdR) mods = mods.filter(m => m !== 'alt')
   if (!mods.length) mods = ['none']
   return mods[Math.floor(Math.random() * mods.length)]
 }
