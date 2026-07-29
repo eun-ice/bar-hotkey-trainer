@@ -265,7 +265,7 @@ function defaultSettings() {
     builderTypes: ['factory', 'constructor'],
     keyboard:     '',
     hintTimeout:  0,
-    timeLimit:    5,   // seconds per required key press
+    timeLimit:    8,   // seconds per required key press
     runLength:    20,  // questions per run (0 = unlimited)
     shortcuts:    ['general', 'groups', 'battle', 'factory', 'builder', 'blueprint', 'rezbot', 'transport', 'camera'],
     difficulty:      'commander',
