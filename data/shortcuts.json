@@ -498,7 +498,7 @@
         },
         {
           "id": "group-set-1",
-          "label": "Create Group 1",
+          "label": "Assign Group 1",
           "level": 0,
           "key": "1",
           "modifiers": ["Ctrl"],
@@ -506,7 +506,7 @@
         },
         {
           "id": "group-set-2",
-          "label": "Create Group 2",
+          "label": "Assign Group 2",
           "level": 0,
           "key": "2",
           "modifiers": ["Ctrl"],
@@ -514,11 +514,35 @@
         },
         {
           "id": "group-set-3",
-          "label": "Create Group 3",
+          "label": "Assign Group 3",
           "level": 0,
           "key": "3",
           "modifiers": ["Ctrl"],
           "description": "Assign all selected units to group 3"
+        },
+        {
+          "id": "auto-group-set-1",
+          "label": "Auto Group 1",
+          "level": 0,
+          "key": "1",
+          "modifiers": ["Alt"],
+          "description": "Assign all selected units to auto group 1"
+        },
+        {
+          "id": "auto-group-set-2",
+          "label": "Auto Group 2",
+          "level": 0,
+          "key": "2",
+          "modifiers": ["Alt"],
+          "description": "Assign all selected units to auto group 2"
+        },
+        {
+          "id": "auto-group-set-3",
+          "label": "Auto Group 3",
+          "level": 0,
+          "key": "3",
+          "modifiers": ["Alt"],
+          "description": "Assign all selected units to auto group 3"
         }
       ]
     },
