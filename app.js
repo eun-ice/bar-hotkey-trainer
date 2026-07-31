@@ -1576,7 +1576,7 @@ function resolveShortcutContextUnit(context) {
 const BROWSER_RESERVED_KEYS = {
   all:      { ctrl:      new Set(['Tab']),
               ctrlShift: new Set(['Tab']) },
-  winlinux: { ctrl:      new Set(['W','R','T','S','F','X','C','V','D','A','H','L','J','U','P','N','O','1','2','3','4','5','6','7','8']),
+  winlinux: { ctrl:      new Set(['W','R','T','S','F','X','C','V','D','H','L','J','U','P','N','O','1','2','3','4','5','6','7','8']),
               ctrlShift: new Set(['A','T','N','J','I','W']) },
   mac:      { ctrl:      new Set(['F1','F2','F3','F4']),
               ctrlShift: new Set(),
