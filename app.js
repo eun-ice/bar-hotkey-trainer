@@ -2105,7 +2105,6 @@ function handleShortcutKey(key, mods) {
   } else {
     // Wrong key — reset sequence, reveal the correct key immediately
     questionHadWrong = true
-    spaceHeld = false
     entry.seqStep = 0
     shortcutKeyVisible = true
     clearShortcutKeyTimer()
