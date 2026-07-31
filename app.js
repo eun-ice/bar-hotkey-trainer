@@ -268,7 +268,7 @@ function defaultSettings() {
     timeLimit:    8,   // seconds per required key press
     runLength:    20,  // questions per run (0 = unlimited)
     shortcuts:    ['general', 'groups', 'battle', 'factory', 'builder', 'blueprint', 'rezbot', 'transport', 'camera'],
-    difficulty:      'commander',
+    difficulty:      'noob',
     soundEnabled:    true,
     mouseEnabled:    true,
     swapCmdAlt:      IS_MAC,
@@ -2459,8 +2459,7 @@ function clearBrowsePin() {
 
 // ─── Setup screen ─────────────────────────────────────────────────────────────
 
-function initSetupScreen() {
-  // Restore saved settings into the form
+function restoreSettingsUI() {
   for (const cb of document.querySelectorAll('input[name=faction]'))
     cb.checked = settings.factions.includes(cb.value)
 
@@ -2469,8 +2468,8 @@ function initSetupScreen() {
     else                         cb.checked = settings.tiers.includes(Number(cb.value))
   }
 
-  if (settings.keyboard)
-    document.querySelector(`input[name=keyboard][value=${settings.keyboard}]`).checked = true
+  for (const rb of document.querySelectorAll('input[name=keyboard]'))
+    rb.checked = rb.value === settings.keyboard
   $('hint-timeout').value = settings.hintTimeout
   updateHintLabel(settings.hintTimeout)
   $('time-limit').value = settings.timeLimit
@@ -2482,16 +2481,18 @@ function initSetupScreen() {
   if (!IS_MAC) $('swap-cmd-alt-row').style.display = 'none'
   $('swap-cmd-alt').checked = settings.swapCmdAlt
 
-  // Restore difficulty radio
   const diff = settings.difficulty ?? 'commander'
   const diffRadio = document.querySelector(`input[name=difficulty][value="${diff}"]`)
   if (diffRadio) diffRadio.checked = true
 
-  // Restore shortcuts checkboxes
   for (const cb of document.querySelectorAll('input[name=shortcuts]'))
     cb.checked = (settings.shortcuts ?? []).includes(cb.value)
 
   updateBuilderCount()
+}
+
+function initSetupScreen() {
+  restoreSettingsUI()
 
   // Live updates
   $('hint-timeout').addEventListener('input', e => {
@@ -2629,6 +2630,12 @@ function initSetupScreen() {
     e.currentTarget.blur()  // prevent Space from re-triggering the button mid-training
     precacheIcons(filteredBuilders(settings))
     showNewRunCountdown()
+  })
+
+  $('btn-reset-defaults').addEventListener('click', () => {
+    Object.assign(settings, defaultSettings())
+    saveSettings(settings)
+    restoreSettingsUI()
   })
 
   initAdvancedToggles()
