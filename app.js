@@ -3244,6 +3244,8 @@ async function init() {
     if (event.key === 'Shift') handleGoBack()
     if (event.key === ' ') { spaceHeld = false; mouseZoneSpaceHeld = false }
   })
+
+  window.addEventListener('blur', () => { spaceHeld = false; mouseZoneSpaceHeld = false })
 }
 
 init()
