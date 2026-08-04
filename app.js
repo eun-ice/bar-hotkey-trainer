@@ -425,6 +425,7 @@ function buildShortcutQueue() {
     if (!settings.shortcuts?.includes(group.id)) continue
     const threshold = difficultyThreshold()
     for (const shortcut of group.shortcuts) {
+      if (shortcut.displayOnly) continue
       if (threshold < Infinity) {
         if (shortcut.level === undefined || shortcut.level > threshold) continue
       }
@@ -2680,7 +2681,7 @@ function updateBuilderCount() {
   const scCount = SHORTCUTS.reduce((total, grp) => {
     if (!settings.shortcuts?.includes(grp.id)) return total
     return total + grp.shortcuts.filter(sc =>
-      threshold === Infinity || (sc.level !== undefined && sc.level <= threshold)
+      !sc.displayOnly && (threshold === Infinity || (sc.level !== undefined && sc.level <= threshold))
     ).length
   }, 0)
   $('builder-count').textContent =
@@ -3068,7 +3069,53 @@ function browsePageDelta(delta) {
 
 let activeShortcutsGroupId = null
 
+function formatMouseAction(mouseAction) {
+  if (!mouseAction) return ''
+
+  const isRight  = mouseAction === 'click-right' || mouseAction.startsWith('right-') || mouseAction.endsWith('-click-right')
+  const isLine   = mouseAction.includes('line')
+  const isDrag   = mouseAction.includes('drag')
+  const modifier = mouseAction.startsWith('alt-')  ? 'Alt'
+    : mouseAction.startsWith('ctrl-') ? 'Ctrl' : null
+
+  const leftBtn  = `<path d="M.75 6.5Q.75.75 7 .75L7 9.5H.75Z" fill="rgba(220,155,30,.7)"/>`
+  const rightBtn = `<path d="M13.25 6.5Q13.25.75 7 .75L7 9.5H13.25Z" fill="rgba(220,155,30,.7)"/>`
+
+  const mouseBody = (btn) => `
+    <rect x=".75" y=".75" width="12.5" height="18.5" rx="5.5" fill="rgba(255,255,255,.07)" stroke="rgba(255,255,255,.35)" stroke-width="1.5"/>
+    <line x1=".75" y1="9.5" x2="13.25" y2="9.5" stroke="rgba(255,255,255,.22)" stroke-width="1"/>
+    <line x1="7" y1=".75" x2="7" y2="9.5" stroke="rgba(255,255,255,.22)" stroke-width="1"/>
+    ${btn}`
+
+  let svg
+  if (!isDrag) {
+    // Click icon: show which button (left or right)
+    svg = `<svg class="sc-mouse-svg" viewBox="0 0 14 20" height="22" aria-hidden="true">
+      ${mouseBody(isRight ? rightBtn : leftBtn)}
+    </svg>`
+  } else if (isLine) {
+    // Diagonal dashed line starting just right of mouse, angled ~35° down — avoids aligning with the mouse's horizontal divider
+    svg = `<svg class="sc-mouse-svg" viewBox="0 0 25 20" height="22" aria-hidden="true">
+      ${mouseBody(isRight ? rightBtn : leftBtn)}
+      <path d="M15 10L22 15" stroke="rgba(255,255,255,.38)" stroke-width="1.2" stroke-dasharray="2,1.5" stroke-linecap="round"/>
+      <polygon points="19.2,14.6 22,15 20.7,12.5" fill="rgba(255,255,255,.38)"/>
+    </svg>`
+  } else {
+    // Area drag: circle on the right side of mouse, sticking out past its right edge.
+    // sc-mouse-bg masks the portion of the circle that sits behind the mouse body.
+    svg = `<svg class="sc-mouse-svg" viewBox="0 0 25 20" height="22" aria-hidden="true">
+      <circle cx="17" cy="10" r="7" fill="rgba(220,155,30,.07)" stroke="rgba(220,155,30,.55)" stroke-width="1.3" stroke-dasharray="2.5,2"/>
+      <rect class="sc-mouse-bg" x=".75" y=".75" width="12.5" height="18.5" rx="5.5"/>
+      ${mouseBody(leftBtn)}
+    </svg>`
+  }
+
+  const modKbd = modifier ? `<kbd>${modifier}</kbd><span class="sc-mouse-plus">+</span>` : ''
+  return `<span class="sc-mouse-action">${modKbd}${svg}</span>`
+}
+
 function formatShortcutKey(shortcut, isQwertz) {
+  if (!shortcut.key && !shortcut.keys) return ''
   const mods = shortcut.modifiers ?? []
   const hasAlt = mods.some(m => m.toLowerCase() === 'alt')
 
@@ -3138,7 +3185,7 @@ function selectShortcutsGroup(id) {
   const content = $('shortcuts-content')
   content.classList.remove('hidden')
 
-  const rows = group.shortcuts.map(sc => {
+  const rows = group.shortcuts.filter(sc => !sc.learnHidden).map(sc => {
     const scope    = sc.keys ? null : browserReservedScope(sc.key, sc.modifiers ?? [])
     const reserved = scope === 'all'          ? '<span class="sc-reserved">study card — all browsers</span>'
       : scope === 'winlinux'    ? '<span class="sc-reserved">study card — Windows/Linux</span>'
@@ -3156,7 +3203,7 @@ function selectShortcutsGroup(id) {
     return `
       <tr>
         <td class="sc-action"><span class="sc-label">${sc.label}</span>${desc}</td>
-        <td class="sc-key">${formatShortcutKey(sc, isQwertz)}${reserved}</td>
+        <td class="sc-key">${formatShortcutKey(sc, isQwertz)}${formatMouseAction(sc.mouseAction)}${reserved}</td>
         <td class="sc-level">${lvlBadge}</td>
       </tr>`
   }).join('')

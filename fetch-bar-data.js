@@ -114,6 +114,58 @@ async function main() {
     }
   }
 
+  // Always ensure reclaim/resurrect widgets are present regardless of --refresh
+  const smartReclaimPath = join(BAR_DATA, 'luaui/Widgets/unit_smart_area_reclaim.lua')
+  if (!existsSync(smartReclaimPath)) {
+    process.stdout.write('Downloading luaui/Widgets/unit_smart_area_reclaim.lua … ')
+    try {
+      const content = await rawGet(`${RAW}/luaui/Widgets/unit_smart_area_reclaim.lua`)
+      saveFile('luaui/Widgets/unit_smart_area_reclaim.lua', content)
+      console.log('done')
+    } catch (err) {
+      console.log(`skipped (${err.message})`)
+    }
+  }
+
+  // Always ensure custom formations widget is present regardless of --refresh
+  const formationsPath = join(BAR_DATA, 'luaui/Widgets/cmd_customformations2.lua')
+  if (!existsSync(formationsPath)) {
+    process.stdout.write('Downloading luaui/Widgets/cmd_customformations2.lua … ')
+    try {
+      const content = await rawGet(`${RAW}/luaui/Widgets/cmd_customformations2.lua`)
+      saveFile('luaui/Widgets/cmd_customformations2.lua', content)
+      console.log('done')
+    } catch (err) {
+      console.log(`skipped (${err.message})`)
+    }
+  }
+
+  // Always ensure chat_and_ui_keys.txt is present regardless of --refresh
+  const chatKeysPath = join(BAR_DATA, 'luaui/configs/hotkeys/chat_and_ui_keys.txt')
+  if (!existsSync(chatKeysPath)) {
+    process.stdout.write('Downloading luaui/configs/hotkeys/chat_and_ui_keys.txt … ')
+    try {
+      const content = await rawGet(`${RAW}/luaui/configs/hotkeys/chat_and_ui_keys.txt`)
+      saveFile('luaui/configs/hotkeys/chat_and_ui_keys.txt', content)
+      console.log('done')
+    } catch (err) {
+      console.log(`skipped (${err.message})`)
+    }
+  }
+
+  // Always ensure grid_keys.txt is present regardless of --refresh
+  const gridKeysPath = join(BAR_DATA, 'luaui/configs/hotkeys/grid_keys.txt')
+  if (!existsSync(gridKeysPath)) {
+    process.stdout.write('Downloading luaui/configs/hotkeys/grid_keys.txt … ')
+    try {
+      const content = await rawGet(`${RAW}/luaui/configs/hotkeys/grid_keys.txt`)
+      saveFile('luaui/configs/hotkeys/grid_keys.txt', content)
+      console.log('done')
+    } catch (err) {
+      console.log(`skipped (${err.message})`)
+    }
+  }
+
   if (!refresh && existsSync(manifestPath)) {
     const mf = JSON.parse(readFileSync(manifestPath, 'utf8'))
     const ageDays = (Date.now() - new Date(mf.downloadedAt).getTime()) / 86_400_000
