@@ -1173,9 +1173,8 @@ kbd {
 }
 #browse-slot-hover-info {
   height: auto;
-  /* Matches .slot-hover-info — reserved up front so hovering a slot never pushes
-     the build-modifier cards below it around. */
-  min-height: 60px;
+  /* The surrounding .browse-info-slot reserves the space now */
+  min-height: 0;
 }
 
 .browse-topbar {
@@ -1386,11 +1385,23 @@ kbd {
   font-style: italic;
 }
 
+/* Hover text and the key-result card share one reserved slot: tall enough for the
+   larger of the two, so showing either never moves the shortcuts box below it.
+   The hover line is suppressed while a card is up — the card already names the unit. */
+.browse-info-slot {
+  width: 100%;
+  min-height: 108px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.browse-info-slot.has-result #browse-slot-hover-info { display: none }
+
 /* Result: what the key you just pressed actually does */
 .browse-mod-result {
   align-self: stretch;
   max-width: 520px;
-  margin: 12px auto 0;
+  margin: 0 auto;
   padding: 10px 12px;
   display: flex;
   align-items: flex-start;

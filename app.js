@@ -3116,14 +3116,16 @@ function renderBrowseMenu() {
     }
   }
 
-  // Page bar — just the position; the B key is listed in the shortcuts box
+  // Page bar — B is named here as well as in the shortcuts box, because in game this
+  // is where the page indicator sits and where you look for it.
   const pageBar   = $('browse-page-bar')
   const totalPages = cat ? ((cat.units[cat.units.length - 1]?.page ?? 0) + 1) : 1
   if (totalPages <= 1) {
     pageBar.classList.add('hidden')
   } else {
     pageBar.classList.remove('hidden')
-    pageBar.innerHTML = `Page ${browsePage + 1} / ${totalPages}`
+    pageBar.innerHTML =
+      `Page ${browsePage + 1} / ${totalPages} — press <kbd>B</kbd> to advance`
   }
 
   renderBrowseModLegend(totalPages)
@@ -3189,6 +3191,7 @@ function clearBrowseModResult() {
   if (!box) return
   box.classList.add('hidden')
   box.innerHTML = ''
+  $('browse-info-slot')?.classList.remove('has-result')
 }
 
 // Spell out what the key just pressed actually does, e.g. Alt+X → "Insert next: Eraser"
@@ -3216,14 +3219,15 @@ function showBrowseModResult(gridKey, event) {
   const info     = uInfo(unit.id)
   const isQwertz = settings.keyboard === 'qwertz'
   const pressed  = modKeysHtml(entry.mods.filter(m => m !== 'space'), display(unit.key, isQwertz))
-  // Constructors apply their modifier at click time, so name the click rather than the key
-  const note = factory
-    ? (entry.note ? `<div class="bmr-note">${entry.note}</div>` : '')
+  // Constructors apply their modifier at click time, so name the click rather than the key.
+  // Factory caveats (entry.note) are not repeated here — they live in the legend below.
+  const note = factory ? ''
     : `<div class="bmr-note">${entry.mods.length
         ? `Then hold ${modKeysHtml(entry.mods, null)} while clicking to place it.`
         : 'Then click to place it.'}</div>`
 
   box.classList.remove('hidden')
+  $('browse-info-slot')?.classList.add('has-result')
   box.innerHTML = `
     <img class="bmr-icon" src="data/${info.icon}" alt="">
     <div class="bmr-text">

@@ -708,7 +708,7 @@
     },
     {
       "id": "move",
-      "name": "Move",
+      "name": "Right-click",
       "context": "battle",
       "shortcuts": [
         {
@@ -782,12 +782,6 @@
           "displayOnly": true,
           "description": "Ctrl + right-click a point — units move there while keeping formation, travelling at the speed of the slowest unit in the selection",
           "mouseAction": "ctrl-click-right"
-        },
-        {
-          "id": "show-pathing",
-          "label": "Show Pathing",
-          "key": "F6",
-          "description": "Toggle pathfinding debug overlay"
         }
       ]
     },
@@ -1059,6 +1053,15 @@
           "key": "W",
           "description": "Hold Alt while dragging the resurrect circle to resurrect only wrecks of the same unit type as the one at the center",
           "mouseAction": "alt-drag"
+        },
+        {
+          "id": "repair-reclaim-area-rezbot",
+          "label": "Repair & Reclaim Area",
+          "level": 1,
+          "key": "F",
+          "displayOnly": true,
+          "description": "Drag a circle to order builders to repair all friendlies and reclaim all wrecks in the area",
+          "mouseAction": "drag"
         },
         {
           "id": "fight-rez-area",
@@ -1633,6 +1636,12 @@
           "level": 0,
           "key": "Backspace",
           "description": "Mute or unmute the game sound"
+        },
+        {
+          "id": "show-pathing",
+          "label": "Show Pathing",
+          "key": "F6",
+          "description": "Toggle pathfinding debug overlay"
         }
       ]
     }

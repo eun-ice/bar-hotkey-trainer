@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=15">
+  <link rel="stylesheet" href="style.css?v=16">
   <script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body>
@@ -125,7 +125,7 @@
           </div>
           <div class="check-group">
             <label class="check-label"><input type="checkbox" name="shortcuts" value="general" checked> Select</label>
-            <label class="check-label"><input type="checkbox" name="shortcuts" value="move" checked> Move</label>
+            <label class="check-label"><input type="checkbox" name="shortcuts" value="move" checked> Right-click</label>
             <label class="check-label"><input type="checkbox" name="shortcuts" value="battle" checked> Battle</label>
             <label class="check-label"><input type="checkbox" name="shortcuts" value="rezbot" checked> Rezbot</label>
             <label class="check-label"><input type="checkbox" name="shortcuts" value="builder" checked> Builder</label>
@@ -449,9 +449,12 @@
           <div id="browse-cat-tabs" class="cat-tabs"></div>
         </div>
 
-        <div id="browse-slot-hover-info" class="slot-hover-info"></div>
-
-        <div id="browse-mod-result" class="browse-mod-result hidden"></div>
+        <!-- One fixed-height slot for both, so neither hovering nor pressing a key
+             can push the shortcuts box around. -->
+        <div id="browse-info-slot" class="browse-info-slot">
+          <div id="browse-slot-hover-info" class="slot-hover-info"></div>
+          <div id="browse-mod-result" class="browse-mod-result hidden"></div>
+        </div>
 
         <div id="browse-mod-legend" class="browse-mod-legend"></div>
 
@@ -486,6 +489,6 @@
   All rights remain with the original authors. If you have suggestions, mention @eunice3x on BAR discord.
 </footer>
 
-<script src="app.js?v=26" type="module"></script>
+<script src="app.js?v=28" type="module"></script>
 </body>
 </html>
