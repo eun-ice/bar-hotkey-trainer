@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=2">
+  <link rel="stylesheet" href="style.css?v=15">
   <script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body>
@@ -124,15 +124,17 @@
             <button id="btn-shortcuts-toggle" class="btn-toggle-all">Select all</button>
           </div>
           <div class="check-group">
-            <label class="check-label"><input type="checkbox" name="shortcuts" value="general" checked> General Selection</label>
-            <label class="check-label"><input type="checkbox" name="shortcuts" value="battle" checked> Battle Commands</label>
-            <label class="check-label"><input type="checkbox" name="shortcuts" value="factory" checked> Factory Commands</label>
-            <label class="check-label"><input type="checkbox" name="shortcuts" value="builder" checked> Builder Commands</label>
-            <label class="check-label"><input type="checkbox" name="shortcuts" value="blueprint" checked> Blueprint Commands</label>
-            <label class="check-label"><input type="checkbox" name="shortcuts" value="rezbot" checked> Rezbot Commands</label>
-            <label class="check-label"><input type="checkbox" name="shortcuts" value="groups" checked> Unit Groups</label>
-            <label class="check-label"><input type="checkbox" name="shortcuts" value="transport" checked> Transport Commands</label>
-            <label class="check-label"><input type="checkbox" name="shortcuts" value="camera" checked> Camera Controls</label>
+            <label class="check-label"><input type="checkbox" name="shortcuts" value="general" checked> Select</label>
+            <label class="check-label"><input type="checkbox" name="shortcuts" value="move" checked> Move</label>
+            <label class="check-label"><input type="checkbox" name="shortcuts" value="battle" checked> Battle</label>
+            <label class="check-label"><input type="checkbox" name="shortcuts" value="rezbot" checked> Rezbot</label>
+            <label class="check-label"><input type="checkbox" name="shortcuts" value="builder" checked> Builder</label>
+            <label class="check-label"><input type="checkbox" name="shortcuts" value="blueprint" checked> Blueprint</label>
+            <label class="check-label"><input type="checkbox" name="shortcuts" value="factory" checked> Factory</label>
+            <label class="check-label"><input type="checkbox" name="shortcuts" value="transport" checked> Transport</label>
+            <label class="check-label"><input type="checkbox" name="shortcuts" value="groups" checked> Groups</label>
+            <label class="check-label"><input type="checkbox" name="shortcuts" value="camera" checked> Camera</label>
+            <label class="check-label"><input type="checkbox" name="shortcuts" value="game" checked> Game</label>
           </div>
         </div>
       </section>
@@ -385,10 +387,25 @@
 
     <div class="browse-main">
       <div id="shortcuts-empty" class="browse-empty">← Select a group</div>
+
+      <div class="sc-intro">
+        <div class="sc-intro-title">⌨ Go ahead — press them</div>
+        <p>Try any shortcut on this page right now. The keys you press light up, and the row
+        earns a <span class="sc-intro-check">✓</span> so you can see how far you've got.</p>
+        <p>Commands that need the mouse (Fight, the area drags…) want a key <em>and</em> a
+        gesture: press the key, then click or drag anywhere on the page. Alt+drag counts as
+        its own thing.</p>
+        <p class="sc-intro-foot">Nothing happening? Then your browser is keeping that
+        combination for itself — those are marked as study cards below.</p>
+      </div>
+
       <div id="shortcuts-content" class="shortcuts-content hidden"></div>
     </div>
 
   </div>
+
+  <svg id="sc-pad-svg" class="sc-pad-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+  <div id="sc-pad-label" class="sc-pad-label"></div>
 </div>
 
 <!-- ── BROWSE ──────────────────────────────────────────────────────────────── -->
@@ -434,6 +451,10 @@
 
         <div id="browse-slot-hover-info" class="slot-hover-info"></div>
 
+        <div id="browse-mod-result" class="browse-mod-result hidden"></div>
+
+        <div id="browse-mod-legend" class="browse-mod-legend"></div>
+
         <div id="browse-equiv-table" class="browse-equiv-table hidden"></div>
 
         <div id="browse-key-hint" class="browse-key-hint"></div>
@@ -465,6 +486,6 @@
   All rights remain with the original authors. If you have suggestions, mention @eunice3x on BAR discord.
 </footer>
 
-<script src="app.js" type="module"></script>
+<script src="app.js?v=26" type="module"></script>
 </body>
 </html>

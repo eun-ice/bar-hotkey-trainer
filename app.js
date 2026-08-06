@@ -21,12 +21,16 @@ function normalise(key, isQwertz, code) {
   if (isQwertz && k === 'Z') return 'Y'
   if (isQwertz && k === 'Ö') return ';'  // physical ;/Ö key position → ; shortcut
   if (isQwertz && k === '+') return ']'  // physical ] key position → ] shortcut
-  if (isQwertz && k === '^') return '`'  // physical `/^ key (Backquote) → ` canonical
   if (isQwertz && k === 'Ü') return '['  // physical [ key position on QWERTZ is labeled ü
-  // ^ on QWERTZ is a dead key — event.key fires as 'Dead' on the first press.
-  // Resolve via event.code so we don't need to wait for the composition (Space follow-up).
-  if (k === 'DEAD' && code === 'Backquote') return '`'
+  // The key left of 1 is ` on QWERTY and ^ on QWERTZ, and browsers report it wildly
+  // differently: 'Dead' (uncomposed dead key), '^', 'ˆ', '°', or '`'. Only some of those
+  // are non-ASCII, so the fallback below would miss the rest — resolve it by position.
+  if (code === 'Backquote') return '`'
   if (k === ' ') return 'SPACE'
+  // A number-row key always means its digit, whatever Shift/Alt turned it into:
+  // Shift+1 is '!' on US and Shift+3 is '§' on German, but both are still the group key.
+  // The digit-row position is identical on QWERTY and QWERTZ, so code is safe here.
+  if (code && code.startsWith('Digit')) return code.slice(5)  // 'Digit1' → '1'
   // On macOS, Alt/Option composes non-ASCII characters (e.g. Alt+B → '∫', Alt++ → '±').
   // When event.key lands outside ASCII, fall back to event.code (the physical scan-code)
   // which is always the unmodified key name regardless of held modifiers or OS.
@@ -40,7 +44,6 @@ function normalise(key, isQwertz, code) {
     if (code === 'BracketLeft')  return '['
     if (code === 'BracketRight') return ']'
     if (code === 'Semicolon')    return ';'
-    if (code === 'Backquote')    return '`'  // Mac Alt+` produces dead-accent; resolve via code
   }
   return k
 }
@@ -267,7 +270,7 @@ function defaultSettings() {
     hintTimeout:  0,
     timeLimit:    8,   // seconds per required key press
     runLength:    20,  // questions per run (0 = unlimited)
-    shortcuts:    ['general', 'groups', 'battle', 'factory', 'builder', 'blueprint', 'rezbot', 'transport', 'camera'],
+    shortcuts:    ['general', 'move', 'groups', 'battle', 'factory', 'builder', 'blueprint', 'rezbot', 'transport', 'camera', 'game'],
     difficulty:      'noob',
     soundEnabled:    true,
     mouseEnabled:    true,
@@ -332,6 +335,24 @@ let UNIT_LEVELS       = {}    // { unitId → level } inverted from shortcuts.js
 let FACTORY_LEVELS    = {}    // { builderId → level } inverted from shortcuts.json factoryLevels
 let CONSTRUCTOR_MODS  = { 'click': 0, 'shift-click': 1, 'space-click': 1 }
 let FACTORY_MODS      = { 'none': 0, 'shift': 1, 'ctrl': 1, 'alt': 1, 'ctrl-shift': 2 }
+
+// What each build modifier does, for the reference screen's legend and result cards.
+// `mods` are the modifier names held together with the grid key (factories) or the
+// mouse click (constructors); order matters for display. `note` is an extra caveat
+// shown only on the result card, where there is room for it.
+const FACTORY_MOD_INFO = {
+  'none':       { mods: [],                label: 'Build 1',      desc: 'Adds one to the end of the queue' },
+  'shift':      { mods: ['shift'],         label: 'Queue ×5',     desc: 'Adds five to the end of the queue' },
+  'ctrl':       { mods: ['ctrl'],          label: 'Queue ×20',    desc: 'Adds twenty to the end of the queue' },
+  'ctrl-shift': { mods: ['ctrl','shift'],  label: 'Queue ×100',   desc: 'Adds a hundred to the end of the queue' },
+  'alt':        { mods: ['alt'],           label: 'Insert next',  desc: 'Jumps the queue — builds this one next',
+                  note: '<strong>Hint:</strong> if the factory is on <strong>Repeat</strong>, any unit being built is finished and this one is built next. If the factory is not on Repeat, a unit under construction is <strong>cancelled</strong> and this one starts instead.' },
+}
+const CONSTRUCTOR_MOD_INFO = {
+  'click':       { mods: [],          label: 'Build',           desc: 'Place it — runs after the current orders' },
+  'shift-click': { mods: ['shift'],   label: 'Queue build',     desc: 'Appends to the build queue' },
+  'space-click': { mods: ['space'],   label: 'Build instantly', desc: 'Skips the queue and starts right away' },
+}
 
 const SHORTCUT_CONTEXT_UNITS = {
   battle:    { armada: 'armcom',   cortex: 'corcom',   legion: 'legcom'    },
@@ -429,6 +450,8 @@ function buildShortcutQueue() {
       if (threshold < Infinity) {
         if (shortcut.level === undefined || shortcut.level > threshold) continue
       }
+      // Unreachable in this browser/OS combination — drop it rather than show a study card
+      if (isOsReserved(shortcut.key, shortcut.modifiers ?? [])) continue
       // Normalise keys and per-key modifier arrays
       const seqKeys = shortcut.keys ?? (shortcut.key ? [shortcut.key] : null)
       if (!seqKeys) continue
@@ -739,7 +762,10 @@ const screens = {
 
 // ─── Screen switching ─────────────────────────────────────────────────────────
 
+let currentScreen = 'loading'
+
 function showScreen(name) {
+  currentScreen = name
   for (const [key, el] of Object.entries(screens)) {
     el.classList.toggle('active', key === name)
   }
@@ -1397,6 +1423,7 @@ function showNewRunCountdown() {
   const numEl   = $('countdown-number')
 
   clearAnswerTimer()
+  clearShowAnswerCountdown()
   countingDown = true
   overlay.classList.remove('hidden')
 
@@ -1574,41 +1601,56 @@ function resolveShortcutContextUnit(context) {
   }
 }
 
+// Verified by hand against the 12 grid keys (Q W E R A S D F Z X C V) in Chrome:
+//   Windows/Linux — every grid key passes through with Shift, Ctrl, Ctrl+Shift and Alt,
+//                   except W, which the browser keeps for Ctrl+W and Ctrl+Shift+W.
+//   macOS         — every grid key passes through with Shift, Ctrl and Ctrl+Shift.
+//                   Cmd+Q and Cmd+W are taken; every other grid key is fine with Cmd.
+// Keys outside the grid (T, H, L, J, U, P, N, O, digits, F-keys) are untested here and
+// keep their known browser bindings. Ctrl+C/V/X/D still fire keydown before the browser
+// acts on them, so they are NOT reserved even though the browser reacts too.
 const BROWSER_RESERVED_KEYS = {
   all:      { ctrl:      new Set(['Tab']),
               ctrlShift: new Set(['Tab']) },
-  winlinux: { ctrl:      new Set(['W','R','T','S','F','X','C','V','D','H','L','J','U','P','N','O','1','2','3','4','5','6','7','8']),
-              ctrlShift: new Set(['A','T','N','J','I','W']) },
+  winlinux: { ctrl:      new Set(['W','T','H','L','J','U','P','N','O','1','2','3','4','5','6','7','8']),
+              ctrlShift: new Set(['W','T','N','J','I']),
+              altShift:  new Set() },
   mac:      { ctrl:      new Set(['F1','F2','F3','F4']),
               ctrlShift: new Set(),
-              cmd:       new Set(['Q','W','R','A','S','D','F','Z','X','C','V']) },
+              // Cmd+Q quits Chrome, Cmd+W closes the tab — and with the Cmd↔Alt swap on,
+              // these are what Alt+Q and Alt+W actually become.
+              cmd:       new Set(['Q','W']),
+              // Cmd+Shift+3/4/5 are macOS screenshot shortcuts, taken before the browser sees them
+              cmdShift:  new Set(['3','4','5']) },
   firefox:  { ctrl:      new Set(['Q','F1','F2']),
               ctrlShift: new Set(['K']) },
 }
 
 function isBrowserReserved(key, mods) {
-  if (!mods.some(m => m === 'Ctrl')) return false
-  const type = mods.some(m => m === 'Shift') ? 'ctrlShift' : 'ctrl'
-  if (BROWSER_RESERVED_KEYS.all[type].has(key))                    return true
-  if (!IS_MAC    && BROWSER_RESERVED_KEYS.winlinux[type].has(key)) return true
-  if (IS_MAC     && BROWSER_RESERVED_KEYS.mac[type].has(key))      return true
-  if (IS_FIREFOX && BROWSER_RESERVED_KEYS.firefox[type].has(key))  return true
+  if (mods.some(m => m === 'Ctrl')) {
+    const type = mods.some(m => m === 'Shift') ? 'ctrlShift' : 'ctrl'
+    if (BROWSER_RESERVED_KEYS.all[type]?.has(key))                    return true
+    if (!IS_MAC    && BROWSER_RESERVED_KEYS.winlinux[type]?.has(key)) return true
+    if (IS_MAC     && BROWSER_RESERVED_KEYS.mac[type]?.has(key))      return true
+    if (IS_FIREFOX && BROWSER_RESERVED_KEYS.firefox[type]?.has(key))  return true
+  }
+  const hasAlt = mods.some(m => m === 'Alt')
+  if (hasAlt && mods.some(m => m === 'Shift')) {
+    if (!IS_MAC && BROWSER_RESERVED_KEYS.winlinux.altShift.has(key)) return true
+  }
+  // With the Cmd↔Alt swap on, an Alt shortcut is pressed as Cmd — so Cmd's own
+  // bindings (Cmd+Q quits, Cmd+W closes the tab) make those unreachable here.
+  if (hasAlt && IS_MAC && settings.swapCmdAlt && BROWSER_RESERVED_KEYS.mac.cmd.has(key)) return true
   return false
 }
 
-function browserReservedScope(key, mods) {
-  if (!mods.some(m => m === 'Ctrl')) return null
-  const type  = mods.some(m => m === 'Shift') ? 'ctrlShift' : 'ctrl'
-  const inAll = BROWSER_RESERVED_KEYS.all[type].has(key)
-  const inWin = BROWSER_RESERVED_KEYS.winlinux[type].has(key)
-  const inMac = BROWSER_RESERVED_KEYS.mac[type].has(key)
-  const inFF  = BROWSER_RESERVED_KEYS.firefox[type].has(key)
-  if (inAll || (inWin && inMac)) return 'all'
-  if (inMac && inFF)             return 'mac-firefox'
-  if (inWin)                     return 'winlinux'
-  if (inMac)                     return 'mac'
-  if (inFF)                      return 'firefox'
-  return null
+// Taken by the OS before any browser sees it, so it can't even be demonstrated here.
+// Unlike browser-reserved keys these get no study card — the queue just skips them,
+// which is fine where sibling keys teach the same command (presets 1 and 2 cover 3).
+function isOsReserved(key, mods) {
+  if (!IS_MAC || !settings.swapCmdAlt) return false
+  if (!(mods.some(m => m === 'Alt') && mods.some(m => m === 'Shift'))) return false
+  return BROWSER_RESERVED_KEYS.mac.cmdShift.has(key)   // Cmd+Shift+3/4/5 = macOS screenshots
 }
 
 function pickFactoryBuildMod(gridKey) {
@@ -1896,8 +1938,10 @@ function onKey(event) {
   const isFactoryGridMod = (trainingState === State.WAITING_GRID)
     && currentEntry?.builder && isFactory(currentEntry.builder)
     && currentEntry?.buildModifier && currentEntry.buildModifier !== 'none'
+  // The reference screen explains modifier combos, so it needs to see them too
+  const isBrowseMod = screens.browse.classList.contains('active')
   // Ignore modifier combos everywhere else
-  if (!isFactoryGridMod && (event.ctrlKey || event.altKey || event.metaKey)) return
+  if (!isFactoryGridMod && !isBrowseMod && (event.ctrlKey || event.altKey || event.metaKey)) return
   if (['INPUT','TEXTAREA','SELECT'].includes(event.target.tagName)) return
 
   // Escape: go back from wrong category first; fall through to pause toggle otherwise
@@ -1936,6 +1980,13 @@ function onKey(event) {
         }
       }
       if (key === 'B') { browsePageDelta(+1); return }
+      // Any other grid key explains what it builds, and what the held modifier does to it
+      if (browseCatId !== null && GRID_KEYS.includes(key)) {
+        event.preventDefault()
+        showBrowseModResult(key, event)
+        flashBrowseSlot(key)
+        return
+      }
     }
     return
   }
@@ -1949,6 +2000,10 @@ function onKey(event) {
     if (key === 'B') {
       handlePageKey()
     } else if (trainingState === State.WAITING_GRID && GRID_KEYS.includes(key)) {
+        // Factory build modifiers ride on Ctrl/Alt, which collide with the browser's own
+        // shortcuts (Ctrl+Shift+A opens Chrome's tab search). We accept the key either
+        // way, so swallow the event to stop the browser acting on it as well.
+        if (event.ctrlKey || event.altKey || event.metaKey) event.preventDefault()
         handleGridKey(key, event)
     }
   }
@@ -2416,6 +2471,15 @@ function flashSlot(key, cls) {
   }
 }
 
+function flashBrowseSlot(key) {
+  const slot = $('browse-menu-grid')?.querySelector(`[data-key="${key}"]`)
+  if (!slot || slot.classList.contains('empty')) return
+  slot.classList.remove('flash-correct')
+  void slot.offsetWidth
+  slot.classList.add('flash-correct')
+  slot.addEventListener('animationend', () => slot.classList.remove('flash-correct'), { once: true })
+}
+
 // ─── Slot hover info ──────────────────────────────────────────────────────────
 
 function showSlotHover(unit, elId) {
@@ -2594,19 +2658,16 @@ function initSetupScreen() {
       updateBuilderCount()
     })
 
-  $('btn-start').addEventListener('click', () => {
-    if (!settings.keyboard) {
-      showKbdDetect(() => {
-        precacheIcons(filteredBuilders(settings))
-        showNewRunCountdown()
-      })
-      return
-    }
+  // Every screen that shows keys needs to know the layout first — the reference screens
+  // label keys (Z vs Y, ^ vs `) just as much as training does.
+  const withKeyboard = fn => () => settings.keyboard ? fn() : showKbdDetect(fn)
+
+  $('btn-start').addEventListener('click', withKeyboard(() => {
     precacheIcons(filteredBuilders(settings))
     showNewRunCountdown()
-  })
-  $('btn-browse').addEventListener('click', () => showScreen('browse'))
-  $('btn-browse-shortcuts').addEventListener('click', () => showScreen('shortcuts'))
+  }))
+  $('btn-browse').addEventListener('click', withKeyboard(() => showScreen('browse')))
+  $('btn-browse-shortcuts').addEventListener('click', withKeyboard(() => showScreen('shortcuts')))
   $('btn-settings').addEventListener('click', () => {
     clearAnswerTimer()
     clearHintTimer()
@@ -2636,6 +2697,10 @@ function initSetupScreen() {
     Object.assign(settings, defaultSettings())
     saveSettings(settings)
     restoreSettingsUI()
+    // The reference screen keeps its own filter, so reset that back to "All" too
+    setBrowseDifficulty('commander')
+    renderBrowseList($('browse-search').value)
+    renderBrowseMenu()
   })
 
   initAdvancedToggles()
@@ -2758,13 +2823,19 @@ let browseDifficulty = 'commander'
 let learnPinnedUnit  = null
 let browsePinnedUnit = null
 
+// The reference is a lookup tool, so it opens on "All" rather than inheriting the
+// training difficulty — you usually browse to find what you have not learned yet.
+function setBrowseDifficulty(value) {
+  browseDifficulty = value
+  const radio = document.querySelector(`input[name="browse-diff"][value="${value}"]`)
+  if (radio) radio.checked = true
+}
+
 function initBrowseScreen() {
   $('btn-browse-back').addEventListener('click', () => showScreen('setup'))
   $('browse-search').addEventListener('input', e => renderBrowseList(e.target.value))
 
-  browseDifficulty = settings.difficulty ?? 'commander'
-  const diffRadio = document.querySelector(`input[name="browse-diff"][value="${browseDifficulty}"]`)
-  if (diffRadio) diffRadio.checked = true
+  setBrowseDifficulty('commander')
   for (const r of document.querySelectorAll('input[name="browse-diff"]')) {
     r.addEventListener('change', e => {
       browseDifficulty = e.target.value
@@ -3031,7 +3102,7 @@ function renderBrowseMenu() {
     }
   }
 
-  // Key hint
+  // Key hint — the category prompt only; B and Shift/Esc live in the shortcuts box below
   const hint = $('browse-key-hint')
   if (hint) {
     if (browseCatId === null) {
@@ -3041,20 +3112,126 @@ function renderBrowseMenu() {
         .join(' ')
       hint.innerHTML = `Press ${catKeys} to select a category`
     } else {
-      hint.innerHTML = `<kbd>Shift</kbd> / <kbd>Esc</kbd> · back`
+      hint.innerHTML = ''
     }
   }
 
-  // Page bar
+  // Page bar — just the position; the B key is listed in the shortcuts box
   const pageBar   = $('browse-page-bar')
   const totalPages = cat ? ((cat.units[cat.units.length - 1]?.page ?? 0) + 1) : 1
   if (totalPages <= 1) {
     pageBar.classList.add('hidden')
   } else {
     pageBar.classList.remove('hidden')
-    pageBar.innerHTML =
-      `Page ${browsePage + 1} / ${totalPages} — press <kbd>B</kbd> to advance`
+    pageBar.innerHTML = `Page ${browsePage + 1} / ${totalPages}`
   }
+
+  renderBrowseModLegend(totalPages)
+  clearBrowseModResult()
+}
+
+// Which modifier table applies to the builder currently open in the reference screen
+function browseModInfo() {
+  return isFactory(browseBuilder) ? FACTORY_MOD_INFO : CONSTRUCTOR_MOD_INFO
+}
+
+function modKeysHtml(mods, lastKey, placeholder = false) {
+  const parts = mods.map(m => `<kbd>${displayMod(m)}</kbd>`)
+  // The legend's trailing key is a stand-in for "whichever unit key" and is drawn dashed;
+  // the result card names a key the user actually pressed, so it gets a normal keycap.
+  if (lastKey) parts.push(`<kbd${placeholder ? ' class="mod-anykey"' : ''}>${lastKey}</kbd>`)
+  return parts.join('<span class="mod-plus">+</span>')
+}
+
+function renderBrowseModLegend(totalPages = 1) {
+  const box = $('browse-mod-legend')
+  if (!box || !browseBuilder) return
+  const factory = isFactory(browseBuilder)
+  const info    = browseModInfo()
+  const anyKey  = factory ? 'key' : 'Click'
+
+  const row = (keys, label, desc = '', note = '') => `
+    <div class="bml-row">
+      <div class="bml-keys">${keys}</div>
+      <div class="bml-text">
+        <span class="bml-label">${label}</span>${desc ? `<span class="bml-desc">${desc}</span>` : ''}
+        ${note ? `<div class="bml-note">${note}</div>` : ''}
+      </div>
+    </div>`
+
+  // The caveats (e.g. what Insert next does to the unit in progress) belong here rather
+  // than only on the result card — you should be able to read them without guessing a key.
+  const modRows = Object.values(info)
+    .map(({ mods, label, desc, note }) => row(modKeysHtml(mods, anyKey, true), label, desc, note))
+    .join('')
+
+  const nav = [
+    totalPages > 1 ? row('<kbd>B</kbd>', 'Next page') : '',
+    (!factory && browseCatId !== null)
+      ? row('<kbd>Shift</kbd><span class="mod-plus">/</span><kbd>Esc</kbd>', 'Back to categories') : '',
+  ].filter(Boolean).join('')
+
+  // Only worth mentioning the Cmd↔Alt swap when this builder actually has an Alt modifier
+  const swap = Object.values(info).some(m => m.mods.includes('alt')) ? macSwapNote(['alt']) : ''
+  const lead = factory
+    ? 'Hold a modifier while pressing the unit key:'
+    : 'Pick the unit with its key, then hold a modifier while clicking to place it:'
+
+  box.innerHTML = `
+    <div class="bml-title">Shortcuts${swap}</div>
+    <div class="bml-lead">${lead}</div>
+    ${modRows}
+    ${nav ? `<div class="bml-sep"></div>${nav}` : ''}`
+}
+
+function clearBrowseModResult() {
+  const box = $('browse-mod-result')
+  if (!box) return
+  box.classList.add('hidden')
+  box.innerHTML = ''
+}
+
+// Spell out what the key just pressed actually does, e.g. Alt+X → "Insert next: Eraser"
+function showBrowseModResult(gridKey, event) {
+  const box = $('browse-mod-result')
+  if (!box || !browseBuilder) return
+  const cat  = browseBuilder.categories[browseCatId]
+  const unit = cat?.units.find(u => u.page === browsePage && keysMatch(u.key, gridKey))
+  if (!unit) return clearBrowseModResult()
+
+  const factory = isFactory(browseBuilder)
+  const alt     = event.altKey || (IS_MAC && settings.swapCmdAlt && event.metaKey)
+  let modKey
+  if (factory) {
+    modKey = event.ctrlKey && event.shiftKey ? 'ctrl-shift'
+      : event.ctrlKey  ? 'ctrl'
+      : event.shiftKey ? 'shift'
+      : alt            ? 'alt' : 'none'
+  } else {
+    modKey = event.shiftKey ? 'shift-click' : spaceHeld ? 'space-click' : 'click'
+  }
+  const entry = browseModInfo()[modKey]
+  if (!entry) return clearBrowseModResult()
+
+  const info     = uInfo(unit.id)
+  const isQwertz = settings.keyboard === 'qwertz'
+  const pressed  = modKeysHtml(entry.mods.filter(m => m !== 'space'), display(unit.key, isQwertz))
+  // Constructors apply their modifier at click time, so name the click rather than the key
+  const note = factory
+    ? (entry.note ? `<div class="bmr-note">${entry.note}</div>` : '')
+    : `<div class="bmr-note">${entry.mods.length
+        ? `Then hold ${modKeysHtml(entry.mods, null)} while clicking to place it.`
+        : 'Then click to place it.'}</div>`
+
+  box.classList.remove('hidden')
+  box.innerHTML = `
+    <img class="bmr-icon" src="data/${info.icon}" alt="">
+    <div class="bmr-text">
+      <div class="bmr-head">${pressed}<span class="bmr-arrow">→</span><span class="bmr-action">${entry.label}</span></div>
+      <div class="bmr-unit">${info.name}</div>
+      <div class="bmr-desc">${entry.desc}</div>
+      ${note}
+    </div>`
 }
 
 function browsePageDelta(delta) {
@@ -3068,6 +3245,14 @@ function browsePageDelta(delta) {
 // ─── Shortcuts reference screen ───────────────────────────────────────────────
 
 let activeShortcutsGroupId = null
+let scCheckedIds = new Set()
+let scSpaceHeld  = false
+let scArmed      = null   // matches waiting for a pad gesture to disambiguate them
+let scArmTimer   = null
+let scKeySeq     = []     // buffered combos for multi-key shortcuts (Z Z = Area MEX)
+let scSeqTimer   = null
+
+const SC_PAD_IDLE = 'Press any shortcut to check it — then click or drag anywhere for its mouse action'
 
 function formatMouseAction(mouseAction) {
   if (!mouseAction) return ''
@@ -3075,8 +3260,10 @@ function formatMouseAction(mouseAction) {
   const isRight  = mouseAction === 'click-right' || mouseAction.startsWith('right-') || mouseAction.endsWith('-click-right')
   const isLine   = mouseAction.includes('line')
   const isDrag   = mouseAction.includes('drag')
-  const modifier = mouseAction.startsWith('alt-')  ? 'Alt'
-    : mouseAction.startsWith('ctrl-') ? 'Ctrl' : null
+  const modifier = mouseAction.startsWith('alt-')   ? 'Alt'
+    : mouseAction.startsWith('ctrl-')  ? 'Ctrl'
+    : mouseAction.startsWith('shift-') ? 'Shift'
+    : mouseAction.startsWith('space-') ? 'Space' : null
 
   const leftBtn  = `<path d="M.75 6.5Q.75.75 7 .75L7 9.5H.75Z" fill="rgba(220,155,30,.7)"/>`
   const rightBtn = `<path d="M13.25 6.5Q13.25.75 7 .75L7 9.5H13.25Z" fill="rgba(220,155,30,.7)"/>`
@@ -3121,16 +3308,19 @@ function formatShortcutKey(shortcut, isQwertz) {
 
   // Canonical combo: always show "Alt" — the game's actual key name, never "⌘ Cmd".
   // The Mac Cmd↔Alt swap is a practice aid; players must memorize "Alt" as the shortcut.
-  const canonicalCombo = (key) => {
+  // data-combo indexes each step of the shortcut so the learn screen can light up
+  // just the keys typed so far (Z → Z shows one Z lit after the first press).
+  const canonicalCombo = (key, index) => {
     const parts = [
       ...mods.map(m => m.toLowerCase() === 'alt' ? 'Alt' : capitalize(m)),
       display(key, isQwertz),
     ]
-    return parts.map(p => `<kbd>${p}</kbd>`).join('+')
+    return `<span class="sc-combo" data-combo="${index}">${
+      parts.map(p => `<kbd>${p}</kbd>`).join('+')}</span>`
   }
   const canonical = shortcut.keys
     ? shortcut.keys.map(canonicalCombo).join(' <span class="sc-seq-arrow">→</span> ')
-    : canonicalCombo(shortcut.key)
+    : canonicalCombo(shortcut.key, 0)
 
   // When swapCmdAlt is active on Mac, Alt shortcuts are practiced with Cmd.
   // Show a small note so the user knows which key to press in this trainer.
@@ -3148,8 +3338,287 @@ function formatShortcutKey(shortcut, isQwertz) {
   return canonical
 }
 
+function scRangeIncludes(rangeKey, key) {
+  const parts = rangeKey.split('–')
+  if (parts.length !== 2) return false
+  const [start, end] = parts
+  if (!isNaN(start) && !isNaN(end)) {
+    const n = parseInt(key, 10)
+    return !isNaN(n) && n >= parseInt(start, 10) && n <= parseInt(end, 10)
+  }
+  if (start.startsWith('F') && end.startsWith('F')) {
+    const n = parseInt(key.slice(1), 10)
+    return key.startsWith('F') && !isNaN(n) && n >= parseInt(start.slice(1), 10) && n <= parseInt(end.slice(1), 10)
+  }
+  return false
+}
+
+// A pressed combo: { key, mods } where mods is a sorted array of Ctrl/Shift/Alt/Space.
+function scComboFromEvent(e, spaceHeld) {
+  const mods = []
+  if (e.ctrlKey)  mods.push('Ctrl')
+  if (e.shiftKey) mods.push('Shift')
+  if (e.altKey || (settings.swapCmdAlt && e.metaKey)) mods.push('Alt')
+  if (spaceHeld)  mods.push('Space')
+  return { key: normalise(e.key, settings.keyboard === 'qwertz', e.code), mods }
+}
+
+function scComboMatchesKey(combo, scKey, scMods) {
+  if (scMods.length !== combo.mods.length) return false
+  if (!scMods.every(m => combo.mods.includes(m))) return false
+  return scKey.includes('–')
+    ? scRangeIncludes(scKey, combo.key)
+    : scKey.toUpperCase() === combo.key
+}
+
+// Does a shortcut's declared mouseAction match the gesture the user performed on the pad?
+// Line-vs-circle drags are indistinguishable by gesture, so both satisfy a drag.
+function scGestureMatches(mouseAction, gesture) {
+  const wantRight = mouseAction === 'click-right'
+    || mouseAction.startsWith('right-') || mouseAction.endsWith('-click-right')
+  const wantDrag = mouseAction.includes('drag')
+  const wantMod  = mouseAction.startsWith('alt-')   ? 'Alt'
+    : mouseAction.startsWith('ctrl-')  ? 'Ctrl'
+    : mouseAction.startsWith('shift-') ? 'Shift'
+    : mouseAction.startsWith('space-') ? 'Space' : null
+  if (wantRight !== (gesture.button === 'right')) return false
+  if (mouseAction.includes('or-drag')) {
+    // Either a click or a drag is acceptable
+  } else if (wantDrag !== (gesture.kind === 'drag')) return false
+  const gestureMod = gesture.mods.length === 1 ? gesture.mods[0] : null
+  if (wantMod !== gestureMod) return false
+  return true
+}
+
+// Resolve a buffered key sequence into shortcuts that are fully typed (`complete`)
+// and ones still waiting for more keys (`partial`, e.g. Z of Z–Z Area MEX).
+// Each entry carries `pressed`: how many of its combos are typed, so the key
+// column can highlight exactly that much.
+// Entries in the open category sort first so the view doesn't jump away.
+function scResolveSequence(seq) {
+  const combo = seq[seq.length - 1]
+  const complete = [], partial = []
+  for (const group of SHORTCUTS) {
+    for (const sc of group.shortcuts) {
+      if (sc.learnHidden) continue
+      if (sc.keys) {
+        const prefixOk = seq.length <= sc.keys.length && seq.every((cb, i) =>
+          scComboMatchesKey(cb, sc.keys[i], i === 0 ? (sc.modifiers ?? []) : []))
+        if (!prefixOk) continue
+        const entry = { group, sc, pressed: seq.length }
+        ;(seq.length === sc.keys.length ? complete : partial).push(entry)
+      } else if (sc.key && scComboMatchesKey(combo, sc.key, sc.modifiers ?? [])) {
+        complete.push({ group, sc, pressed: 1 })
+      }
+    }
+  }
+  const here = entry => entry.group.id === activeShortcutsGroupId ? 0 : 1
+  const order = list => [...list].sort((a, b) => here(a) - here(b))
+  return { complete: order(complete), partial: order(partial) }
+}
+
+function initShortcutsPad(scFlash, scDisarmPad, padLabel) {
+  const screen = $('screen-shortcuts')
+  if (!screen) return
+  const svg = $('sc-pad-svg')
+  let origin = null
+  let button = 'left'
+  let captured = false   // did we take this gesture over from the browser?
+
+  // Sidebar entries, the Back button and links keep their normal click behaviour
+  const isChrome = target => target.closest('button, a, .browse-item, input, label')
+
+  // Selecting text is a plain unmodified left drag, so we must not swallow those.
+  // Right-button and modifier-held gestures never select text, and once a key press is
+  // waiting for its mouse action the gesture is unambiguous — take those over. A plain
+  // left press stays with the browser and is judged at mouseup: a click still counts as
+  // a gesture (clicking selects nothing), a drag is the user highlighting text.
+  const capturable = e => scArmed !== null
+    || e.button === 2
+    || e.ctrlKey || e.shiftKey || e.altKey || e.metaKey || scSpaceHeld
+
+  screen.addEventListener('contextmenu', e => {
+    if (isChrome(e.target)) return
+    e.preventDefault()
+  })
+
+  screen.addEventListener('mousedown', e => {
+    if (isChrome(e.target)) return
+    origin = { x: e.clientX, y: e.clientY }
+    button = e.button === 2 ? 'right' : 'left'
+    captured = capturable(e)
+    if (captured) e.preventDefault()
+  })
+
+  screen.addEventListener('mousemove', e => {
+    if (!origin || !svg || !captured) return
+    const radius = Math.hypot(e.clientX - origin.x, e.clientY - origin.y)
+    if (radius < 5) return
+    svg.innerHTML =
+      `<circle cx="${origin.x}" cy="${origin.y}" r="${radius}" fill="rgba(0,200,0,.08)"
+        stroke="rgba(0,210,0,.7)" stroke-width="1.5" stroke-dasharray="6 3"/>
+       <line x1="${origin.x}" y1="${origin.y}" x2="${e.clientX}" y2="${e.clientY}"
+        stroke="rgba(0,210,0,.5)" stroke-width="1.2" stroke-dasharray="4 3"/>
+       <circle cx="${origin.x}" cy="${origin.y}" r="4" fill="rgba(0,210,0,.9)"/>`
+  })
+
+  window.addEventListener('mouseup', e => {
+    if (!origin) return
+    const dist = Math.hypot(e.clientX - origin.x, e.clientY - origin.y)
+    const wasCaptured = captured
+    origin = null
+    captured = false
+    if (svg) svg.innerHTML = ''
+    // A left drag we never took over is the user highlighting text, not a command
+    if (!wasCaptured && dist >= 18) return
+
+    const mods = []
+    if (e.ctrlKey)  mods.push('Ctrl')
+    if (e.shiftKey) mods.push('Shift')
+    if (e.altKey || (settings.swapCmdAlt && e.metaKey)) mods.push('Alt')
+    if (scSpaceHeld) mods.push('Space')
+    const gesture = { button, kind: dist >= 18 ? 'drag' : 'click', mods }
+
+    // Armed by a key press: narrow those candidates. Otherwise match keyless mouse-only commands.
+    const wasArmed = scArmed !== null
+    const pool = scArmed ?? SHORTCUTS.flatMap(group =>
+      group.shortcuts.filter(sc => !sc.learnHidden && !sc.key && !sc.keys && sc.mouseAction)
+        .map(sc => ({ group, sc })))
+    const hits = pool.filter(m => scGestureMatches(m.sc.mouseAction, gesture))
+
+    scDisarmPad()
+    // Only a key-armed gesture may change category; a bare click stays where you are
+    if (hits.length) scFlash(hits, wasArmed)
+    else if (wasArmed) padLabel(`No command on that key for a ${gesture.button === 'right' ? 'right-' : ''}${gesture.kind}`)
+  })
+}
+
 function initShortcutsScreen() {
-  $('btn-shortcuts-back').addEventListener('click', () => showScreen('setup'))
+  $('btn-shortcuts-back').addEventListener('click', () => {
+    scCheckedIds = new Set()
+    scSpaceHeld  = false
+    scKeySeq     = []
+    showScreen('setup')
+  })
+
+  const padLabel = txt => { const el = $('sc-pad-label'); if (el) el.innerHTML = txt }
+
+  const scClearLit = () => {
+    for (const el of document.querySelectorAll('.sc-combo-lit'))
+      el.classList.remove('sc-combo-lit')
+  }
+
+  const scDisarmPad = () => {
+    scArmed = null
+    if (scArmTimer !== null) { clearTimeout(scArmTimer); scArmTimer = null }
+    $('screen-shortcuts')?.classList.remove('sc-pad-armed')
+    scClearLit()
+    padLabel(SC_PAD_IDLE)
+  }
+
+  // Light up the individual keys typed so far, on every shortcut still in the running
+  const scLight = entries => {
+    if (!entries.length) return
+    const target = entries[0].group
+    if (activeShortcutsGroupId !== target.id) selectShortcutsGroup(target.id)
+    requestAnimationFrame(() => {
+      scClearLit()
+      let first = true
+      for (const { group, sc, pressed } of entries) {
+        if (group.id !== target.id) continue
+        const row = document.querySelector(`[data-sc-id="${sc.id}"]`)
+        if (!row) continue
+        for (let i = 0; i < pressed; i++)
+          row.querySelector(`.sc-combo[data-combo="${i}"]`)?.classList.add('sc-combo-lit')
+        if (first) { row.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); first = false }
+      }
+    })
+  }
+
+  // allowSwitch: only a deliberate key press may pull the view to another category.
+  // A bare click or drag must not — those are easy to trigger by accident, and being
+  // yanked to Select or Move every time you click the page is worse than no feedback.
+  const scFlash = (matches, allowSwitch = true) => {
+    if (!matches.length) return
+    const here     = matches.find(m => m.group.id === activeShortcutsGroupId)
+    const targetId = here      ? here.group.id
+      : allowSwitch            ? matches[0].group.id
+      : activeShortcutsGroupId
+    // Switching category re-renders the table, so settle the group before querying rows
+    if (activeShortcutsGroupId !== targetId) selectShortcutsGroup(targetId)
+    // Only tick off what the user can actually see happen — a match in a category we
+    // deliberately did not switch to would otherwise collect a checkmark invisibly.
+    const visible = matches.filter(m => m.group.id === targetId)
+    for (const { sc } of visible) scCheckedIds.add(sc.id)
+    requestAnimationFrame(() => {
+      let first = true
+      for (const { sc } of visible) {
+        const row = document.querySelector(`[data-sc-id="${sc.id}"]`)
+        if (!row) continue
+        row.classList.add('sc-row-checked')
+        row.classList.remove('sc-row-flash')
+        void row.offsetWidth
+        row.classList.add('sc-row-flash')
+        if (first) { row.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); first = false }
+      }
+    })
+  }
+
+  const scArmPad = (matches, comboHtml) => {
+    scArmed = matches
+    $('screen-shortcuts')?.classList.add('sc-pad-armed')
+    padLabel(`${comboHtml} — now click or drag anywhere to pick the command`)
+    if (scArmTimer !== null) clearTimeout(scArmTimer)
+    scArmTimer = setTimeout(scDisarmPad, 10000)
+  }
+
+  document.addEventListener('keydown', e => {
+    if (currentScreen !== 'shortcuts') return
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return
+    if (['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) return
+
+    if (e.key === ' ') scSpaceHeld = true
+    const combo = scComboFromEvent(e, e.key === ' ' ? false : scSpaceHeld)
+
+    // Try extending the buffered sequence (Z then Z = Area MEX); if that leads
+    // nowhere, treat this press as the start of a fresh sequence.
+    let seq = [...scKeySeq, combo]
+    let { complete, partial } = scResolveSequence(seq)
+    if (!complete.length && !partial.length && seq.length > 1) {
+      seq = [combo]
+      ;({ complete, partial } = scResolveSequence(seq))
+    }
+
+    scKeySeq = partial.length ? seq : []
+    if (scSeqTimer !== null) clearTimeout(scSeqTimer)
+    if (partial.length) scSeqTimer = setTimeout(() => { scKeySeq = []; scDisarmPad() }, 2000)
+
+    if (!complete.length && !partial.length) return
+    e.preventDefault()
+
+    const needsMouse = complete.filter(m => m.sc.mouseAction)
+    const done       = complete.filter(m => !m.sc.mouseAction)
+
+    scLight([...partial, ...needsMouse])
+    if (done.length) scFlash(done)
+
+    if (needsMouse.length) {
+      scArmPad(needsMouse, formatShortcutKey(needsMouse[0].sc, settings.keyboard === 'qwertz'))
+    } else if (partial.length) {
+      $('screen-shortcuts')?.classList.remove('sc-pad-armed')
+      scArmed = null
+      padLabel('Keep going — press the next key in the sequence')
+    } else {
+      scDisarmPad()
+    }
+  })
+
+  document.addEventListener('keyup', e => {
+    if (e.key === ' ') scSpaceHeld = false
+  })
+
+  initShortcutsPad(scFlash, scDisarmPad, padLabel)
+  padLabel(SC_PAD_IDLE)
 
   const list = $('shortcuts-group-list')
   for (const group of SHORTCUTS) {
@@ -3186,12 +3655,12 @@ function selectShortcutsGroup(id) {
   content.classList.remove('hidden')
 
   const rows = group.shortcuts.filter(sc => !sc.learnHidden).map(sc => {
-    const scope    = sc.keys ? null : browserReservedScope(sc.key, sc.modifiers ?? [])
-    const reserved = scope === 'all'          ? '<span class="sc-reserved">study card — all browsers</span>'
-      : scope === 'winlinux'    ? '<span class="sc-reserved">study card — Windows/Linux</span>'
-      : scope === 'mac'         ? '<span class="sc-reserved">study card — Mac only</span>'
-      : scope === 'mac-firefox' ? '<span class="sc-reserved">study card — Mac &amp; Firefox</span>'
-      : scope === 'firefox'     ? '<span class="sc-reserved">study card — Firefox only</span>'
+    // Only flag what this browser/OS actually swallows — a "Windows/Linux" warning on a
+    // Mac is noise, and worse, it contradicts the key visibly working when you press it.
+    const mods     = sc.modifiers ?? []
+    const reserved = sc.keys ? ''
+      : isBrowserReserved(sc.key, mods) ? '<span class="sc-reserved">study card — your browser keeps this one</span>'
+      : isOsReserved(sc.key, mods)      ? `<span class="sc-reserved">study card — ${IS_MAC ? 'macOS' : 'your OS'} keeps this one</span>`
       : ''
     const desc = sc.description
       ? `<div class="sc-desc">${sc.description}</div>` : ''
@@ -3200,8 +3669,10 @@ function selectShortcutsGroup(id) {
       : sc.level === 1
         ? '<span class="sc-lvl sc-lvl-1">Mid</span>'
         : '<span class="sc-lvl sc-lvl-cmd">Commander</span>'
+    const checked = scCheckedIds.has(sc.id) ? ' sc-row-checked' : ''
     return `
-      <tr>
+      <tr data-sc-id="${sc.id}"${checked ? ` class="${checked.trim()}"` : ''}>
+        <td class="sc-check-col"><span class="sc-check">✓</span></td>
         <td class="sc-action"><span class="sc-label">${sc.label}</span>${desc}</td>
         <td class="sc-key">${formatShortcutKey(sc, isQwertz)}${formatMouseAction(sc.mouseAction)}${reserved}</td>
         <td class="sc-level">${lvlBadge}</td>
@@ -3213,6 +3684,7 @@ function selectShortcutsGroup(id) {
     <table class="sc-table">
       <thead>
         <tr>
+          <th class="sc-check-col"></th>
           <th>Action</th>
           <th>Key</th>
           <th>Level</th>
@@ -3265,22 +3737,25 @@ async function init() {
   initShortcutsScreen()
   initMouseZone()
   showScreen('setup')
-  // Prevent browser-reserved keys from closing the tab/app while training.
-  // Ctrl+W closes tabs and Ctrl+Q quits the browser on Linux/Windows.
+  // Prevent browser-reserved keys from closing the tab/app. Ctrl+W closes tabs and
+  // Ctrl+Q quits the browser on Linux/Windows; Cmd+W and Cmd+Q do the same on macOS,
+  // and with the Cmd↔Alt swap on those are exactly what Alt+W and Alt+Q become.
   window.addEventListener('keydown', (event) => {
-    if (event.ctrlKey && (event.key === 'w' || event.key === 'W' ||
-                          event.key === 'q' || event.key === 'Q')) {
-      event.preventDefault()
-    }
+    const closeKey = event.key === 'w' || event.key === 'W'
+                  || event.key === 'q' || event.key === 'Q'
+    if (closeKey && (event.ctrlKey || event.metaKey)) event.preventDefault()
   }, { capture: true })
 
-  // Belt-and-suspenders: if the keydown block didn't work (e.g. Chromium on Linux
-  // intercepts Ctrl+W before JS), the beforeunload dialog is the last line of defence.
+  // Belt-and-suspenders: if the keydown block didn't work (Chromium on Linux intercepts
+  // Ctrl+W before JS, and macOS takes Cmd+Q outright), the beforeunload dialog is the
+  // last line of defence. It covers the reference screens too, since trying shortcuts
+  // out there is exactly where you press these combinations on purpose.
   window.addEventListener('beforeunload', (event) => {
-    if (document.getElementById('screen-training')?.classList.contains('active') && !runComplete) {
-      event.preventDefault()
-      event.returnValue = ''
-    }
+    const guarded = currentScreen === 'shortcuts' || currentScreen === 'browse'
+                 || (currentScreen === 'training' && !runComplete)
+    if (!guarded) return
+    event.preventDefault()
+    event.returnValue = ''
   })
 
   document.addEventListener('keydown', onKey)

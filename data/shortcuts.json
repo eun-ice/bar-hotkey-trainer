@@ -613,9 +613,25 @@
   "groups": [
     {
       "id": "general",
-      "name": "Select Units",
+      "name": "Select",
       "context": "none",
       "shortcuts": [
+        {
+          "id": "select-click",
+          "label": "Select",
+          "level": 0,
+          "displayOnly": true,
+          "description": "Left-click a unit — selects just that one, replacing the current selection",
+          "mouseAction": "click"
+        },
+        {
+          "id": "select-box",
+          "label": "Box Select",
+          "level": 0,
+          "displayOnly": true,
+          "description": "Left-drag a box — selects every unit inside it",
+          "mouseAction": "drag"
+        },
         {
           "id": "select-commander",
           "label": "Select Commander",
@@ -692,9 +708,65 @@
     },
     {
       "id": "move",
-      "name": "Move Commands",
+      "name": "Move",
       "context": "battle",
       "shortcuts": [
+        {
+          "id": "right-click-ground",
+          "label": "Move",
+          "level": 0,
+          "displayOnly": true,
+          "description": "Right-click the ground — the plain move order, units path to the point you clicked",
+          "mouseAction": "click-right"
+        },
+        {
+          "id": "right-click-enemy",
+          "label": "Set Target / Attack",
+          "level": 0,
+          "displayOnly": true,
+          "description": "Right-click an enemy — which of the two you get is configurable in the game settings: Set Target is recommended, Attack is the default",
+          "mouseAction": "click-right"
+        },
+        {
+          "id": "right-click-wreck",
+          "label": "Reclaim",
+          "level": 0,
+          "displayOnly": true,
+          "description": "Right-click a wreck — the selection reclaims it for metal",
+          "mouseAction": "click-right"
+        },
+        {
+          "id": "right-click-friendly",
+          "label": "Guard",
+          "level": 0,
+          "displayOnly": true,
+          "description": "Right-click a friendly unit — the selection follows and assists it, repairing it or helping build whatever it builds",
+          "mouseAction": "click-right"
+        },
+        {
+          "id": "right-click-mex-geo",
+          "label": "Build / Upgrade Mex or Geo",
+          "level": 1,
+          "displayOnly": true,
+          "description": "Right-click a metal spot or geothermal vent to build the extractor there — right-click your own T1 extractor to upgrade it to T2",
+          "mouseAction": "click-right"
+        },
+        {
+          "id": "queue-order",
+          "label": "Queue",
+          "level": 0,
+          "displayOnly": true,
+          "description": "Shift + right-click — appends the order instead of replacing the queue; keep Shift held to chain several",
+          "mouseAction": "shift-click-right"
+        },
+        {
+          "id": "queue-order-front",
+          "label": "Insert Next",
+          "level": 1,
+          "displayOnly": true,
+          "description": "Space + right-click — the order jumps to the front of the queue and runs next",
+          "mouseAction": "space-click-right"
+        },
         {
           "id": "move-formation",
           "label": "Move & Assume Formation",
@@ -721,7 +793,7 @@
     },
     {
       "id": "battle",
-      "name": "Battle Commands",
+      "name": "Battle",
       "context": "battle",
       "shortcuts": [
         {
@@ -921,7 +993,7 @@
     },
     {
       "id": "rezbot",
-      "name": "Rezbot Commands",
+      "name": "Rezbot",
       "context": "rezbot",
       "shortcuts": [
         {
@@ -1000,7 +1072,7 @@
     },
     {
       "id": "builder",
-      "name": "Builder Commands",
+      "name": "Builder",
       "context": "builder",
       "shortcuts": [
         {
@@ -1104,7 +1176,7 @@
     },
     {
       "id": "blueprint",
-      "name": "Blueprint Commands",
+      "name": "Blueprint",
       "context": "builder",
       "shortcuts": [
         {
@@ -1133,7 +1205,7 @@
     },
     {
       "id": "factory",
-      "name": "Factory Commands",
+      "name": "Factory",
       "context": "factory",
       "shortcuts": [
         {
@@ -1167,7 +1239,7 @@
     },
     {
       "id": "transport",
-      "name": "Transport Commands",
+      "name": "Transport",
       "context": "transport",
       "shortcuts": [
         {
@@ -1206,7 +1278,7 @@
     },
     {
       "id": "groups",
-      "name": "Unit Groups",
+      "name": "Groups",
       "context": "none",
       "shortcuts": [
         {
@@ -1451,7 +1523,7 @@
     },
     {
       "id": "camera",
-      "name": "Camera Controls",
+      "name": "Camera",
       "context": "none",
       "shortcuts": [
         {
@@ -1459,14 +1531,16 @@
           "label": "Select Camera 1",
           "level": 1,
           "key": "F1",
-          "description": "Jump to stored camera position 1"
+          "description": "Jump to stored camera position 1",
+          "learnHidden": true
         },
         {
           "id": "camera-recall-2",
           "label": "Select Camera 2",
           "level": 1,
           "key": "F2",
-          "description": "Jump to stored camera position 2"
+          "description": "Jump to stored camera position 2",
+          "learnHidden": true
         },
         {
           "id": "camera-store-1",
@@ -1476,7 +1550,8 @@
           "modifiers": [
             "Ctrl"
           ],
-          "description": "Save the current camera position to slot 1"
+          "description": "Save the current camera position to slot 1",
+          "learnHidden": true
         },
         {
           "id": "camera-store-2",
@@ -1486,7 +1561,27 @@
           "modifiers": [
             "Ctrl"
           ],
-          "description": "Save the current camera position to slot 2"
+          "description": "Save the current camera position to slot 2",
+          "learnHidden": true
+        },
+        {
+          "id": "camera-recall-range",
+          "label": "Select Camera",
+          "level": 1,
+          "key": "F1–F4",
+          "displayOnly": true,
+          "description": "Jump to a stored camera position — use the function key for the slot you want"
+        },
+        {
+          "id": "camera-store-range",
+          "label": "Store Camera",
+          "level": 1,
+          "key": "F1–F4",
+          "modifiers": [
+            "Ctrl"
+          ],
+          "displayOnly": true,
+          "description": "Save the current camera position to that slot"
         },
         {
           "id": "camera-toggle-overview",
@@ -1507,6 +1602,37 @@
             "Alt"
           ],
           "description": "Rotate the camera 180° to look from the opposite direction"
+        }
+      ]
+    },
+    {
+      "id": "game",
+      "name": "Game",
+      "context": "none",
+      "shortcuts": [
+        {
+          "id": "chat",
+          "label": "Chat",
+          "level": 0,
+          "key": "Enter",
+          "description": "Open the chat input — Enter again sends the message"
+        },
+        {
+          "id": "chat-target",
+          "label": "Switch Chat Target",
+          "level": 1,
+          "key": "Enter",
+          "modifiers": [
+            "Alt"
+          ],
+          "description": "Cycle who the message goes to — allies, everyone, spectators"
+        },
+        {
+          "id": "mute",
+          "label": "Mute",
+          "level": 0,
+          "key": "Backspace",
+          "description": "Mute or unmute the game sound"
         }
       ]
     }

@@ -1014,7 +1014,10 @@ kbd {
 
 /* ─── Slot hover info ───────────────────────────────────────────────────────── */
 .slot-hover-info {
-  min-height: 40px;
+  /* Tall enough for the fullest hover text (name + description + id + link) so that
+     hovering a slot never reflows whatever sits below the build menu. Measured at
+     58.4px, rounded up so the fractional line-height cannot nudge the layout. */
+  min-height: 60px;
   padding: 4px 6px 4px;
   font-size: 12px;
   line-height: 1.4;
@@ -1170,7 +1173,9 @@ kbd {
 }
 #browse-slot-hover-info {
   height: auto;
-  min-height: 40px;
+  /* Matches .slot-hover-info — reserved up front so hovering a slot never pushes
+     the build-modifier cards below it around. */
+  min-height: 60px;
 }
 
 .browse-topbar {
@@ -1326,6 +1331,95 @@ kbd {
   text-align: center;
 }
 
+/* ── Build-modifier cards (reference screen) ───────────────────────────────── */
+
+/* Legend: what each modifier does with this builder */
+.browse-mod-legend {
+  align-self: stretch;
+  max-width: 520px;
+  margin: 12px auto 0;
+  padding: 10px 12px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--rad);
+}
+.bml-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-dim);
+}
+.bml-lead {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin: 3px 0 8px;
+}
+.bml-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 3px 0;
+}
+.bml-keys {
+  flex: 0 0 148px;
+  text-align: right;
+  white-space: nowrap;
+}
+.bml-text { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px }
+.bml-label { font-size: 13px; font-weight: 600; color: var(--text-bright) }
+.bml-desc  { font-size: 12px; color: var(--text-dim) }
+/* Caveat under a modifier row — full width so it always starts its own line */
+.bml-note {
+  flex-basis: 100%;
+  margin-top: 2px;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+.bml-note strong { color: var(--text); font-weight: 600 }
+.bml-sep { height: 1px; background: var(--border); margin: 8px 0 6px }
+.mod-plus  { color: var(--text-dim); font-size: 11px; margin: 0 1px }
+.mod-anykey {
+  border-style: dashed;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* Result: what the key you just pressed actually does */
+.browse-mod-result {
+  align-self: stretch;
+  max-width: 520px;
+  margin: 12px auto 0;
+  padding: 10px 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--bg-panel2);
+  border: 1px solid var(--accent-dim);
+  border-radius: var(--rad);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+.browse-mod-result.hidden { display: none }
+.bmr-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.bmr-text { min-width: 0 }
+.bmr-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.bmr-arrow  { color: var(--text-dim) }
+.bmr-action { font-size: 14px; font-weight: 700; color: var(--accent) }
+.bmr-unit   { font-size: 13px; font-weight: 600; color: var(--text-bright); margin-top: 3px }
+.bmr-desc   { font-size: 12px; color: var(--text-dim); margin-top: 1px }
+.bmr-note   { font-size: 12px; color: var(--text); margin-top: 5px }
+
 .browse-equiv-table {
   display: flex;
   flex-direction: column;
@@ -1389,6 +1483,79 @@ kbd {
   max-width: 720px;
 }
 
+/* Nudge to actually try the shortcuts rather than just read them */
+.sc-intro {
+  width: 100%;
+  max-width: 720px;
+  margin-bottom: 18px;
+  padding: 11px 14px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border2);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--rad);
+}
+.sc-intro-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-bright);
+  margin-bottom: 5px;
+}
+.sc-intro p {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+.sc-intro p + p { margin-top: 5px }
+.sc-intro em { color: var(--text); font-style: italic }
+.sc-intro-check { color: var(--success); font-weight: 700 }
+.sc-intro-foot { color: var(--text-dim); opacity: .85 }
+
+/* The whole shortcuts page doubles as a mouse pad, so key+gesture commands
+   (Fight vs Fight Line vs the area drags) can be told apart without scrolling. */
+.sc-pad-svg {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 40;
+}
+#screen-shortcuts.sc-pad-armed .browse-main { cursor: crosshair }
+
+.sc-pad-label {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 7px 16px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
+  letter-spacing: .04em;
+  background: var(--bg-panel);
+  border-top: 1px solid var(--border);
+  pointer-events: none;
+  z-index: 41;
+}
+#screen-shortcuts.sc-pad-armed .sc-pad-label {
+  color: rgba(90, 220, 90, .95);
+  border-top-color: rgba(0, 200, 0, .5);
+  box-shadow: 0 -2px 12px rgba(0, 180, 0, .15);
+}
+.sc-pad-label kbd { font-size: 11px; margin: 0 2px }
+
+/* Intro above the table, not beside it — and room for the fixed hint bar.
+   Switching to a column swaps the flex axes, so the inherited justify-content:center
+   would centre vertically; anything overflowing the top of a centred flex container
+   cannot be scrolled back to, so pin the content to the top explicitly. */
+#screen-shortcuts .browse-main {
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  padding-bottom: 46px;
+}
+
 .sc-group-heading {
   font-size: 16px;
   font-weight: 700;
@@ -1421,6 +1588,30 @@ kbd {
 
 .sc-action { }
 .sc-label  { font-weight: 600; color: var(--text-bright); display: block }
+.sc-check-col { width: 20px; padding-right: 0 !important; text-align: center }
+.sc-check  { color: var(--success); font-weight: 700; font-size: 13px; opacity: 0; transition: opacity 0.15s }
+.sc-row-checked .sc-check { opacity: 1 }
+
+@keyframes sc-row-flash {
+  0%   { background: var(--success-bg); }
+  70%  { background: var(--success-bg); }
+  100% { background: transparent; }
+}
+.sc-row-flash td { animation: sc-row-flash 0.8s ease-out; }
+
+/* Keys typed so far on candidate shortcuts — the mouse gesture (or the next key)
+   narrows them down to one. Only the pressed keys light up, not the whole row. */
+@keyframes sc-combo-lit {
+  0%, 100% { box-shadow: 0 0 0 1px var(--accent), 0 0 5px var(--accent-glow) }
+  50%      { box-shadow: 0 0 0 1px var(--accent), 0 0 11px var(--accent-glow) }
+}
+.sc-combo-lit kbd {
+  color: var(--text-bright);
+  border-color: var(--accent);
+  background: rgba(200, 164, 64, .18);
+  animation: sc-combo-lit 1.3s ease-in-out infinite;
+}
+
 .sc-key    { white-space: nowrap; text-align: right; padding-left: 20px }
 .sc-level  { white-space: nowrap; text-align: right; padding-left: 12px }
 .sc-lvl    { display: inline-block; padding: 2px 7px; border-radius: 3px; font-size: 11px; font-weight: 700; letter-spacing: .03em }
