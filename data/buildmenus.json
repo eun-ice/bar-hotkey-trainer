@@ -1,6 +1,6 @@
 {
-  "version": "2026-07-25",
-  "generatedAt": "2026-07-25T19:32:01.792Z",
+  "version": "2026-08-06",
+  "generatedAt": "2026-08-06T23:29:37.017Z",
   "builders": {
     "armlab": {
       "id": "armlab",
@@ -10029,6 +10029,70 @@
       },
       "factions": [
         "legion"
+      ]
+    },
+    "armfark": {
+      "id": "armfark",
+      "name": "Butler",
+      "faction": "armada",
+      "tier": 2,
+      "isCommander": false,
+      "optional": false,
+      "experimental": false,
+      "metalCost": 210,
+      "energyCost": 3000,
+      "icon": "icons/armfark.webp",
+      "categories": {
+        "economy": {
+          "label": "Economy",
+          "key": "Z",
+          "units": [
+            {
+              "id": "armmex",
+              "key": "Z",
+              "page": 0
+            },
+            {
+              "id": "armsolar",
+              "key": "X",
+              "page": 0
+            },
+            {
+              "id": "armwin",
+              "key": "C",
+              "page": 0
+            },
+            {
+              "id": "armmakr",
+              "key": "A",
+              "page": 0
+            }
+          ]
+        },
+        "utility": {
+          "label": "Utility",
+          "key": "C",
+          "units": [
+            {
+              "id": "armmark",
+              "key": "Z",
+              "page": 0
+            },
+            {
+              "id": "armeyes",
+              "key": "X",
+              "page": 0
+            },
+            {
+              "id": "armaser",
+              "key": "C",
+              "page": 0
+            }
+          ]
+        }
+      },
+      "factions": [
+        "armada"
       ]
     },
     "corfast": {

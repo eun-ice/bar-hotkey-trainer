@@ -68,7 +68,6 @@ const EXCLUDED_BUILDER_IDS = new Set([
   // Decommissioning commanders — special game mode only
   'armdecom','cordecom','legdecom',
   // Nano-repair turrets that appear as builders in Lua but have no real build menu
-  'armfark',                          // Armada T1 nano turret (Butler)
   'corprinter','corvac','corvacct',   // Cortex nano variants (all named Printer)
   // Special combat units with only a handful of build options
   'cormando',                         // Cortex Commando
