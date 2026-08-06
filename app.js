@@ -348,10 +348,11 @@ const FACTORY_MOD_INFO = {
   'alt':        { mods: ['alt'],           label: 'Insert next',  desc: 'Jumps the queue — builds this one next',
                   note: '<strong>Hint:</strong> if the factory is on <strong>Repeat</strong>, any unit being built is finished and this one is built next. If the factory is not on Repeat, a unit under construction is <strong>cancelled</strong> and this one starts instead.' },
 }
+// `short` is the compact wording used on the result card, where all three are listed at once
 const CONSTRUCTOR_MOD_INFO = {
-  'click':       { mods: [],          label: 'Build',           desc: 'Place it — runs after the current orders' },
-  'shift-click': { mods: ['shift'],   label: 'Queue build',     desc: 'Appends to the build queue' },
-  'space-click': { mods: ['space'],   label: 'Build instantly', desc: 'Skips the queue and starts right away' },
+  'click':       { mods: [],        short: 'Build',   label: 'Build',           desc: 'Place it — runs after the current orders' },
+  'shift-click': { mods: ['shift'], short: 'Queue',   label: 'Queue build',     desc: 'Appends to the build queue' },
+  'space-click': { mods: ['space'], short: 'Instant', label: 'Build instantly', desc: 'Skips the queue and starts right away' },
 }
 
 const SHORTCUT_CONTEXT_UNITS = {
@@ -1957,18 +1958,16 @@ function onKey(event) {
 
   const key = normalise(event.key, settings.keyboard === 'qwertz', event.code)
 
-  // Browse screen: Escape/Shift = back to setup; category switching + pagination
+  // Browse screen: Escape/Shift = leave the category; category switching + pagination
   if (screens.browse.classList.contains('active')) {
-    if (event.key === 'Escape' || event.key === 'Shift') {
-      if (browseCatId !== null && !isFactory(browseBuilder)) {
-        event.preventDefault()
-        browseCatId = null
-        browsePage  = 0
-        clearBrowsePin()
-        renderBrowseMenu()
-      }
+    if (event.key === 'Escape') {
+      if (browseExitCategory()) event.preventDefault()
       return
     }
+    // In game Shift only backs out on release, so a chord like Shift+Q reaches the grid
+    // instead of dropping you out of the category the moment Shift goes down.
+    if (event.key === 'Shift') { browseShiftSolo = true; return }
+    browseShiftSolo = false
     if (browseBuilder) {
       if (browseCatId === null) {
         const matched = CATEGORIES.find(c => c.key === key)
@@ -2826,6 +2825,18 @@ let browsePage       = 0
 let browseDifficulty = 'commander'
 let learnPinnedUnit  = null
 let browsePinnedUnit = null
+let browseShiftSolo  = false   // Shift held with no other key — backs out on release
+
+// Leave the open category and return to the category picker. Factories have no
+// categories, so there is nothing to back out of there. Returns whether it acted.
+function browseExitCategory() {
+  if (browseCatId === null || isFactory(browseBuilder)) return false
+  browseCatId = null
+  browsePage  = 0
+  clearBrowsePin()
+  renderBrowseMenu()
+  return true
+}
 
 // The reference is a lookup tool, so it opens on "All" rather than inheriting the
 // training difficulty — you usually browse to find what you have not learned yet.
@@ -3206,38 +3217,46 @@ function showBrowseModResult(gridKey, event) {
   const unit = cat?.units.find(u => u.page === browsePage && keysMatch(u.key, gridKey))
   if (!unit) return clearBrowseModResult()
 
-  const factory = isFactory(browseBuilder)
-  const alt     = event.altKey || (IS_MAC && settings.swapCmdAlt && event.metaKey)
-  let modKey
-  if (factory) {
-    modKey = event.ctrlKey && event.shiftKey ? 'ctrl-shift'
+  const info     = uInfo(unit.id)
+  const isQwertz = settings.keyboard === 'qwertz'
+  const keyCap   = display(unit.key, isQwertz)
+  let head, desc, note
+
+  if (isFactory(browseBuilder)) {
+    // Factories take their modifier with the grid key, so the key press fully
+    // determines the order and we can name it outright.
+    const alt = event.altKey || (IS_MAC && settings.swapCmdAlt && event.metaKey)
+    const modKey = event.ctrlKey && event.shiftKey ? 'ctrl-shift'
       : event.ctrlKey  ? 'ctrl'
       : event.shiftKey ? 'shift'
       : alt            ? 'alt' : 'none'
+    const entry = FACTORY_MOD_INFO[modKey]
+    if (!entry) return clearBrowseModResult()
+    head = modKeysHtml(entry.mods, keyCap) +
+      `<span class="bmr-arrow">→</span><span class="bmr-action">${entry.label}</span>`
+    desc = entry.desc
+    note = ''   // the Repeat caveat lives in the legend below
   } else {
-    modKey = event.shiftKey ? 'shift-click' : spaceHeld ? 'space-click' : 'click'
+    // Constructors only arm the blueprint with the key — which order you get is decided
+    // by the modifier held at CLICK time, so the key press cannot say. Whether Shift was
+    // already down here is irrelevant: what counts is whether it is down when you click.
+    head = `<kbd>${keyCap}</kbd>` +
+      `<span class="bmr-arrow">→</span><span class="bmr-action">Ready to place</span>`
+    // No separate explanation line — every entry below already names the click
+    desc = ''
+    note = '<div class="bmr-note">' + Object.values(CONSTRUCTOR_MOD_INFO)
+      .map(m => `${modKeysHtml(m.mods, 'Click')} ${m.short}`)
+      .join('<span class="bmr-sep"> · </span>') + '</div>'
   }
-  const entry = browseModInfo()[modKey]
-  if (!entry) return clearBrowseModResult()
-
-  const info     = uInfo(unit.id)
-  const isQwertz = settings.keyboard === 'qwertz'
-  const pressed  = modKeysHtml(entry.mods.filter(m => m !== 'space'), display(unit.key, isQwertz))
-  // Constructors apply their modifier at click time, so name the click rather than the key.
-  // Factory caveats (entry.note) are not repeated here — they live in the legend below.
-  const note = factory ? ''
-    : `<div class="bmr-note">${entry.mods.length
-        ? `Then hold ${modKeysHtml(entry.mods, null)} while clicking to place it.`
-        : 'Then click to place it.'}</div>`
 
   box.classList.remove('hidden')
   $('browse-info-slot')?.classList.add('has-result')
   box.innerHTML = `
     <img class="bmr-icon" src="data/${info.icon}" alt="">
     <div class="bmr-text">
-      <div class="bmr-head">${pressed}<span class="bmr-arrow">→</span><span class="bmr-action">${entry.label}</span></div>
+      <div class="bmr-head">${head}</div>
       <div class="bmr-unit">${info.name}</div>
-      <div class="bmr-desc">${entry.desc}</div>
+      ${desc ? `<div class="bmr-desc">${desc}</div>` : ''}
       ${note}
     </div>`
 }
@@ -3771,7 +3790,14 @@ async function init() {
   // it bubbles (or swallow it entirely for focus-management shortcuts like Shift+Tab).
   // Listening on keyup guarantees we always catch the Shift release.
   document.addEventListener('keyup', (event) => {
-    if (event.key === 'Shift') handleGoBack()
+    if (event.key === 'Shift') {
+      if (screens.browse.classList.contains('active')) {
+        if (browseShiftSolo) browseExitCategory()
+        browseShiftSolo = false
+      } else {
+        handleGoBack()
+      }
+    }
     if (event.key === ' ') { spaceHeld = false; mouseZoneSpaceHeld = false }
   })
 

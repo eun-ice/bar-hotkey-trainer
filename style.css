@@ -1430,6 +1430,7 @@ kbd {
 .bmr-unit   { font-size: 13px; font-weight: 600; color: var(--text-bright); margin-top: 3px }
 .bmr-desc   { font-size: 12px; color: var(--text-dim); margin-top: 1px }
 .bmr-note   { font-size: 12px; color: var(--text); margin-top: 5px }
+.bmr-sep    { color: var(--text-dim); margin: 0 2px }
 
 .browse-equiv-table {
   display: flex;

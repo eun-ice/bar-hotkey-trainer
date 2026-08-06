@@ -67,8 +67,11 @@ const EXCLUDED_BUILDER_IDS = new Set([
   'legassistdrone','legassistdrone_land',
   // Decommissioning commanders — special game mode only
   'armdecom','cordecom','legdecom',
-  // Nano-repair turrets that appear as builders in Lua but have no real build menu
-  'corprinter','corvac','corvacct',   // Cortex nano variants (all named Printer)
+  // Cortex "Printer" field engineers and the scavenger-boss variant. Nothing in the game
+  // lists these in its buildoptions, so the reachability filter drops them anyway — kept
+  // as a guard in case a future BAR update wires them up. (They are mobile builders with
+  // 4 build options each, NOT nano turrets, whatever an earlier comment here claimed.)
+  'corprinter','corvac','corvacct',
   // Special combat units with only a handful of build options
   'cormando',                         // Cortex Commando
 ])
