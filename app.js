@@ -270,7 +270,7 @@ function defaultSettings() {
     hintTimeout:  0,
     timeLimit:    8,   // seconds per required key press
     runLength:    20,  // questions per run (0 = unlimited)
-    shortcuts:    ['general', 'move', 'groups', 'battle', 'factory', 'builder', 'blueprint', 'rezbot', 'transport', 'camera', 'game'],
+    shortcuts:    ['general', 'move', 'groups', 'battle', 'factory', 'builder', 'blueprint', 'rezbot', 'transport', 'camera', 'pip', 'game'],
     difficulty:      'noob',
     soundEnabled:    true,
     mouseEnabled:    true,
@@ -1617,9 +1617,9 @@ const BROWSER_RESERVED_KEYS = {
               altShift:  new Set() },
   mac:      { ctrl:      new Set(['F1','F2','F3','F4']),
               ctrlShift: new Set(),
-              // Cmd+Q quits Chrome, Cmd+W closes the tab — and with the Cmd↔Alt swap on,
-              // these are what Alt+Q and Alt+W actually become.
-              cmd:       new Set(['Q','W']),
+              // Cmd+Q quits Chrome, Cmd+W closes the tab, Cmd+T opens one — and with the
+              // Cmd↔Alt swap on, these are what Alt+Q, Alt+W and Alt+T actually become.
+              cmd:       new Set(['Q','W','T']),
               // Cmd+Shift+3/4/5 are macOS screenshot shortcuts, taken before the browser sees them
               cmdShift:  new Set(['3','4','5']) },
   firefox:  { ctrl:      new Set(['Q','F1','F2']),
@@ -2485,6 +2485,9 @@ function flashBrowseSlot(key) {
 function showSlotHover(unit, elId) {
   const el = $(elId)
   if (!el) return
+  // Hover and the key-result card share one slot, so hovering hands it back to the hover
+  // text — otherwise the card would keep the hover line hidden until you changed builder.
+  if (elId === 'browse-slot-hover-info') clearBrowseModResult()
   const info = uInfo(unit.id)
   const desc = info.description ? `<br><span class="slot-hover-desc">${info.description}</span>` : ''
   const link = `<a href="https://www.beyondallreason.info/unit/${unit.id}" target="_blank" rel="noopener noreferrer" class="slot-hover-link">↗ beyondallreason.info</a>`
@@ -2494,6 +2497,7 @@ function showSlotHover(unit, elId) {
 function showBrowseSlotHover(unit, equivUnit, isQwertz) {
   const el = $('browse-slot-hover-info')
   if (!el) return
+  clearBrowseModResult()   // see showSlotHover — the two share one reserved slot
   const info      = uInfo(unit.id)
   const equivInfo = uInfo(equivUnit.id)
   const equivKey  = display(equivUnit.key, isQwertz)

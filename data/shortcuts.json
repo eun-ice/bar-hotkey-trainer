@@ -676,6 +676,16 @@
           "description": "Select all units of the same type visible on screen"
         },
         {
+          "id": "select-damaged",
+          "label": "Select Damaged",
+          "level": 1,
+          "key": "Q",
+          "modifiers": [
+            "Alt"
+          ],
+          "description": "Narrow the current selection down to the units below 60% HP"
+        },
+        {
           "id": "split-army",
           "label": "Split Army",
           "level": 1,
@@ -1605,6 +1615,64 @@
             "Alt"
           ],
           "description": "Rotate the camera 180° to look from the opposite direction"
+        },
+        {
+          "id": "show-pathing",
+          "label": "Show Pathing",
+          "key": "F6",
+          "description": "Toggle pathfinding debug overlay"
+        },
+        {
+          "id": "toggle-hud",
+          "label": "Show / Hide HUD",
+          "level": 2,
+          "key": "F7",
+          "modifiers": [
+            "Ctrl"
+          ],
+          "displayOnly": true,
+          "description": "Hide the whole interface for a clean look at the battlefield — press again to bring it back"
+        }
+      ]
+    },
+    {
+      "id": "pip",
+      "name": "PiP",
+      "context": "none",
+      "shortcuts": [
+        {
+          "id": "pip-track",
+          "label": "Track Selection in PiP",
+          "level": 2,
+          "key": "T",
+          "modifiers": [
+            "Alt"
+          ],
+          "description": "Lock the picture-in-picture camera onto the units you have selected",
+          "displayOnly": true
+        },
+        {
+          "id": "pip-swap",
+          "label": "Swap Camera and PiP",
+          "level": 2,
+          "key": "Tab",
+          "modifiers": [
+            "Space"
+          ],
+          "description": "Exchange the main camera position with the PiP camera position",
+          "displayOnly": true
+        },
+        {
+          "id": "pip-copy",
+          "label": "Copy Camera to PiP",
+          "level": 2,
+          "key": "Tab",
+          "modifiers": [
+            "Ctrl",
+            "Space"
+          ],
+          "description": "Put the main camera's current position into the PiP",
+          "displayOnly": true
         }
       ]
     },
@@ -1636,12 +1704,6 @@
           "level": 0,
           "key": "Backspace",
           "description": "Mute or unmute the game sound"
-        },
-        {
-          "id": "show-pathing",
-          "label": "Show Pathing",
-          "key": "F6",
-          "description": "Toggle pathfinding debug overlay"
         }
       ]
     }
