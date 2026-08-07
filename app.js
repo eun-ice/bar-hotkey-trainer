@@ -46,12 +46,15 @@ const KeyLayout = {
       if (!window.isSecureContext || !navigator.keyboard?.getLayoutMap) return
       this.map = await navigator.keyboard.getLayoutMap()
     } catch { this.map = null; return }
-    // The key BAR calls ` is whichever key is printed ` or ^, and its position is NOT
-    // stable: Backquote on US and Windows German, but IntlBackslash on macOS ISO, where
-    // Backquote carries '<'. Locate it by label instead of guessing from the OS.
-    for (const [code, label] of this.map) {
-      if (label === '`' || label === '^') { this.toCode['`'] = code; break }
-    }
+    // BAR's ` key is the one left of the 1 key. That is 'Backquote' nearly everywhere —
+    // US, UK, Windows German (^), AZERTY (²), Danish (½). The exception is macOS ISO,
+    // which reports that key as 'IntlBackslash' and puts '<' on Backquote. Detect only
+    // that swap; do NOT go looking for whichever key prints '^', because on AZERTY the
+    // circumflex is a separate dead key on BracketLeft and has no BAR binding at all.
+    const backquote     = this.map.get('Backquote')
+    const intlBackslash = this.map.get('IntlBackslash')
+    const isTilde = ch => ch === '`' || ch === '^'
+    if (!isTilde(backquote) && isTilde(intlBackslash)) this.toCode['`'] = 'IntlBackslash'
     this.toCanon = Object.fromEntries(Object.entries(this.toCode).map(([c, k]) => [k, c]))
   },
 
