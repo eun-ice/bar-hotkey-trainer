@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=20">
+  <link rel="stylesheet" href="style.css?v=22">
   <script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body>
@@ -27,7 +27,7 @@
     <header class="setup-welcome">
       <h1>BAR Hotkey Trainer</h1>
       <p class="setup-tagline">★ Learn keyboard shortcuts. Gain OS.</p>
-      <p class="setup-desc">Commanders, free your mouse for what matters most: Commanding your units. Use shortcuts for everything else.<br><br>This trainer burns the grid keys into muscle memory so your fingers don't have to think. If you prefer legacy keys, this is not for you.</p>
+      <p class="setup-desc">Free your mouse for what matters most — commanding your units — and burn the grid keys into muscle memory. If you prefer legacy keys, this is not for you.</p>
     </header>
 
     <div class="setup-form">
@@ -61,6 +61,16 @@
         </div>
       </section>
 
+      <!-- Actions sit here, not at the bottom: with layout autodetection almost nobody
+           needs to touch the settings below, so the buttons stay above the fold. -->
+      <div class="setup-actions">
+        <div class="setup-action-btns">
+          <button id="btn-browse" class="btn-action">📖 Learn Menus</button>
+          <button id="btn-browse-shortcuts" class="btn-action">⌨ Learn Shortcuts</button>
+          <button id="btn-start" class="btn-action btn-action-primary">▶ Start Training</button>
+        </div>
+      </div>
+
       <section class="setup-section">
         <div class="setup-section-head">
           <h2 class="setup-section-title">Keyboard</h2>
@@ -75,9 +85,8 @@
           <span id="keyboard-detected-keys" class="kbd-detected-keys"></span>
         </div>
         <p id="keyboard-nodetect-hint" class="kbd-nodetect hidden">
-          This browser cannot report your keyboard layout. For automatic detection —
-          and correct key labels on layouts other than QWERTY and QWERTZ — use a
-          Chromium based browser such as Chrome, Edge or Opera.
+          Only Chromium browsers (Chrome, Edge, Opera) can detect the layout — including
+          AZERTY and others.
         </p>
         <label class="setup-checkbox-row" id="swap-cmd-alt-row">
           <input type="checkbox" id="swap-cmd-alt" checked>
@@ -203,19 +212,14 @@
 
     </div>
 
-    <div class="setup-actions">
-      <div class="setup-count-row">
-        <span id="builder-count" class="builder-count"></span>
-        <button id="btn-reset-defaults" class="btn-link">Reset to defaults</button>
-      </div>
-      <div class="setup-action-btns">
-        <button id="btn-browse" class="btn-action">📖 Learn Menus</button>
-        <button id="btn-browse-shortcuts" class="btn-action">⌨ Learn Shortcuts</button>
-        <button id="btn-start" class="btn-action btn-action-primary">▶ Start Training</button>
-      </div>
-      <div class="setup-reference-link">
-        <a href="https://www.beyondallreason.info/commands-2-0-grid" target="_blank" rel="noopener">BAR Command Reference ↗</a>
-      </div>
+    <!-- The count summarises the settings above it, so it stays at the end -->
+    <div class="setup-count-row">
+      <span id="builder-count" class="builder-count"></span>
+      <button id="btn-reset-defaults" class="btn-link">Reset to defaults</button>
+    </div>
+
+    <div class="setup-reference-link">
+      <a href="https://www.beyondallreason.info/commands-2-0-grid" target="_blank" rel="noopener">BAR Command Reference ↗</a>
     </div>
 
   </div>
@@ -518,6 +522,6 @@
   All rights remain with the original authors. If you have suggestions, mention @eunice3x on BAR discord.
 </footer>
 
-<script src="app.js?v=52" type="module"></script>
+<script src="app.js?v=54" type="module"></script>
 </body>
 </html>
