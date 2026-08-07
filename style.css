@@ -313,6 +313,22 @@ kbd {
   cursor: pointer;
 }
 
+/* Shown in place of the QWERTY/QWERTZ pick once the browser reports the real layout */
+.kbd-detected {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+.kbd-detected-label::after { content: ' —' }
+.kbd-detected-keys {
+  font-family: inherit;
+  letter-spacing: .06em;
+  color: var(--text-bright);
+}
+
 /* ─── Difficulty selector ────────────────────────────────────────────────── */
 
 .difficulty-section { padding: 12px 20px }

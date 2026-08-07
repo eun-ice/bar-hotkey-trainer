@@ -12,10 +12,89 @@ const CATEGORIES = [
 
 const GRID_KEYS = ['Q','W','E','R','A','S','D','F','Z','X','C','V']
 
-// On QWERTZ keyboards the physical Z key fires 'Y' and vice versa.
-// We normalise all incoming keys to their QWERTY equivalent so the
-// rest of the app only deals with QWERTY names.
-function normalise(key, isQwertz, code) {
+// ─── Keyboard layout ──────────────────────────────────────────────────────────
+//
+// BAR binds the grid by POSITION, so a shortcut means "the key sitting here", not
+// "the key printed with this letter". Internally a key keeps its US label ('Q', '1',
+// '`') — on a US board label and position coincide, which makes it a convenient name
+// for the position. Everything layout-specific lives in KeyLayout:
+//
+//   getKeyPressed(event) — physical key → canonical name   (matching)
+//   getDisplayKey(name)  — canonical name → printed label  (what we show on a keycap)
+//
+// navigator.keyboard.getLayoutMap() reports the real labels of the user's layout, so
+// AZERTY, UK, Danish, Dutch and the rest work with no tables of ours. It is Chromium-
+// only and needs a secure context (https or localhost); elsewhere we fall back to the
+// QWERTY/QWERTZ setting, which is what the app did everywhere before.
+
+const CANON_TO_CODE = {
+  ...Object.fromEntries([...'QWERTYUIOPASDFGHJKLZXCVBNM'].map(c => [c, 'Key' + c])),
+  ...Object.fromEntries([...'0123456789'].map(d => [d, 'Digit' + d])),
+  '`': 'Backquote',    '-': 'Minus',        '=': 'Equal',
+  '[': 'BracketLeft',  ']': 'BracketRight', '\\': 'Backslash',
+  ';': 'Semicolon',    "'": 'Quote',
+  ',': 'Comma',        '.': 'Period',       '/': 'Slash',
+}
+
+const KeyLayout = {
+  map:     null,                    // code → printed label, from getLayoutMap()
+  toCode:  { ...CANON_TO_CODE },    // canonical → the code carrying it on THIS machine
+  toCanon: null,                    // inverse of toCode
+
+  async init() {
+    try {
+      if (!window.isSecureContext || !navigator.keyboard?.getLayoutMap) return
+      this.map = await navigator.keyboard.getLayoutMap()
+    } catch { this.map = null; return }
+    // The key BAR calls ` is whichever key is printed ` or ^, and its position is NOT
+    // stable: Backquote on US and Windows German, but IntlBackslash on macOS ISO, where
+    // Backquote carries '<'. Locate it by label instead of guessing from the OS.
+    for (const [code, label] of this.map) {
+      if (label === '`' || label === '^') { this.toCode['`'] = code; break }
+    }
+    this.toCanon = Object.fromEntries(Object.entries(this.toCode).map(([c, k]) => [k, c]))
+  },
+
+  /** True once the browser has told us the real layout — no manual pick needed then. */
+  get detected() { return this.map !== null },
+
+  /** Best-effort QWERTY/QWERTZ guess, only to keep settings.keyboard meaningful. */
+  guessLayout() {
+    return this.map?.get('KeyZ') === 'y' ? 'qwertz' : 'qwerty'
+  },
+
+  /** The grid as this user sees it, e.g. "Q W E R / A S D F / Z X C V". */
+  gridLabels() {
+    const rows = [['Q','W','E','R'], ['A','S','D','F'], ['Z','X','C','V']]
+    return rows.map(r => r.map(k => this.getDisplayKey(k)).join(' ')).join('  /  ')
+  },
+
+  /** KeyboardEvent (or {key, code}) → canonical key name used throughout the app. */
+  getKeyPressed(event, isQwertz) {
+    const key  = event.key ?? ''
+    const code = event.code
+    if (key === ' ') return 'SPACE'
+    // Named keys (Tab, Enter, F1 …) carry no printed label and are the same on every
+    // layout. Upper-cased to match what the pre-KeyLayout normalise() returned.
+    if (key.length > 1 && key !== 'Dead') return key.toUpperCase()
+    if (this.toCanon && code && this.toCanon[code]) return this.toCanon[code]
+    return normaliseByLabel(key, isQwertz, code)
+  },
+
+  /** Canonical key name → what is actually printed on that key for this user. */
+  getDisplayKey(name, isQwertz) {
+    if (this.map) {
+      const label = this.map.get(this.toCode[name])
+      if (label) return label.length === 1 ? label.toUpperCase() : label
+      return name          // ranges like "0–9", F-keys, Tab … have no printed label
+    }
+    return displayByLayout(name, isQwertz)
+  },
+}
+
+// Fallback for browsers without the Keyboard Map API: guess from the QWERTY/QWERTZ
+// setting and the character the browser reported. This is the pre-getLayoutMap path.
+function normaliseByLabel(key, isQwertz, code) {
   const k = key.toUpperCase()
   if (isQwertz && k === 'Y') return 'Z'
   if (isQwertz && k === 'Z') return 'Y'
@@ -65,10 +144,9 @@ function isEquivGridKey(key) {
   return equivUnit ? keysMatch(key, equivUnit.key) : false
 }
 
-// For display: remap QWERTY scan-code key names to their physical QWERTZ labels.
-// Z and Y are swapped: the key in the QWERTY-Z position is labeled Y on QWERTZ and
-// vice versa. All other keys are unaffected.
-function display(key, isQwertz) {
+// Fallback labels when the Keyboard Map API is unavailable: the QWERTZ positions that
+// differ from QWERTY. Every other layout falls back to the plain QWERTY label.
+function displayByLayout(key, isQwertz) {
   if (!isQwertz) return key
   if (key === 'Z') return 'Y'
   if (key === 'Y') return 'Z'
@@ -77,6 +155,16 @@ function display(key, isQwertz) {
   if (key === ']') return '+'
   if (key === '`') return '^'
   return key
+}
+
+// The two entry points the rest of the app uses. Signatures are unchanged so every
+// existing call site keeps working; the layout logic now lives in KeyLayout.
+function normalise(key, isQwertz, code) {
+  return KeyLayout.getKeyPressed({ key, code }, isQwertz)
+}
+
+function display(key, isQwertz) {
+  return KeyLayout.getDisplayKey(key, isQwertz)
 }
 
 // ─── Audio ────────────────────────────────────────────────────────────────────
@@ -1993,6 +2081,10 @@ function onKey(event) {
     return
   }
 
+  // The shortcuts reference runs its own key handling; without this, keys pressed there
+  // also reach the training logic below and act on whatever state the last run left.
+  if (screens.shortcuts.classList.contains('active')) return
+
   // Training screen
   if (trainingState === State.WAITING_CATEGORY) {
     handleCategoryKey(key)
@@ -2012,6 +2104,7 @@ function onKey(event) {
 }
 
 function handleCategoryKey(key) {
+  if (!currentEntry) return  // stale training state with no question loaded
   const matched = CATEGORIES.find(c => keysMatch(c.key, key))
   if (!matched) return  // not a category key — ignore
 
@@ -2540,6 +2633,16 @@ function restoreSettingsUI() {
 
   for (const rb of document.querySelectorAll('input[name=keyboard]'))
     rb.checked = rb.value === settings.keyboard
+  // With a real layout from the browser the manual QWERTY/QWERTZ pick is meaningless —
+  // it only feeds the fallback path. Show what was detected instead. The Cmd↔Alt swap
+  // is a separate concern (a practice aid, not a layout fact) and stays either way.
+  if (KeyLayout.detected) {
+    // Keep the stored value meaningful for code that still reads it, but never ask
+    if (!settings.keyboard) { settings.keyboard = KeyLayout.guessLayout(); saveSettings(settings) }
+    $('keyboard-manual-row').classList.add('hidden')
+    $('keyboard-detected-row').classList.remove('hidden')
+    $('keyboard-detected-keys').textContent = KeyLayout.gridLabels()
+  }
   $('hint-timeout').value = settings.hintTimeout
   updateHintLabel(settings.hintTimeout)
   $('time-limit').value = settings.timeLimit
@@ -2665,8 +2768,10 @@ function initSetupScreen() {
     })
 
   // Every screen that shows keys needs to know the layout first — the reference screens
-  // label keys (Z vs Y, ^ vs `) just as much as training does.
-  const withKeyboard = fn => () => settings.keyboard ? fn() : showKbdDetect(fn)
+  // label keys (Z vs Y, ^ vs `) just as much as training does. When the browser can tell
+  // us the layout there is nothing to ask, so the Y/Z prompt is skipped entirely.
+  const withKeyboard = fn => () =>
+    (KeyLayout.detected || settings.keyboard) ? fn() : showKbdDetect(fn)
 
   $('btn-start').addEventListener('click', withKeyboard(() => {
     precacheIcons(filteredBuilders(settings))
@@ -3728,6 +3833,7 @@ function selectShortcutsGroup(id) {
 
 async function init() {
   showScreen('loading')
+  await KeyLayout.init()   // before anything renders a keycap or reads a key
   try {
     await loadData()
   } catch (err) {
