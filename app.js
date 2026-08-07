@@ -4013,6 +4013,12 @@ async function init() {
     const closeKey = event.key === 'w' || event.key === 'W'
                   || event.key === 'q' || event.key === 'Q'
     if (closeKey && (event.ctrlKey || event.metaKey)) event.preventDefault()
+    // F7 toggles caret browsing on Windows — a blinking text cursor that then follows you
+    // through every screen, including the countdown. It does nothing useful here and is
+    // easy to hit while trying out the F-row, so swallow it.
+    if (event.key === 'F7' && !event.ctrlKey && !event.altKey && !event.metaKey) {
+      event.preventDefault()
+    }
   }, { capture: true })
 
   // Belt-and-suspenders: if the keydown block didn't work (Chromium on Linux intercepts

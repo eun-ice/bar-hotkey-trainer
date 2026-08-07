@@ -40,6 +40,19 @@
 
 /* ─── Utility ───────────────────────────────────────────────────────────────── */
 .hidden { display: none !important }
+
+/* App surfaces, not documents: selecting their text is never useful, and on Windows a
+   click leaves a blinking insertion caret behind (macOS draws none for non-editable
+   text, which is why it only shows up there). The shortcuts reference is deliberately
+   left selectable — its rows are worth copying. */
+#screen-setup,
+#screen-training,
+#screen-browse,
+.countdown-overlay,
+.pause-overlay { user-select: none; -webkit-user-select: none }
+
+/* …but the unit details under a build menu carry an id and a link worth copying */
+#browse-slot-hover-info { user-select: text; -webkit-user-select: text }
 kbd {
   display: inline-block;
   padding: 1px 6px;
