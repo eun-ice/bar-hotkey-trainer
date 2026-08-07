@@ -1588,28 +1588,18 @@ kbd {
 .sc-intro {
   width: 100%;
   max-width: 720px;
-  margin-bottom: 18px;
-  padding: 11px 14px;
+  margin-bottom: 14px;
+  padding: 8px 12px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-dim);
   background: var(--bg-panel);
   border: 1px solid var(--border2);
   border-left: 3px solid var(--accent);
   border-radius: var(--rad);
 }
-.sc-intro-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text-bright);
-  margin-bottom: 5px;
-}
-.sc-intro p {
-  font-size: 12.5px;
-  line-height: 1.5;
-  color: var(--text-dim);
-}
-.sc-intro p + p { margin-top: 5px }
-.sc-intro em { color: var(--text); font-style: italic }
+.sc-intro strong { color: var(--text-bright) }
 .sc-intro-check { color: var(--success); font-weight: 700 }
-.sc-intro-foot { color: var(--text-dim); opacity: .85 }
 
 /* The whole shortcuts page doubles as a mouse pad, so key+gesture commands
    (Fight vs Fight Line vs the area drags) can be told apart without scrolling. */
