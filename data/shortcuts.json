@@ -1120,7 +1120,10 @@
             "Alt"
           ],
           "note": "QWERTY: Shift+Alt+Z   QWERTZ: Shift+Alt+Y (same physical key)",
-          "description": "Increase spacing when placing a line or grid of structures"
+          "description": "Increase spacing when placing a line or grid of structures",
+          "optionalModifiers": [
+            "Shift"
+          ]
         },
         {
           "id": "build-spacing-decrease",
@@ -1131,7 +1134,10 @@
             "Shift",
             "Alt"
           ],
-          "description": "Decrease spacing when placing a line or grid of structures"
+          "description": "Decrease spacing when placing a line or grid of structures",
+          "optionalModifiers": [
+            "Shift"
+          ]
         },
         {
           "id": "queue-next",

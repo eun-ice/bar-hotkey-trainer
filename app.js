@@ -150,7 +150,23 @@ function binding(shortcut) {
     key:       alt?.key ?? shortcut.key,
     keys:      alt ? null : shortcut.keys,
     modifiers: alt?.modifiers ?? shortcut.modifiers ?? [],
+    // Modifiers that are part of the documented combo but not required to trigger it —
+    // Build Spacing is written Shift+Alt+Z because you need Shift to see the grid you are
+    // adjusting, yet the spacing changes with Alt+Z alone. Taught as documented, accepted
+    // either way, so a player who learnt it from the game is not marked wrong.
+    optionalModifiers: shortcut.optionalModifiers ?? [],
   }
+}
+
+/** Do the modifiers held satisfy `want`, given `optional` ones that may be left out? */
+function modsSatisfy(held, want, optional = []) {
+  const norm = list => [...list].map(m => m.toLowerCase()).sort().join('+')
+  if (norm(held) === norm(want)) return true
+  if (!optional.length) return false
+  const lowerOptional = optional.map(m => m.toLowerCase())
+  const required = want.filter(m => !lowerOptional.includes(m.toLowerCase()))
+  // Every held modifier must be wanted, and every non-optional one must be held
+  return norm(held) === norm(required)
 }
 
 function isEquivGridKey(key) {
@@ -584,6 +600,7 @@ function buildShortcutQueue() {
         context:         shortcut.contextOverride ?? group.context,
         seqKeys,
         seqMods,
+        optionalMods:    bind.optionalModifiers.map(m => m.toLowerCase()),
         mouseAction:     shortcut.mouseAction ?? 'none',
         browserReserved: isBrowserReserved(bind.key, bind.modifiers),
       })
@@ -2251,7 +2268,9 @@ function handleShortcutKey(key, mods) {
   const entry       = currentEntry
   const expectedKey  = entry.seqKeys[entry.seqStep]
   const expectedMods = (entry.seqMods[entry.seqStep] ?? []).map(m => m.toLowerCase())
-  const modsMatch    = JSON.stringify([...mods].sort()) === JSON.stringify([...expectedMods].sort())
+  // Only the first step of a sequence carries modifiers, so the optional ones apply there
+  const optional     = entry.seqStep === 0 ? (entry.optionalMods ?? []) : []
+  const modsMatch    = modsSatisfy(mods, expectedMods, optional)
   const keyMatch     = keysMatch(key, expectedKey.toUpperCase())
 
   if (modsMatch && keyMatch) {
@@ -3544,9 +3563,8 @@ function scComboFromEvent(e, spaceHeld) {
   return { key: normalise(e.key, settings.keyboard === 'qwertz', e.code), mods }
 }
 
-function scComboMatchesKey(combo, scKey, scMods) {
-  if (scMods.length !== combo.mods.length) return false
-  if (!scMods.every(m => combo.mods.includes(m))) return false
+function scComboMatchesKey(combo, scKey, scMods, optionalMods = []) {
+  if (!modsSatisfy(combo.mods, scMods, optionalMods)) return false
   return scKey.includes('–')
     ? scRangeIncludes(scKey, combo.key)
     : scKey.toUpperCase() === combo.key
@@ -3585,11 +3603,13 @@ function scResolveSequence(seq) {
       const bind = binding(sc)
       if (bind.keys) {
         const prefixOk = seq.length <= bind.keys.length && seq.every((cb, i) =>
-          scComboMatchesKey(cb, bind.keys[i], i === 0 ? bind.modifiers : []))
+          scComboMatchesKey(cb, bind.keys[i], i === 0 ? bind.modifiers : [],
+                            i === 0 ? bind.optionalModifiers : []))
         if (!prefixOk) continue
         const entry = { group, sc, pressed: seq.length }
         ;(seq.length === bind.keys.length ? complete : partial).push(entry)
-      } else if (bind.key && scComboMatchesKey(combo, bind.key, bind.modifiers)) {
+      } else if (bind.key &&
+                 scComboMatchesKey(combo, bind.key, bind.modifiers, bind.optionalModifiers)) {
         complete.push({ group, sc, pressed: 1 })
       }
     }
