@@ -923,6 +923,15 @@ async function main() {
     const pairs = [...parsePairs(unitlistBlock), ...parsePairs(legionBlock)]
     const equivalents = {}
     for (const [a, b] of pairs) { equivalents[a] = b; equivalents[b] = a }
+    // Upstream occasionally points a pair at a unit id that no longer exists (e.g.
+    // {'legvp','legamsub'} — the Legion amphibious lab is legamphlab). Such a pair is
+    // inert in game too, so we copy it verbatim rather than "fixing" it, but surface it
+    // here so a real upstream rename is not mistaken for one of these dead entries.
+    const unknown = Object.keys(equivalents).filter(id => !unitDefs[id])
+    if (unknown.length) {
+      console.log(`  note: ${unknown.length} water-equivalent id(s) match no unit — ` +
+        `inert in game as well: ${unknown.join(', ')}`)
+    }
     writeFileSync(join(__dirname, 'data', 'water-equivalents.json'), JSON.stringify(equivalents, null, 2))
     console.log(`Wrote data/water-equivalents.json  (${pairs.length} pairs)`)
   }
