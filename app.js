@@ -22,10 +22,13 @@ function normalise(key, isQwertz, code) {
   if (isQwertz && k === 'Ö') return ';'  // physical ;/Ö key position → ; shortcut
   if (isQwertz && k === '+') return ']'  // physical ] key position → ] shortcut
   if (isQwertz && k === 'Ü') return '['  // physical [ key position on QWERTZ is labeled ü
-  // The key left of 1 is ` on QWERTY and ^ on QWERTZ, and browsers report it wildly
-  // differently: 'Dead' (uncomposed dead key), '^', 'ˆ', '°', or '`'. Only some of those
-  // are non-ASCII, so the fallback below would miss the rest — resolve it by position.
-  if (code === 'Backquote') return '`'
+  // BAR's ` key is whichever key is printed ` or ^. Neither the character nor the
+  // position is stable: browsers report 'Dead', '^', 'ˆ', '°' or '`', and the position
+  // moves too — Backquote on US and Windows German, but IntlBackslash on macOS German,
+  // where Backquote carries '<' instead. Match on the label and only fall back to the
+  // position for dead keys, which report no label at all.
+  if (k === '`' || k === '^' || k === 'ˆ' || k === '°') return '`'
+  if (k === 'DEAD' && (code === 'Backquote' || code === 'IntlBackslash')) return '`'
   if (k === ' ') return 'SPACE'
   // A number-row key always means its digit, whatever Shift/Alt turned it into:
   // Shift+1 is '!' on US and Shift+3 is '§' on German, but both are still the group key.
