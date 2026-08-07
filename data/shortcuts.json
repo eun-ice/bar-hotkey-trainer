@@ -683,7 +683,14 @@
           "modifiers": [
             "Alt"
           ],
-          "description": "Narrow the current selection down to the units below 60% HP"
+          "description": "Narrow the current selection down to the units below 60% HP",
+          "sixty": {
+            "key": "Q",
+            "modifiers": [
+              "Ctrl",
+              "Alt"
+            ]
+          }
         },
         {
           "id": "split-army",
@@ -1426,7 +1433,14 @@
             "Ctrl"
           ],
           "note": "QWERTY: Ctrl+`  QWERTZ: Ctrl+^ (same physical key, left of 1)",
-          "description": "Remove selected units from all their control groups"
+          "description": "Remove selected units from all their control groups",
+          "sixty": {
+            "key": "Q",
+            "modifiers": [
+              "Ctrl",
+              "Space"
+            ]
+          }
         },
         {
           "id": "auto-group-set-1",
@@ -1481,7 +1495,13 @@
             "Alt"
           ],
           "note": "QWERTY: Alt+`  QWERTZ: Alt+^ (same physical key, left of 1)",
-          "description": "Remove the unit types of selected units from their auto group configuration"
+          "description": "Remove the unit types of selected units from their auto group configuration",
+          "sixty": {
+            "key": "Q",
+            "modifiers": [
+              "Alt"
+            ]
+          }
         },
         {
           "id": "load-autogroup-preset-1",
@@ -1544,7 +1564,13 @@
           "level": 1,
           "key": "F1",
           "description": "Jump to stored camera position 1",
-          "learnHidden": true
+          "learnHidden": true,
+          "sixty": {
+            "key": "1",
+            "modifiers": [
+              "Space"
+            ]
+          }
         },
         {
           "id": "camera-recall-2",
@@ -1552,7 +1578,13 @@
           "level": 1,
           "key": "F2",
           "description": "Jump to stored camera position 2",
-          "learnHidden": true
+          "learnHidden": true,
+          "sixty": {
+            "key": "2",
+            "modifiers": [
+              "Space"
+            ]
+          }
         },
         {
           "id": "camera-store-1",
@@ -1563,7 +1595,14 @@
             "Ctrl"
           ],
           "description": "Save the current camera position to slot 1",
-          "learnHidden": true
+          "learnHidden": true,
+          "sixty": {
+            "key": "1",
+            "modifiers": [
+              "Ctrl",
+              "Space"
+            ]
+          }
         },
         {
           "id": "camera-store-2",
@@ -1574,7 +1613,14 @@
             "Ctrl"
           ],
           "description": "Save the current camera position to slot 2",
-          "learnHidden": true
+          "learnHidden": true,
+          "sixty": {
+            "key": "2",
+            "modifiers": [
+              "Ctrl",
+              "Space"
+            ]
+          }
         },
         {
           "id": "camera-recall-range",
@@ -1582,7 +1628,13 @@
           "level": 1,
           "key": "F1–F4",
           "displayOnly": true,
-          "description": "Jump to a stored camera position — use the function key for the slot you want"
+          "description": "Jump to a stored camera position — use the function key for the slot you want",
+          "sixty": {
+            "key": "1–4",
+            "modifiers": [
+              "Space"
+            ]
+          }
         },
         {
           "id": "camera-store-range",
@@ -1593,7 +1645,14 @@
             "Ctrl"
           ],
           "displayOnly": true,
-          "description": "Save the current camera position to that slot"
+          "description": "Save the current camera position to that slot",
+          "sixty": {
+            "key": "1–4",
+            "modifiers": [
+              "Ctrl",
+              "Space"
+            ]
+          }
         },
         {
           "id": "camera-toggle-overview",
@@ -1619,7 +1678,13 @@
           "id": "show-pathing",
           "label": "Show Pathing",
           "key": "F6",
-          "description": "Toggle pathfinding debug overlay"
+          "description": "Toggle pathfinding debug overlay",
+          "sixty": {
+            "key": "6",
+            "modifiers": [
+              "Space"
+            ]
+          }
         },
         {
           "id": "toggle-hud",
@@ -1630,7 +1695,14 @@
             "Ctrl"
           ],
           "displayOnly": true,
-          "description": "Hide the whole interface for a clean look at the battlefield — press again to bring it back"
+          "description": "Hide the whole interface for a clean look at the battlefield — press again to bring it back",
+          "sixty": {
+            "key": "7",
+            "modifiers": [
+              "Ctrl",
+              "Space"
+            ]
+          }
         }
       ]
     },
@@ -1715,7 +1787,7 @@
           "modifiers": [
             "Ctrl"
           ],
-          "description": "Open the chat input addressed to everyone"
+          "description": "Always addresses everyone, whatever the current target is"
         },
         {
           "id": "mute",

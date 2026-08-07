@@ -139,6 +139,20 @@ function keysMatch(pressed, expected) {
   return pressed === expected
 }
 
+// Which binding a shortcut actually has for this user. BAR ships a second hotkey preset
+// for 60%/65% boards (luaui/configs/hotkeys/grid_keys_60pct.txt) that moves everything
+// off the F-row and off the ` key, since those boards only reach them through an Fn
+// layer. Entries that differ carry a `sixty` block; everything else is identical.
+// The form factor is not detectable from the browser, so this follows a manual setting.
+function binding(shortcut) {
+  const alt = settings.compact60 ? shortcut.sixty : null
+  return {
+    key:       alt?.key ?? shortcut.key,
+    keys:      alt ? null : shortcut.keys,
+    modifiers: alt?.modifiers ?? shortcut.modifiers ?? [],
+  }
+}
+
 function isEquivGridKey(key) {
   if (!currentEntry || currentEntry.type === 'shortcut') return false
   const equivId = WATER_EQUIVALENTS[currentEntry.unit.id]
@@ -371,6 +385,7 @@ function defaultSettings() {
     soundEnabled:    true,
     mouseEnabled:    true,
     swapCmdAlt:      IS_MAC,
+    compact60:       false,
     buildModifiers:  true,
   }
 }
@@ -547,18 +562,19 @@ function buildShortcutQueue() {
       if (threshold < Infinity) {
         if (shortcut.level === undefined || shortcut.level > threshold) continue
       }
+      const bind = binding(shortcut)
       // Unreachable in this browser/OS combination — drop it rather than show a study card
-      if (isOsReserved(shortcut.key, shortcut.modifiers ?? [])) continue
+      if (isOsReserved(bind.key, bind.modifiers)) continue
       // Normalise keys and per-key modifier arrays
-      const seqKeys = shortcut.keys ?? (shortcut.key ? [shortcut.key] : null)
+      const seqKeys = bind.keys ?? (bind.key ? [bind.key] : null)
       if (!seqKeys) continue
       let seqMods
-      if (shortcut.keys) {
+      if (bind.keys) {
         // Sequence of keys — each key has no modifiers
-        seqMods = shortcut.keys.map(() => [])
+        seqMods = bind.keys.map(() => [])
       } else {
         // Single key with optional modifiers
-        seqMods = [(shortcut.modifiers ?? []).map(m => m.toLowerCase())]
+        seqMods = [bind.modifiers.map(m => m.toLowerCase())]
       }
       items.push({
         type:            'shortcut',
@@ -569,7 +585,7 @@ function buildShortcutQueue() {
         seqKeys,
         seqMods,
         mouseAction:     shortcut.mouseAction ?? 'none',
-        browserReserved: isBrowserReserved(shortcut.key, shortcut.modifiers ?? []),
+        browserReserved: isBrowserReserved(bind.key, bind.modifiers),
       })
     }
   }
@@ -2662,6 +2678,7 @@ function restoreSettingsUI() {
   $('mouse-enabled').checked = settings.mouseEnabled
   if (!IS_MAC) $('swap-cmd-alt-row').style.display = 'none'
   $('swap-cmd-alt').checked = settings.swapCmdAlt
+  $('compact-60').checked = !!settings.compact60
 
   const diff = settings.difficulty ?? 'commander'
   const diffRadio = document.querySelector(`input[name=difficulty][value="${diff}"]`)
@@ -2729,6 +2746,13 @@ function initSetupScreen() {
   $('swap-cmd-alt').addEventListener('change', e => {
     settings.swapCmdAlt = e.target.checked
     saveSettings(settings)
+  })
+
+  $('compact-60').addEventListener('change', e => {
+    settings.compact60 = e.target.checked
+    saveSettings(settings)
+    // Every key label on the reference screen can change with this
+    if (activeShortcutsGroupId) selectShortcutsGroup(activeShortcutsGroupId)
   })
 
   for (const cb of document.querySelectorAll('input[name=buildertype]'))
@@ -3457,8 +3481,9 @@ function formatMouseAction(mouseAction) {
 }
 
 function formatShortcutKey(shortcut, isQwertz) {
-  if (!shortcut.key && !shortcut.keys) return ''
-  const mods = shortcut.modifiers ?? []
+  const bind = binding(shortcut)
+  if (!bind.key && !bind.keys) return ''
+  const mods = bind.modifiers
   const hasAlt = mods.some(m => m.toLowerCase() === 'alt')
 
   // Canonical combo: always show "Alt" — the game's actual key name, never "⌘ Cmd".
@@ -3473,9 +3498,9 @@ function formatShortcutKey(shortcut, isQwertz) {
     return `<span class="sc-combo" data-combo="${index}">${
       parts.map(p => `<kbd>${p}</kbd>`).join('+')}</span>`
   }
-  const canonical = shortcut.keys
-    ? shortcut.keys.map(canonicalCombo).join(' <span class="sc-seq-arrow">→</span> ')
-    : canonicalCombo(shortcut.key, 0)
+  const canonical = bind.keys
+    ? bind.keys.map(canonicalCombo).join(' <span class="sc-seq-arrow">→</span> ')
+    : canonicalCombo(bind.key, 0)
 
   // When swapCmdAlt is active on Mac, Alt shortcuts are practiced with Cmd.
   // Show a small note so the user knows which key to press in this trainer.
@@ -3484,9 +3509,9 @@ function formatShortcutKey(shortcut, isQwertz) {
       const parts = [...mods.map(m => displayMod(m.toLowerCase())), display(key, isQwertz)]
       return parts.map(p => `<kbd>${p}</kbd>`).join('+')
     }
-    const practice = shortcut.keys
-      ? shortcut.keys.map(practiceCombo).join(' → ')
-      : practiceCombo(shortcut.key)
+    const practice = bind.keys
+      ? bind.keys.map(practiceCombo).join(' → ')
+      : practiceCombo(bind.key)
     return `${canonical}<span class="sc-mac-practice">Practice here: ${practice}</span>`
   }
 
@@ -3556,13 +3581,14 @@ function scResolveSequence(seq) {
   for (const group of SHORTCUTS) {
     for (const sc of group.shortcuts) {
       if (sc.learnHidden) continue
-      if (sc.keys) {
-        const prefixOk = seq.length <= sc.keys.length && seq.every((cb, i) =>
-          scComboMatchesKey(cb, sc.keys[i], i === 0 ? (sc.modifiers ?? []) : []))
+      const bind = binding(sc)
+      if (bind.keys) {
+        const prefixOk = seq.length <= bind.keys.length && seq.every((cb, i) =>
+          scComboMatchesKey(cb, bind.keys[i], i === 0 ? bind.modifiers : []))
         if (!prefixOk) continue
         const entry = { group, sc, pressed: seq.length }
-        ;(seq.length === sc.keys.length ? complete : partial).push(entry)
-      } else if (sc.key && scComboMatchesKey(combo, sc.key, sc.modifiers ?? [])) {
+        ;(seq.length === bind.keys.length ? complete : partial).push(entry)
+      } else if (bind.key && scComboMatchesKey(combo, bind.key, bind.modifiers)) {
         complete.push({ group, sc, pressed: 1 })
       }
     }
@@ -3812,10 +3838,10 @@ function selectShortcutsGroup(id) {
   const rows = group.shortcuts.filter(sc => !sc.learnHidden).map(sc => {
     // Only flag what this browser/OS actually swallows — a "Windows/Linux" warning on a
     // Mac is noise, and worse, it contradicts the key visibly working when you press it.
-    const mods     = sc.modifiers ?? []
-    const reserved = sc.keys ? ''
-      : isBrowserReserved(sc.key, mods) ? '<span class="sc-reserved">study card — your browser keeps this one</span>'
-      : isOsReserved(sc.key, mods)      ? `<span class="sc-reserved">study card — ${IS_MAC ? 'macOS' : 'your OS'} keeps this one</span>`
+    const bind     = binding(sc)
+    const reserved = bind.keys ? ''
+      : isBrowserReserved(bind.key, bind.modifiers) ? '<span class="sc-reserved">study card — your browser keeps this one</span>'
+      : isOsReserved(bind.key, bind.modifiers)      ? `<span class="sc-reserved">study card — ${IS_MAC ? 'macOS' : 'your OS'} keeps this one</span>`
       : ''
     const desc = sc.description
       ? `<div class="sc-desc">${sc.description}</div>` : ''
