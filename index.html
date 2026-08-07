@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=19">
+  <link rel="stylesheet" href="style.css?v=20">
   <script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body>
@@ -483,6 +483,20 @@
   </div>
 </div>
 
+<!-- ── KEY DIAGNOSTIC ─────────────────────────────────────────────────────────
+     Only appears with ?keylog in the URL. Reports the raw keyboard events so a
+     browser that mangles them (e.g. LibreWolf's resistFingerprinting) can be told
+     apart from a bug in our own matching. -->
+<div id="keylog" class="keylog hidden">
+  <div class="keylog-head">
+    <strong>Key diagnostic</strong>
+    <button id="keylog-copy" class="keylog-btn">Copy</button>
+    <button id="keylog-clear" class="keylog-btn">Clear</button>
+  </div>
+  <pre id="keylog-env" class="keylog-env"></pre>
+  <pre id="keylog-out" class="keylog-out">press keys…</pre>
+</div>
+
 <!-- ── PAUSE OVERLAY ──────────────────────────────────────────────────────────── -->
 <div id="pause-overlay" class="pause-overlay hidden">
   <div class="pause-box">
@@ -504,6 +518,6 @@
   All rights remain with the original authors. If you have suggestions, mention @eunice3x on BAR discord.
 </footer>
 
-<script src="app.js?v=47" type="module"></script>
+<script src="app.js?v=48" type="module"></script>
 </body>
 </html>

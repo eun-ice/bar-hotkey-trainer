@@ -336,6 +336,50 @@ kbd {
   color: var(--text-dim);
 }
 
+/* ─── Key diagnostic overlay (?keylog) ───────────────────────────────────── */
+.keylog {
+  position: fixed;
+  right: 10px;
+  bottom: 10px;
+  z-index: 90;
+  width: min(560px, calc(100vw - 20px));
+  padding: 8px 10px;
+  background: rgba(8, 12, 16, .96);
+  border: 1px solid var(--accent-dim);
+  border-radius: var(--rad);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, .6);
+}
+.keylog-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+.keylog-head strong { flex: 1 }
+.keylog-btn {
+  font: inherit;
+  font-size: 11px;
+  padding: 2px 8px;
+  color: var(--text);
+  background: var(--bg-panel2);
+  border: 1px solid var(--border2);
+  border-radius: 3px;
+  cursor: pointer;
+}
+.keylog-btn:hover { background: var(--bg-hover) }
+.keylog-env, .keylog-out {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.45;
+  white-space: pre;
+  overflow: auto;
+  color: var(--text);
+}
+.keylog-env { color: var(--text-dim); margin-bottom: 6px }
+.keylog-out { max-height: 210px }
+
 /* ─── Difficulty selector ────────────────────────────────────────────────── */
 
 .difficulty-section { padding: 12px 20px }

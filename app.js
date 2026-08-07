@@ -3428,6 +3428,7 @@ let scCheckedIds = new Set()
 let scSpaceHeld  = false
 let scArmed      = null   // matches waiting for a pad gesture to disambiguate them
 let scArmTimer   = null
+let scSawAlt     = false  // has this browser ever reported Alt? (LibreWolf/RFP never does)
 let scKeySeq     = []     // buffered combos for multi-key shortcuts (Z Z = Area MEX)
 let scSeqTimer   = null
 
@@ -3745,6 +3746,20 @@ function initShortcutsScreen() {
     })
   }
 
+  // Firefox's resistFingerprinting (on by default in LibreWolf) hides the Alt key from
+  // the page entirely: no keydown when Alt is pressed alone, and altKey stripped from
+  // the combo. We cannot read it, so the best we can do is name the cause at the moment
+  // it bites — a press that matches nothing, but would match if Alt were reported.
+  // Only fires once we are sure this browser has never reported a working Alt.
+  const scHintHiddenAlt = combo => {
+    if (scSawAlt || !IS_FIREFOX || combo.mods.includes('Alt')) return
+    const withAlt = scResolveSequence([{ key: combo.key, mods: [...combo.mods, 'Alt'] }])
+    if (!withAlt.complete.length) return
+    padLabel('Nothing matched — if you were holding <kbd>Alt</kbd>, this browser hides it ' +
+      'from the page (Firefox setting <em>privacy.resistFingerprinting</em>). ' +
+      'Turn it off or use another browser to practise Alt shortcuts.')
+  }
+
   const scArmPad = (matches, comboHtml) => {
     scArmed = matches
     $('screen-shortcuts')?.classList.add('sc-pad-armed')
@@ -3758,6 +3773,7 @@ function initShortcutsScreen() {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return
     if (['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) return
 
+    if (e.altKey || e.metaKey) scSawAlt = true   // this browser does report Alt
     if (e.key === ' ') scSpaceHeld = true
     const combo = scComboFromEvent(e, e.key === ' ' ? false : scSpaceHeld)
 
@@ -3774,7 +3790,7 @@ function initShortcutsScreen() {
     if (scSeqTimer !== null) clearTimeout(scSeqTimer)
     if (partial.length) scSeqTimer = setTimeout(() => { scKeySeq = []; scDisarmPad() }, 2000)
 
-    if (!complete.length && !partial.length) return
+    if (!complete.length && !partial.length) { scHintHiddenAlt(combo); return }
     e.preventDefault()
 
     const needsMouse = complete.filter(m => m.sc.mouseAction)
@@ -3819,6 +3835,55 @@ function initShortcutsScreen() {
   }
 
   if (SHORTCUTS.length) selectShortcutsGroup(SHORTCUTS[0].id)
+}
+
+// ─── Key diagnostic (?keylog) ─────────────────────────────────────────────────
+//
+// Some browsers rewrite keyboard events before the page sees them — LibreWolf's
+// resistFingerprinting, for instance, can report altKey as false to stop layouts being
+// probed. When a key "does not work" this tells apart a mangled event from a bug in our
+// own matching, by showing the raw event next to what we resolved it to.
+
+function initKeyLog() {
+  if (!new URLSearchParams(location.search).has('keylog')) return
+  const box = $('keylog'), out = $('keylog-out'), env = $('keylog-env')
+  if (!box) return
+  box.classList.remove('hidden')
+
+  env.textContent =
+    `platform : ${navigator.platform}\n` +
+    `ua       : ${navigator.userAgent}\n` +
+    `IS_MAC=${IS_MAC}  IS_FIREFOX=${IS_FIREFOX}  swapCmdAlt=${settings.swapCmdAlt}\n` +
+    `getLayoutMap=${KeyLayout.detected}  keyboard=${settings.keyboard}  compact60=${!!settings.compact60}`
+
+  const lines = []
+  const log = (e, type) => {
+    const mod = n => e.getModifierState(n) ? n : ''
+    // What our own resolver makes of it — the whole point of the comparison
+    let resolved = ''
+    try { resolved = normalise(e.key, settings.keyboard === 'qwertz', e.code) } catch { resolved = '?' }
+    lines.push(
+      `${type.padEnd(7)} key=${JSON.stringify(e.key).padEnd(12)} code=${(e.code||'').padEnd(14)} ` +
+      `alt=${String(e.altKey).padEnd(5)} ctrl=${String(e.ctrlKey).padEnd(5)} ` +
+      `meta=${String(e.metaKey).padEnd(5)} shift=${String(e.shiftKey).padEnd(5)} ` +
+      `[${[mod('Alt'), mod('AltGraph'), mod('Control'), mod('Meta')].filter(Boolean).join(' ')}] ` +
+      `→ ${resolved}`)
+    if (lines.length > 40) lines.shift()
+    out.textContent = lines.join('\n')
+    out.scrollTop = out.scrollHeight
+  }
+  // Capture phase so we see the event even where the app calls preventDefault
+  addEventListener('keydown', e => log(e, 'down'), true)
+  addEventListener('keyup',   e => log(e, 'up'),   true)
+
+  $('keylog-copy').addEventListener('click', () => {
+    const text = env.textContent + '\n\n' + lines.join('\n')
+    navigator.clipboard?.writeText(text)
+      .then(() => { $('keylog-copy').textContent = 'Copied'
+                    setTimeout(() => $('keylog-copy').textContent = 'Copy', 1200) })
+      .catch(() => { out.textContent = text })   // no clipboard permission: select manually
+  })
+  $('keylog-clear').addEventListener('click', () => { lines.length = 0; out.textContent = 'press keys…' })
 }
 
 function selectShortcutsGroup(id) {
@@ -3917,6 +3982,7 @@ async function init() {
   initSetupScreen()
   initBrowseScreen()
   initShortcutsScreen()
+  initKeyLog()
   initMouseZone()
   showScreen('setup')
   // Prevent browser-reserved keys from closing the tab/app. Ctrl+W closes tabs and
