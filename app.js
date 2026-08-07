@@ -63,9 +63,11 @@ const KeyLayout = {
     return this.map?.get('KeyZ') === 'y' ? 'qwertz' : 'qwerty'
   },
 
-  /** The grid as this user sees it, e.g. "Q W E R / A S D F / Z X C V". */
+  /** The keys we care about as this user sees them, for confirming the detection.
+   *  Leads with the number row because the ` key that unsets groups lives there and
+   *  is the one that moves around most between layouts. */
   gridLabels() {
-    const rows = [['Q','W','E','R'], ['A','S','D','F'], ['Z','X','C','V']]
+    const rows = [['`','1','2','3'], ['Q','W','E','R'], ['A','S','D','F'], ['Z','X','C','V']]
     return rows.map(r => r.map(k => this.getDisplayKey(k)).join(' ')).join('  /  ')
   },
 
@@ -2642,6 +2644,9 @@ function restoreSettingsUI() {
     $('keyboard-manual-row').classList.add('hidden')
     $('keyboard-detected-row').classList.remove('hidden')
     $('keyboard-detected-keys').textContent = KeyLayout.gridLabels()
+  } else {
+    // Manual pick only covers QWERTY and QWERTZ — say why, and what fixes it
+    $('keyboard-nodetect-hint').classList.remove('hidden')
   }
   $('hint-timeout').value = settings.hintTimeout
   updateHintLabel(settings.hintTimeout)

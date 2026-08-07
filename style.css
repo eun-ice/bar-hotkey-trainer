@@ -328,6 +328,13 @@ kbd {
   letter-spacing: .06em;
   color: var(--text-bright);
 }
+.kbd-nodetect {
+  margin-top: 8px;
+  max-width: 46em;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
 
 /* ─── Difficulty selector ────────────────────────────────────────────────── */
 

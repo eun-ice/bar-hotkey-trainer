@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=18">
+  <link rel="stylesheet" href="style.css?v=19">
   <script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body>
@@ -74,6 +74,11 @@
           <span class="kbd-detected-label">Layout detected</span>
           <span id="keyboard-detected-keys" class="kbd-detected-keys"></span>
         </div>
+        <p id="keyboard-nodetect-hint" class="kbd-nodetect hidden">
+          This browser cannot report your keyboard layout. For automatic detection —
+          and correct key labels on layouts other than QWERTY and QWERTZ — use a
+          Chromium based browser such as Chrome, Edge or Opera.
+        </p>
         <label class="setup-checkbox-row" id="swap-cmd-alt-row">
           <input type="checkbox" id="swap-cmd-alt" checked>
           Swap ⌘ Cmd ↔ ⌥ Alt
@@ -495,6 +500,6 @@
   All rights remain with the original authors. If you have suggestions, mention @eunice3x on BAR discord.
 </footer>
 
-<script src="app.js?v=38" type="module"></script>
+<script src="app.js?v=39" type="module"></script>
 </body>
 </html>
