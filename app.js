@@ -3755,9 +3755,10 @@ function initShortcutsScreen() {
     if (scSawAlt || !IS_FIREFOX || combo.mods.includes('Alt')) return
     const withAlt = scResolveSequence([{ key: combo.key, mods: [...combo.mods, 'Alt'] }])
     if (!withAlt.complete.length) return
-    padLabel('Nothing matched — if you were holding <kbd>Alt</kbd>, this browser hides it ' +
-      'from the page (Firefox setting <em>privacy.resistFingerprinting</em>). ' +
-      'Turn it off or use another browser to practise Alt shortcuts.')
+    padLabel(`Nothing matched — if you were holding <kbd>Alt</kbd> for ` +
+      `<strong>${withAlt.complete[0].sc.label}</strong>, this browser hides ` +
+      `<kbd>Alt</kbd> from the page (Firefox setting <em>privacy.resistFingerprinting</em>) ` +
+      `— turn it off or use another browser to practise Alt shortcuts.`)
   }
 
   const scArmPad = (matches, comboHtml) => {
