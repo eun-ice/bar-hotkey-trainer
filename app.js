@@ -1873,7 +1873,8 @@ function updateInstruction() {
   } else if (trainingState === State.WAITING_SHIFT) {
     setInstruction(`Wrong category — press <kbd>Shift</kbd> or <kbd>Esc</kbd> to go back`, 'state-wrong')
   } else if (trainingState === State.WAITING_PAGE) {
-    setInstruction(`Press <kbd>B</kbd> to advance to page ${currentEntry.page + 1}`)
+    setInstruction(`Press <kbd>${display('B', settings.keyboard === 'qwertz')}</kbd> ` +
+      `to advance to page ${currentEntry.page + 1}`)
   } else if (trainingState === State.WAITING_GRID) {
     setInstruction(`${buildModHint()}Press the <strong>grid key</strong>`)
   }
@@ -3252,8 +3253,8 @@ function renderBrowseMenu() {
     pageBar.classList.add('hidden')
   } else {
     pageBar.classList.remove('hidden')
-    pageBar.innerHTML =
-      `Page ${browsePage + 1} / ${totalPages} — press <kbd>B</kbd> to advance`
+    pageBar.innerHTML = `Page ${browsePage + 1} / ${totalPages} — ` +
+      `press <kbd>${display('B', isQwertz)}</kbd> to advance`
   }
 
   renderBrowseModLegend(totalPages)
@@ -3280,35 +3281,42 @@ function renderBrowseModLegend(totalPages = 1) {
   const info    = browseModInfo()
   const anyKey  = factory ? 'key' : 'Click'
 
-  const row = (keys, label, desc = '', note = '') => `
+  const row = (keys, label, desc = '', notes = []) => `
     <div class="bml-row">
       <div class="bml-keys">${keys}</div>
       <div class="bml-text">
         <span class="bml-label">${label}</span>${desc ? `<span class="bml-desc">${desc}</span>` : ''}
-        ${note ? `<div class="bml-note">${note}</div>` : ''}
+        ${notes.filter(Boolean).map(n => `<div class="bml-note">${n}</div>`).join('')}
       </div>
     </div>`
 
-  // The caveats (e.g. what Insert next does to the unit in progress) belong here rather
-  // than only on the result card — you should be able to read them without guessing a key.
+  // Always name the modifier the game uses — Alt. The trainer substitutes Cmd on a Mac,
+  // but that is a quirk of this page, not something to memorise, so it goes in a note on
+  // the row itself rather than into the heading where it reads like the real binding.
+  const swapNote = macSwapNote(['alt'])
   const modRows = Object.values(info)
-    .map(({ mods, label, desc, note }) => row(modKeysHtml(mods, anyKey, true), label, desc, note))
+    .map(({ mods, label, desc, note }) => {
+      const keys  = mods.map(m => `<kbd>${capitalize(m)}</kbd>`)
+      keys.push(`<kbd class="mod-anykey">${anyKey}</kbd>`)
+      const extra = mods.includes('alt') && swapNote
+        ? `Press <kbd>⌘ Cmd</kbd> instead of <kbd>Alt</kbd> here in the trainer — the game uses Alt.`
+        : ''
+      return row(keys.join('<span class="mod-plus">+</span>'), label, desc, [note, extra])
+    })
     .join('')
 
   const nav = [
-    totalPages > 1 ? row('<kbd>B</kbd>', 'Next page') : '',
+    totalPages > 1 ? row(`<kbd>${display('B', settings.keyboard === 'qwertz')}</kbd>`, 'Next page') : '',
     (!factory && browseCatId !== null)
       ? row('<kbd>Shift</kbd><span class="mod-plus">/</span><kbd>Esc</kbd>', 'Back to categories') : '',
   ].filter(Boolean).join('')
 
-  // Only worth mentioning the Cmd↔Alt swap when this builder actually has an Alt modifier
-  const swap = Object.values(info).some(m => m.mods.includes('alt')) ? macSwapNote(['alt']) : ''
   const lead = factory
     ? 'Hold a modifier while pressing the unit key:'
     : 'Pick the unit with its key, then hold a modifier while clicking to place it:'
 
   box.innerHTML = `
-    <div class="bml-title">Shortcuts${swap}</div>
+    <div class="bml-title">Shortcuts</div>
     <div class="bml-lead">${lead}</div>
     ${modRows}
     ${nav ? `<div class="bml-sep"></div>${nav}` : ''}`
@@ -3345,10 +3353,14 @@ function showBrowseModResult(gridKey, event) {
       : alt            ? 'alt' : 'none'
     const entry = FACTORY_MOD_INFO[modKey]
     if (!entry) return clearBrowseModResult()
-    head = modKeysHtml(entry.mods, keyCap) +
+    // Name the combo the game uses (Alt), not the Cmd we accepted as a stand-in
+    const keys = [...entry.mods.map(m => `<kbd>${capitalize(m)}</kbd>`), `<kbd>${keyCap}</kbd>`]
+    head = keys.join('<span class="mod-plus">+</span>') +
       `<span class="bmr-arrow">→</span><span class="bmr-action">${entry.label}</span>`
     desc = entry.desc
-    note = ''   // the Repeat caveat lives in the legend below
+    // the Repeat caveat lives in the legend below; only the Cmd substitution needs saying
+    note = entry.mods.includes('alt') && macSwapNote(['alt'])
+      ? '<div class="bmr-note">You pressed <kbd>⌘ Cmd</kbd> — the game uses <kbd>Alt</kbd>.</div>' : ''
   } else {
     // Constructors only arm the blueprint with the key — which order you get is decided
     // by the modifier held at CLICK time, so the key press cannot say. Whether Shift was
