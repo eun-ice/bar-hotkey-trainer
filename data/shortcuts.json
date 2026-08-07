@@ -930,8 +930,7 @@
           "id": "gather-wait",
           "label": "Gather Wait",
           "key": "P",
-          "description": "Wait at current position until a certain number of units gather",
-          "mouseAction": "click"
+          "description": "Wait at current position until a certain number of units gather"
         },
         {
           "id": "on-off",
@@ -1689,14 +1688,34 @@
           "description": "Open the chat input — Enter again sends the message"
         },
         {
-          "id": "chat-target",
-          "label": "Switch Chat Target",
+          "id": "chat-allies",
+          "label": "Chat: Allies ↔ Everyone",
           "level": 1,
           "key": "Enter",
           "modifiers": [
             "Alt"
           ],
-          "description": "Cycle who the message goes to — allies, everyone, spectators"
+          "description": "Toggle the chat target between your allies and everyone"
+        },
+        {
+          "id": "chat-spec",
+          "label": "Chat: Spectators ↔ Everyone",
+          "level": 1,
+          "key": "Enter",
+          "modifiers": [
+            "Shift"
+          ],
+          "description": "Toggle the chat target between spectators and everyone"
+        },
+        {
+          "id": "chat-everyone",
+          "label": "Chat to Everyone",
+          "level": 1,
+          "key": "Enter",
+          "modifiers": [
+            "Ctrl"
+          ],
+          "description": "Open the chat input addressed to everyone"
         },
         {
           "id": "mute",
