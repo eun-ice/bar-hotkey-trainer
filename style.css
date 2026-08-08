@@ -77,15 +77,10 @@ kbd {
 }
 
 /* ─── Site footer ───────────────────────────────────────────────────────────── */
+/* In normal flow, not pinned: pinned it sat on top of the content on short screens, and
+   the credit line is never urgent enough to cost a strip of a small viewport. */
 #site-footer {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 999;
   padding: 5px 16px;
-  background: rgba(12, 18, 24, 0.88);
-  backdrop-filter: blur(6px);
   border-top: 1px solid var(--border);
   font-size: 11px;
   color: var(--text-dim);
@@ -100,11 +95,22 @@ kbd {
 #site-footer a:hover { color: var(--text) }
 
 /* ─── Screens ───────────────────────────────────────────────────────────────── */
-.screen { display: none; min-height: 100vh }
-.screen.active { display: flex; flex-direction: column; padding-bottom: 28px }
+/* Body owns the vertical layout so the active screen can claim the viewport *minus* the
+   footer. With the screen at a flat 100vh the footer pushed the page past the fold and
+   the browse screen — which is built to fit exactly — could be scrolled half out of view. */
+body { display: flex; flex-direction: column; min-height: 100vh }
+.screen { display: none }
+.screen.active { display: flex; flex-direction: column; flex: 1; min-height: 0 }
 
-/* Browse needs a fixed viewport height so the sidebar scrolls independently */
-#screen-browse.active { min-height: unset; height: 100vh; overflow: hidden }
+/* The two reference screens scroll their own panes and must fit the window exactly. A
+   definite body height is what lets `flex: 1` above resolve to "viewport minus footer";
+   with body left at min-height the screen just grows to its content instead. Browsers
+   without :has() fall back to scrolling the page, which is untidy but not broken. */
+body:has(#screen-browse.active),
+body:has(#screen-shortcuts.active) { height: 100vh }
+
+/* Browse fits the space it is given, so its sidebar and menu scroll independently */
+#screen-browse.active { overflow: hidden }
 
 /* ─── Loading ───────────────────────────────────────────────────────────────── */
 #screen-loading {
@@ -1594,7 +1600,7 @@ kbd {
 #screen-shortcuts {
   flex-direction: column;
 }
-#screen-shortcuts.active { min-height: unset; height: 100vh; overflow: hidden }
+#screen-shortcuts.active { overflow: hidden }
 
 .shortcuts-content {
   width: 100%;
@@ -1955,3 +1961,71 @@ kbd {
   letter-spacing: 0;
   text-transform: none;
 }
+
+/* ─── Phones ─────────────────────────────────────────────────────────────────
+   Training needs a keyboard, so it stays a desktop affair. The two reference
+   screens are worth reading on a phone though, and there the side-by-side layout
+   does not survive: a 240px builder list next to a 340px build menu wants 600px
+   of width that a phone does not have. Stack them instead — list on top with its
+   own scroll, the menu below. */
+@media (max-width: 720px) {
+  /* Fitting both panes into one viewport is a desktop luxury. Stacked on a phone it
+     leaves the build menu a sliver, so let the page scroll instead: list on top with
+     its own scroll, menu below it at full height, footer after that. */
+  body:has(#screen-browse.active),
+  body:has(#screen-shortcuts.active) { height: auto }
+  #screen-browse.active,
+  #screen-shortcuts.active,
+  .browse-layout,
+  .browse-main { overflow: visible }
+
+  .browse-layout { flex-direction: column }
+
+  .browse-sidebar {
+    width: auto;
+    max-height: 38vh;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    /* Scrolling to the end of the list must not carry on into the page behind it */
+    overscroll-behavior: contain;
+  }
+
+  /* The top bar carries a back button, a title, a search box and the difficulty switch —
+     far too much for one phone-width row. The title gets its own line rather than
+     wrapping mid-phrase between the buttons. */
+  .browse-topbar {
+    flex-wrap: wrap;
+    gap: 8px 10px;
+    padding: 10px 12px;
+  }
+  .browse-title { order: -1; flex: 0 0 100%; font-size: 12px }
+  .browse-search { width: 100%; order: 3 }
+
+  .browse-main { padding: 14px 10px }
+  .browse-content { gap: 14px }
+
+  /* 4 × 82px + gaps + padding overflows a 390px screen; this fits with room to spare */
+  #screen-browse { --slot: 74px }
+  .browse-info-slot { min-height: 0 }
+
+  /* The hint bar is pinned to the bottom and would sit on the last table row */
+  #screen-shortcuts .browse-main { padding-bottom: 60px }
+  .sc-table th, .sc-table td { padding-left: 8px; padding-right: 8px }
+
+  /* Four columns do not fit. The level is a difficulty filter rather than something you
+     look up, so it goes first and the action description gets the width back — otherwise
+     it wraps to one word per line while the key column is cut off at the screen edge. */
+  .sc-table th:nth-child(4),
+  .sc-table td.sc-level { display: none }
+  .sc-table td.sc-key { white-space: nowrap }
+}
+
+/* ─── No pointing device but a finger ────────────────────────────────────────
+   Both prompts invite a keypress, which is a dead end on a phone and costs real
+   estate the reference needs. Only the text goes — key checking stays wired up,
+   so an iPad with a keyboard folio still works for anyone who tries it. The class
+   is set from JS: a media query cannot portably ask for "coarse pointer and no
+   fine pointer anywhere". */
+.touch-only .sc-intro,
+.touch-only .sc-pad-label { display: none }
+.touch-only #screen-shortcuts .browse-main { padding-bottom: 14px }

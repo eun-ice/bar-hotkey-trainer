@@ -45,6 +45,12 @@ http://localhost:3737/?queue=armcom:armsy&mod=shift-click
 question, so a Shift+click bug takes a dozen reloads to hit. Constructors only —
 factories carry their modifier on the grid key.
 
+### `?nolayout` — pretend the Keyboard Map API is missing
+
+Forces the fallback path Chrome never takes: the manual QWERTY/QWERTZ pick, and on a
+touch device no prompt at all. Use it to check anything Safari or Firefox users see
+without leaving Chrome.
+
 ### `?keylog` — raw keyboard events
 
 Shows an overlay with the environment (platform, `IS_MAC`, layout detection) and every
@@ -60,9 +66,15 @@ when Alt is pressed alone, and `altKey` stripped from the combo.
 
 ```bash
 npm test                  # pure matching logic against the real data files
+npm run bump              # cache-bust the assets whose files changed
+npm run bump -- --all     # …or all of them regardless
 npm run extract           # regenerate data/ from the BAR repo (downloads icons)
 npm run extract:no-icons  # same, skipping icon conversion — much faster
 ```
+
+Run `npm run bump` after editing `app.js`, `style.css` or `logic.js`. It bumps the `?v=`
+on each in `index.html` and keeps the `logic.js?v=` inside `app.js`'s import in step,
+which hand-editing kept getting wrong.
 
 `npm test` covers `logic.js`: modifier matching, key ranges, the 60% keyboard preset and
 every land/water pair of every builder. It runs in milliseconds and is the right place to
@@ -103,5 +115,10 @@ rather than being copied into the code, so it can be refreshed when upstream cha
   between them was silently dropped — the question then simply ran out of time with no
   feedback at all. If a threshold is ever split again, make sure the gap is answered.
 - **`logic.js` carries its own cache-busting query** in the import at the top of
-  `app.js`. Bump it together with the `app.js?v=` in `index.html`, or a stale copy of the
-  matching rules outlives the update.
+  `app.js`, because a module import is cached separately from the file importing it.
+  `npm run bump` keeps the two in step; do not edit either by hand.
+- **Touch detection hides prompts, never wiring.** `isTouchOnly()` cannot tell whether a
+  keyboard is attached — an iPad with a keyboard folio and no trackpad looks exactly like
+  a bare phone. It skips the layout dialogue and hides the two "press a shortcut" hints,
+  all of them pure text. Key checking stays live everywhere, so anyone who does have a
+  keyboard and simply tries it still gets their checkmarks.

@@ -3,7 +3,7 @@ import {
   slotPicksUnit,
   // Version query kept in step with the one on this file in index.html — a module import
   // is cached on its own, so a stale logic.js would otherwise outlive an app.js update.
-} from './logic.js?v=71'
+} from './logic.js?v=78'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -50,6 +50,9 @@ const KeyLayout = {
 
   async init() {
     try {
+      // ?nolayout pretends the Keyboard Map API is missing, so the Safari/Firefox path —
+      // manual QWERTY/QWERTZ pick, or none at all on a phone — can be tried in Chrome
+      if (new URLSearchParams(location.search).has('nolayout')) return
       if (!window.isSecureContext || !navigator.keyboard?.getLayoutMap) return
       this.map = await navigator.keyboard.getLayoutMap()
     } catch { this.map = null; return }
@@ -3032,15 +3035,23 @@ function initSetupScreen() {
   // Every screen that shows keys needs to know the layout first — the reference screens
   // label keys (Z vs Y, ^ vs `) just as much as training does. When the browser can tell
   // us the layout there is nothing to ask, so the Y/Z prompt is skipped entirely.
-  const withKeyboard = fn => () =>
-    (KeyLayout.detected || settings.keyboard) ? fn() : showKbdDetect(fn)
+  //
+  // `skipOnTouch` opts a button out of the prompt on a device with no keyboard to answer
+  // it with. The reference screens are worth reading on a phone even though training is
+  // not possible there, and a dialogue asking for a keypress is a dead end. QWERTY labels
+  // are the fallback; the radio buttons on the setup screen still switch them.
+  const withKeyboard = (fn, skipOnTouch = false) => () => {
+    if (KeyLayout.detected || settings.keyboard) return fn()
+    if (skipOnTouch && isTouchOnly()) return fn()
+    showKbdDetect(fn)
+  }
 
   $('btn-start').addEventListener('click', withKeyboard(() => {
     precacheIcons(filteredBuilders(settings))
     showNewRunCountdown()
   }))
-  $('btn-browse').addEventListener('click', withKeyboard(() => showScreen('browse')))
-  $('btn-browse-shortcuts').addEventListener('click', withKeyboard(() => showScreen('shortcuts')))
+  $('btn-browse').addEventListener('click', withKeyboard(() => showScreen('browse'), true))
+  $('btn-browse-shortcuts').addEventListener('click', withKeyboard(() => showScreen('shortcuts'), true))
   $('btn-settings').addEventListener('click', () => {
     clearAnswerTimer()
     clearHintTimer()
@@ -3150,6 +3161,17 @@ function initAdvancedToggles() {
       apply()
     })
   }
+}
+
+/**
+ * A device driven by touch alone. Used only to skip a dialogue that asks for a keypress —
+ * never to switch a feature off, since this cannot actually tell whether a keyboard is
+ * attached. An iPad with a keyboard folio (no trackpad) looks exactly like a bare phone
+ * here, and typing on the reference screens works fine there.
+ */
+function isTouchOnly() {
+  return matchMedia('(pointer: coarse)').matches
+      && !matchMedia('(any-pointer: fine)').matches
 }
 
 let kbdDetectPendingCallback = null
@@ -4155,6 +4177,9 @@ function selectShortcutsGroup(id) {
 
 async function init() {
   showScreen('loading')
+  // Drops the two prompts that invite a keypress. Only the text goes — the key checking
+  // itself stays wired up, so an iPad with a keyboard folio still works if you just try.
+  if (isTouchOnly()) document.documentElement.classList.add('touch-only')
   await KeyLayout.init()   // before anything renders a keycap or reads a key
   try {
     await loadData()
