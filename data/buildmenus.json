@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-07",
-  "generatedAt": "2026-08-07T14:34:51.261Z",
+  "version": "2026-08-08",
+  "generatedAt": "2026-08-08T22:45:22.444Z",
   "builders": {
     "armlab": {
       "id": "armlab",
@@ -10606,6 +10606,70 @@
       },
       "factions": [
         "armada"
+      ]
+    },
+    "cormando": {
+      "id": "cormando",
+      "name": "Commando",
+      "faction": "cortex",
+      "tier": 2,
+      "isCommander": false,
+      "optional": false,
+      "experimental": false,
+      "metalCost": 1200,
+      "energyCost": 15500,
+      "icon": "icons/cormando.webp",
+      "categories": {
+        "combat": {
+          "label": "Combat",
+          "key": "X",
+          "units": [
+            {
+              "id": "cormaw",
+              "key": "Z",
+              "page": 0
+            }
+          ]
+        },
+        "utility": {
+          "label": "Utility",
+          "key": "C",
+          "units": [
+            {
+              "id": "cormine2",
+              "key": "Z",
+              "page": 0
+            },
+            {
+              "id": "coreyes",
+              "key": "X",
+              "page": 0
+            },
+            {
+              "id": "cordrag",
+              "key": "C",
+              "page": 0
+            },
+            {
+              "id": "corjamt",
+              "key": "V",
+              "page": 0
+            },
+            {
+              "id": "corvalk",
+              "key": "A",
+              "page": 0
+            },
+            {
+              "id": "corfink",
+              "key": "Q",
+              "page": 0
+            }
+          ]
+        }
+      },
+      "factions": [
+        "cortex"
       ]
     },
     "armmls": {

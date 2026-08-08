@@ -72,8 +72,6 @@ const EXCLUDED_BUILDER_IDS = new Set([
   // as a guard in case a future BAR update wires them up. (They are mobile builders with
   // 4 build options each, NOT nano turrets, whatever an earlier comment here claimed.)
   'corprinter','corvac','corvacct',
-  // Special combat units with only a handful of build options
-  'cormando',                         // Cortex Commando
 ])
 
 // Product unit IDs to always exclude from build menus (exist in game files but not base game)
