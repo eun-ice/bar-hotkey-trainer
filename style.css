@@ -41,6 +41,17 @@
 /* ─── Utility ───────────────────────────────────────────────────────────────── */
 .hidden { display: none !important }
 
+/* Separates the two routes to the same building in a shown answer */
+/* The gesture belongs to the keys before it, so it never wraps away from them on its own */
+.answer-mouse { white-space: nowrap }
+
+.answer-or {
+  margin: 0 8px;
+  font-size: .85em;
+  font-style: italic;
+  color: var(--text-dim);
+}
+
 /* App surfaces, not documents: selecting their text is never useful, and on Windows a
    click leaves a blinking insertion caret behind (macOS draws none for non-editable
    text, which is why it only shows up there). The shortcuts reference is deliberately
@@ -689,10 +700,16 @@ kbd {
   font-size: 13px;
   color: var(--text-dim);
   min-height: 40px;
+  /* Everything goes in one .instruction-inner child: as a bare flex container the leading
+     text became its own item and wrapped on its own ("Time / up — / Answer:") while the
+     keycaps sat beside it. One child keeps the text and the <kbd>s in a single inline
+     flow that wraps as one sentence. */
   display: flex;
   align-items: center;
   justify-content: center;
 }
+/* One child holding everything, so text and keycaps stay a single inline flow */
+.instruction-inner { display: block; width: 100% }
 .instruction strong { color: var(--accent) }
 .instruction.state-correct { border-color: var(--success); color: var(--success) }
 .instruction.state-wrong   { border-color: var(--error);   color: var(--error)   }

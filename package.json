@@ -6,7 +6,8 @@
   "license": "MIT",
   "scripts": {
     "extract": "node extract-data.js",
-    "extract:no-icons": "node extract-data.js --skip-icons"
+    "extract:no-icons": "node extract-data.js --skip-icons",
+    "test": "node test.js"
   },
   "engines": {
     "node": ">=18"

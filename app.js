@@ -1,3 +1,10 @@
+import {
+  modsSatisfy, scRangeIncludes, scComboMatchesKey, resolveBinding, equivalentKeyOnPage,
+  slotPicksUnit,
+  // Version query kept in step with the one on this file in index.html — a module import
+  // is cached on its own, so a stale logic.js would otherwise outlive an app.js update.
+} from './logic.js?v=69'
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const IS_FIREFOX = navigator.userAgent.includes('Firefox')
@@ -145,38 +152,22 @@ function keysMatch(pressed, expected) {
 // layer. Entries that differ carry a `sixty` block; everything else is identical.
 // The form factor is not detectable from the browser, so this follows a manual setting.
 function binding(shortcut) {
-  const alt = settings.compact60 ? shortcut.sixty : null
-  return {
-    key:       alt?.key ?? shortcut.key,
-    keys:      alt ? null : shortcut.keys,
-    modifiers: alt?.modifiers ?? shortcut.modifiers ?? [],
-    // Modifiers that are part of the documented combo but not required to trigger it —
-    // Build Spacing is written Shift+Alt+Z because you need Shift to see the grid you are
-    // adjusting, yet the spacing changes with Alt+Z alone. Taught as documented, accepted
-    // either way, so a player who learnt it from the game is not marked wrong.
-    optionalModifiers: shortcut.optionalModifiers ?? [],
-  }
+  return resolveBinding(shortcut, !!settings.compact60)
 }
 
 /** Do the modifiers held satisfy `want`, given `optional` ones that may be left out? */
-function modsSatisfy(held, want, optional = []) {
-  const norm = list => [...list].map(m => m.toLowerCase()).sort().join('+')
-  if (norm(held) === norm(want)) return true
-  if (!optional.length) return false
-  const lowerOptional = optional.map(m => m.toLowerCase())
-  const required = want.filter(m => !lowerOptional.includes(m.toLowerCase()))
-  // Every held modifier must be wanted, and every non-optional one must be held
-  return norm(held) === norm(required)
-}
 
+// BAR swaps the pending build between a land unit and its water counterpart as the cursor
+// crosses the shoreline, so either slot places the asked-for building. The counterpart can
+// sit on a different page of the same category (Metal Storage on page 1, Naval Metal
+// Storage on page 2), and that route needs no page flip at all — hence this checks the
+// page currently on screen, not the page the asked-for unit lives on.
 function isEquivGridKey(key) {
   if (!currentEntry || currentEntry.type === 'shortcut') return false
-  const equivId = WATER_EQUIVALENTS[currentEntry.unit.id]
-  if (!equivId) return false
-  const cat = currentEntry.builder.categories[currentEntry.categoryId]
-  if (!cat) return false
-  const equivUnit = cat.units.find(u => u.id === equivId && u.page === currentEntry.page)
-  return equivUnit ? keysMatch(key, equivUnit.key) : false
+  const equivKey = equivalentKeyOnPage(
+    WATER_EQUIVALENTS, currentEntry.builder, currentEntry.categoryId,
+    currentEntry.unit.id, currentPage)
+  return equivKey !== null && keysMatch(key, equivKey)
 }
 
 // Fallback labels when the Keyboard Map API is unavailable: the QWERTZ positions that
@@ -529,7 +520,43 @@ function filteredBuilders(settings) {
  * Build a shuffled queue of { builderId, unitId, categoryId, gridKey, page }.
  * Due/new SR items come first; rest are random.
  */
+/**
+ * Test hook: ?queue=armcom:armsy,armcom:armlab pins the queue to exactly those
+ * builder:unit pairs, in order, bypassing the filters and the shuffle. Without the
+ * parameter nothing here runs, so normal play is untouched.
+ */
+function fixedQueueFromUrl() {
+  const spec = new URLSearchParams(location.search).get('queue')
+  if (!spec) return null
+  const items = []
+  for (const pair of spec.split(',')) {
+    const [builderId, unitId] = pair.split(':')
+    // `sc:<shortcut-id>` pins a shortcut question — the only way to reach one on demand
+    if (builderId === 'sc') {
+      for (const group of SHORTCUTS) {
+        const shortcut = group.shortcuts.find(s => s.id === unitId)
+        if (!shortcut) continue
+        const item = shortcutQueueItem(group, shortcut)
+        if (item) items.push(item)
+        break
+      }
+      continue
+    }
+    const builder = DATA.builders[builderId]
+    if (!builder) continue
+    for (const [catId, cat] of Object.entries(builder.categories)) {
+      const unit = cat.units.find(u => u.id === unitId)
+      if (!unit) continue
+      items.push({ builderId, unitId, categoryId: catId, gridKey: unit.key, page: unit.page })
+      break
+    }
+  }
+  return items.length ? items : null
+}
+
 function buildQueue(builders, sr) {
+  const fixed = fixedQueueFromUrl()
+  if (fixed) return fixed
   const items = []
   for (const builder of builders) {
     for (const [catId, cat] of Object.entries(builder.categories)) {
@@ -578,36 +605,38 @@ function buildShortcutQueue() {
       if (threshold < Infinity) {
         if (shortcut.level === undefined || shortcut.level > threshold) continue
       }
-      const bind = binding(shortcut)
-      // Unreachable in this browser/OS combination — drop it rather than show a study card
-      if (isOsReserved(bind.key, bind.modifiers)) continue
-      // Normalise keys and per-key modifier arrays
-      const seqKeys = bind.keys ?? (bind.key ? [bind.key] : null)
-      if (!seqKeys) continue
-      let seqMods
-      if (bind.keys) {
-        // Sequence of keys — each key has no modifiers
-        seqMods = bind.keys.map(() => [])
-      } else {
-        // Single key with optional modifiers
-        seqMods = [bind.modifiers.map(m => m.toLowerCase())]
-      }
-      items.push({
-        type:            'shortcut',
-        id:              shortcut.id,
-        label:           shortcut.label,
-        description:     shortcut.description ?? '',
-        context:         shortcut.contextOverride ?? group.context,
-        seqKeys,
-        seqMods,
-        optionalMods:    bind.optionalModifiers.map(m => m.toLowerCase()),
-        mouseAction:     shortcut.mouseAction ?? 'none',
-        browserReserved: isBrowserReserved(bind.key, bind.modifiers),
-      })
+      const item = shortcutQueueItem(group, shortcut)
+      if (item) items.push(item)
     }
   }
   shuffle(items)
   return items
+}
+
+/** One queue entry for a shortcut, or null when this browser/OS cannot reach its key. */
+function shortcutQueueItem(group, shortcut) {
+  const bind = binding(shortcut)
+  // Unreachable in this browser/OS combination — drop it rather than show a study card
+  if (isOsReserved(bind.key, bind.modifiers)) return null
+  // Normalise keys and per-key modifier arrays
+  const seqKeys = bind.keys ?? (bind.key ? [bind.key] : null)
+  if (!seqKeys) return null
+  // A sequence carries no modifiers on its steps; a single key may carry some
+  const seqMods = bind.keys
+    ? bind.keys.map(() => [])
+    : [bind.modifiers.map(m => m.toLowerCase())]
+  return {
+    type:            'shortcut',
+    id:              shortcut.id,
+    label:           shortcut.label,
+    description:     shortcut.description ?? '',
+    context:         shortcut.contextOverride ?? group.context,
+    seqKeys,
+    seqMods,
+    optionalMods:    bind.optionalModifiers.map(m => m.toLowerCase()),
+    mouseAction:     shortcut.mouseAction ?? 'none',
+    browserReserved: isBrowserReserved(bind.key, bind.modifiers),
+  }
 }
 
 // ─── Application state ────────────────────────────────────────────────────────
@@ -631,6 +660,8 @@ let currentEntry  = null   // item from queue + resolved builder/unit objects
 let trainingState = State.WAITING_CATEGORY
 let activeCatId   = null   // currently displayed category in menu
 let currentPage   = 0
+let pendingSlotKey = null   // slot the white border sits on during the mouse phase
+let pendingSlotPage = 0     // page that slot lives on — B pages away from it, the build stays
 let hintTimerId   = null
 let hintInterval  = null
 let shortcutKeyVisible  = false  // false = hide key for first 3s of shortcut question
@@ -1122,9 +1153,11 @@ function renderShortcutQuestion(entry) {
   document.querySelector('#screen-training .target-icon-wrap').style.display = 'none'
 }
 
+// Wrapped in a single child so the box can centre it without turning every <kbd> into a
+// flex/grid item of its own — that stacked the keycaps into a vertical column.
 function setInstruction(html, stateClass = '') {
   const el = $('instruction')
-  el.innerHTML = html
+  el.innerHTML = `<span class="instruction-inner">${html}</span>`
   el.className = 'instruction' + (stateClass ? ` ${stateClass}` : '')
 }
 
@@ -1190,12 +1223,25 @@ function clearShortcutKeyTimer() {
  * keypress is needed.  e.g. MEX = Z, LLT = X (not XZ), Radar = C (not CZ), etc.
  * keysMatch handles the Z/Y QWERTZ equivalence.
  */
+// The category key doubles as the bottom-left slot, so one press selects it. That also
+// holds when the bottom-left slot carries the land/water counterpart of what was asked
+// for: on the Commander, V + click places a Bot Lab on land and a Shipyard on water,
+// even though the Shipyard has its own slot on V.
 function isBottomRowItem(entry) {
   if (entry.type === 'shortcut') return false
   const builder = DATA.builders[entry.builderId]
   if (!builder || isFactory(builder)) return false
   if (entry.page > 0) return false
-  return keysMatch(entry.gridKey, 'Z')
+  return bottomRowSlotKey(entry) !== null
+}
+
+/** Which slot the category key lands on: the unit's own, or its counterpart's. */
+function bottomRowSlotKey(entry) {
+  if (keysMatch(entry.gridKey, 'Z')) return entry.gridKey
+  const builder = DATA.builders[entry.builderId]
+  const equivKey = equivalentKeyOnPage(
+    WATER_EQUIVALENTS, builder, entry.categoryId, entry.unitId, 0)
+  return equivKey !== null && keysMatch(equivKey, 'Z') ? equivKey : null
 }
 
 /** Compute total timeout in ms for the current question based on required key presses. */
@@ -1273,6 +1319,7 @@ function showAnswer(prefix = '') {
     const keys = correctKeySequence()
     showAnswerPrefix   = prefix
     showAnswerKeysHtml = keys.map(k => `<kbd>${k}</kbd>`).join(' → ')
+    showAnswerKeysHtml += answerMouseHtml()
     const answerMods = currentEntry.seqMods?.flat() ?? []
     showAnswerKeysHtml += macSwapNote(answerMods)
     trainingState = State.SHOW_ANSWER
@@ -1295,9 +1342,8 @@ function showAnswer(prefix = '') {
   currentPage = currentEntry.page
   renderMenu(currentEntry.builder, activeCatId, currentPage, currentEntry.unitId)
 
-  const keys = correctKeySequence()
   showAnswerPrefix   = prefix
-  showAnswerKeysHtml = keys.map(k => `<kbd>${k}</kbd>`).join(' ')
+  showAnswerKeysHtml = answerKeysHtml() + answerMouseHtml()
   if (isFactory(currentEntry.builder) && currentEntry.buildModifier === 'alt') {
     showAnswerKeysHtml += macSwapNote(['alt'])
   }
@@ -1403,6 +1449,56 @@ function macSwapNote(mods) {
   const hasMacAlt = (mods ?? ['alt']).some(m => m.toLowerCase() === 'alt')
   if (!hasMacAlt) return ''
   return ` <span class="mod-swap-note">(⌘ Cmd in trainer)</span>`
+}
+
+/**
+ * The other way to place the same building — through its land/water counterpart's slot.
+ * Returns null when there is no counterpart in this menu, or the keys as an array.
+ */
+function equivalentKeySequence() {
+  if (!currentEntry || currentEntry.type === 'shortcut') return null
+  if (isFactory(currentEntry.builder)) return null
+  const equivId = WATER_EQUIVALENTS[currentEntry.unitId]
+  if (!equivId) return null
+  const cat   = currentEntry.builder.categories[currentEntry.categoryId]
+  const equiv = cat?.units.find(u => u.id === equivId)
+  if (!equiv) return null
+  const isQwertz = settings.keyboard === 'qwertz'
+  const catDef   = CATEGORIES.find(c => c.id === currentEntry.categoryId)
+  const keys = catDef ? [display(catDef.key, isQwertz)] : []
+  const page = equiv.page ?? 0
+  // Counterpart bottom-left on the first page: the category key alone already selects it
+  if (page === 0 && keysMatch(equiv.key, 'Z')) return keys
+  for (let p = 0; p < page; p++) keys.push('B')
+  keys.push(display(equiv.key, isQwertz))
+  return keys
+}
+
+/** Both routes as HTML, shortest first — a unit may be reachable two ways. */
+function answerKeysHtml() {
+  const asKbd = keys => keys.map(k => `<kbd>${k}</kbd>`).join(' ')
+  const own = correctKeySequence()
+  const alt = equivalentKeySequence()
+  if (!alt) return asKbd(own)
+  const [first, second] = own.length <= alt.length ? [own, alt] : [alt, own]
+  // Nothing to learn from a route that just adds keystrokes to the shorter one
+  if (first.every((k, i) => k === second[i])) return asKbd(first)
+  return `${asKbd(first)}<span class="answer-or">or</span>${asKbd(second)}`
+}
+
+/**
+ * The gesture that still has to follow the keys, drawn the way the reference table draws
+ * it. Without it the answer is only half of one — F on its own is Fight; Fight Line is F
+ * and a drag. Left off when the mouse phase is switched off, since then nothing asks for
+ * it, and off factory builds, which finish on the grid key.
+ */
+function answerMouseHtml() {
+  if (!settings.mouseEnabled) return ''
+  const action = currentEntry.type === 'shortcut'
+    ? currentEntry.mouseAction
+    : (isFactory(currentEntry.builder) ? null : (currentEntry.buildModifier || 'click'))
+  if (!action || action === 'none') return ''
+  return `<span class="answer-mouse">${formatMouseAction(action)}</span>`
 }
 
 function correctKeySequence() {
@@ -1598,6 +1694,8 @@ function isFactory(builder) {
 // ─── Core training flow ───────────────────────────────────────────────────────
 
 function mergeShortcutsIntoQueue(baseQueue) {
+  // A pinned queue is already exactly what was asked for — do not sprinkle extras into it
+  if (fixedQueueFromUrl()) return baseQueue
   const scItems = buildShortcutQueue()
   if (!scItems.length) return baseQueue
   const merged = []
@@ -2062,8 +2160,42 @@ function onKey(event) {
     return
   }
 
-  // Block keypresses while waiting for mouse interaction
-  if (trainingState === State.WAITING_MOUSE) return
+  // Keypresses are blocked during the mouse phase — except a grid key, which in game
+  // moves the pending build to that slot. After the category key picked the bottom-left
+  // slot, a further grid key must still shift the white border.
+  if (trainingState === State.WAITING_MOUSE) {
+    const gridKey = normalise(event.key, settings.keyboard === 'qwertz', event.code)
+    // B only pages the menu; the pending build stays whatever was picked. Paging away
+    // from it takes the border off screen — the build itself is untouched, so a click
+    // still places it. (Verified in game: Y B click on a Construction Seaplane puts down
+    // the Metal Extractor picked by Y, not the Naval Metal Storage now sitting on Z.)
+    if (gridKey === 'B' && currentEntry?.builder && !isFactory(currentEntry.builder)) {
+      const cat = currentEntry.builder.categories[activeCatId]
+      const total = cat ? ((cat.units[cat.units.length - 1]?.page ?? 0) + 1) : 1
+      currentPage = (currentPage + 1) % total
+      renderMenu(currentEntry.builder, activeCatId, currentPage)
+      if (currentPage === pendingSlotPage) selectSlot(pendingSlotKey)
+      else clearSlotBorder()
+      return
+    }
+    if (currentEntry?.builder && !isFactory(currentEntry.builder) && GRID_KEYS.includes(gridKey)) {
+      // A grid key picks whatever is drawn there *now*, so the page decides as much as
+      // the key does: Z is the Metal Extractor on page 1 and the Naval Metal Storage on
+      // page 2 of the same category.
+      if (slotPicksUnit(WATER_EQUIVALENTS, currentEntry.builder,
+                        activeCatId, currentPage, gridKey, currentEntry.unit.id)) {
+        selectSlot(gridKey)          // same unit by another route — just move the border
+      } else {
+        // A different slot replaces the pending build, so the click would now place the
+        // wrong thing. Drop out of the mouse phase and make them pick again.
+        questionHadWrong = true
+        deactivateMouseZone()
+        trainingState = State.WAITING_GRID
+        updateInstruction()
+      }
+    }
+    return
+  }
 
   // Allow modifier+key for factory grid builds (Shift/Ctrl/Alt held with grid key)
   const isFactoryGridMod = (trainingState === State.WAITING_GRID)
@@ -2132,7 +2264,11 @@ function onKey(event) {
   } else if (trainingState === State.WAITING_PAGE || trainingState === State.WAITING_GRID) {
     if (key === 'B') {
       handlePageKey()
-    } else if (trainingState === State.WAITING_GRID && GRID_KEYS.includes(key)) {
+    } else if (GRID_KEYS.includes(key) &&
+               // On a later page the answer is normally out of reach until B is pressed,
+               // but the water counterpart may sit on the page already shown — that route
+               // skips the page flip entirely, so let it through.
+               (trainingState === State.WAITING_GRID || isEquivGridKey(key))) {
         // Factory build modifiers ride on Ctrl/Alt, which collide with the browser's own
         // shortcuts (Ctrl+Shift+A opens Chrome's tab search). We accept the key either
         // way, so swallow the event to stop the browser acting on it as well.
@@ -2159,10 +2295,11 @@ function handleCategoryKey(key) {
       trainingState = State.WAITING_PAGE
       updateInstruction()
     } else if (isBottomRowItem(currentEntry)) {
-      // The category key also activates the bottom-row slot — one press does it all
-      flashSlot(currentEntry.gridKey, 'flash-correct')
-      const autoSlot = $('menu-grid').querySelector(`[data-key="${currentEntry.gridKey}"]`)
-      if (autoSlot && !autoSlot.classList.contains('empty')) autoSlot.classList.add('is-selected')
+      // The category key also activates the bottom-row slot — one press does it all.
+      // Highlight the slot it really lands on, which may be the counterpart's.
+      const slotKey = bottomRowSlotKey(currentEntry)
+      flashSlot(slotKey, 'flash-correct')
+      selectSlot(slotKey)
       playBuildSound('builder')
       if (settings.mouseEnabled) {
         trainingState = State.WAITING_MOUSE
@@ -2249,8 +2386,7 @@ function handleGridKey(key, event) {
 
   // Constructor: correct grid key — show mouse zone
   flashSlot(key, 'flash-correct')
-  const selectedSlot = document.querySelector(`#menu-grid .slot[data-key="${key}"]`)
-  if (selectedSlot) selectedSlot.classList.add('is-selected')
+  selectSlot(key)
   playBuildSound('builder')
   if (settings.mouseEnabled) {
     trainingState = State.WAITING_MOUSE
@@ -2387,6 +2523,13 @@ const MOUSE_ACTION_LABELS = {
   'alt-drag':           'Hold Alt · Drag area',
   'click-or-drag':      'Click or drag',
   'click-unit-or-drag': 'Click unit or drag',
+  'click-right':        'Right-click',
+  'drag-line':          'Drag a line',
+  'right-drag-line':    'Right-drag a line',
+  'shift-click-right':  'Shift + Right-click (queue)',
+  'space-click-right':  'Space + Right-click (instant)',
+  'alt-click-right':    'Alt + Right-click',
+  'ctrl-click-right':   'Ctrl + Right-click',
 }
 
 let mouseZoneSpaceHeld = false
@@ -2451,6 +2594,8 @@ function activateMouseZone(action) {
 function deactivateMouseZone() {
   currentMouseAction = null
   mouseZoneSpaceHeld = false
+  pendingSlotKey  = null
+  pendingSlotPage = 0
   const zone = $('mouse-zone')
   if (!zone) return
   zone.classList.remove('mouse-zone-active', 'mouse-zone-pending')
@@ -2477,19 +2622,28 @@ function initMouseZone() {
   const zone = $('mouse-zone')
   if (!zone) return
 
-  let dragOrigin = null   // { x, y } zone-local px, set on mousedown
+  let dragOrigin  = null    // { x, y } zone-local px, set on mousedown
+  let dragButton  = 'left'  // Attack Line is a *right* drag — the button is part of the answer
+
+  const AREA_DRAGS = ['drag', 'alt-drag', 'click-or-drag', 'click-unit-or-drag']
+  const isLineDrag = action => (action ?? '').includes('line')
+
+  // Without this the browser menu swallows every right-button gesture, so Attack Line
+  // and the right-click orders can never be finished.
+  zone.addEventListener('contextmenu', e => e.preventDefault())
 
   zone.addEventListener('mousedown', e => {
     if (trainingState !== State.WAITING_MOUSE) return
     const rect = zone.getBoundingClientRect()
     dragOrigin = { x: e.clientX - rect.left, y: e.clientY - rect.top }
+    dragButton = e.button === 2 ? 'right' : 'left'
     e.preventDefault()
   })
 
   zone.addEventListener('mousemove', e => {
     if (!dragOrigin || trainingState !== State.WAITING_MOUSE) return
     const action = currentMouseAction
-    if (action !== 'drag' && action !== 'alt-drag' && action !== 'click-or-drag' && action !== 'click-unit-or-drag') return
+    if (!AREA_DRAGS.includes(action) && !isLineDrag(action)) return
 
     const rect = zone.getBoundingClientRect()
     const mx   = e.clientX - rect.left
@@ -2498,12 +2652,17 @@ function initMouseZone() {
     if (r < 5) return
 
     const svg = $('mouse-zone-svg')
-    if (svg) svg.innerHTML =
-      `<circle cx="${dragOrigin.x}" cy="${dragOrigin.y}" r="${r}"
-        fill="rgba(0,200,0,0.10)" stroke="rgba(0,210,0,0.75)"
-        stroke-width="1.5" stroke-dasharray="6 3"/>
-      <circle cx="${dragOrigin.x}" cy="${dragOrigin.y}" r="4"
-        fill="rgba(0,210,0,0.9)"/>`
+    if (!svg) return
+    // A line order draws the line the orders land on, not the circle an area order covers
+    svg.innerHTML = isLineDrag(action)
+      ? `<line x1="${dragOrigin.x}" y1="${dragOrigin.y}" x2="${mx}" y2="${my}"
+          stroke="rgba(0,210,0,0.75)" stroke-width="1.5" stroke-dasharray="6 3"/>
+        <circle cx="${dragOrigin.x}" cy="${dragOrigin.y}" r="4" fill="rgba(0,210,0,0.9)"/>
+        <circle cx="${mx}" cy="${my}" r="4" fill="rgba(0,210,0,0.9)"/>`
+      : `<circle cx="${dragOrigin.x}" cy="${dragOrigin.y}" r="${r}"
+          fill="rgba(0,200,0,0.10)" stroke="rgba(0,210,0,0.75)"
+          stroke-width="1.5" stroke-dasharray="6 3"/>
+        <circle cx="${dragOrigin.x}" cy="${dragOrigin.y}" r="4" fill="rgba(0,210,0,0.9)"/>`
   })
 
   zone.addEventListener('mouseup', e => {
@@ -2518,9 +2677,32 @@ function initMouseZone() {
     const svg    = $('mouse-zone-svg')
     if (svg) svg.innerHTML = ''
 
-    const action  = currentMouseAction
-    const isDrag  = dist >= 20
-    const isClick = dist < 10
+    const rawAction = currentMouseAction
+    const isDrag    = dist >= 20
+    const isClick   = dist < 10
+
+    // Which button the gesture wants. Fight Line and Attack Line are right-drags, and a
+    // left-button gesture must not pass for one — that difference is the whole point.
+    const wantRight = rawAction === 'click-right'
+      || rawAction.startsWith('right-') || rawAction.endsWith('-click-right')
+    if (wantRight !== (dragButton === 'right')) {
+      if (isClick || isDrag) {
+        questionHadWrong = true
+        setInstruction(`Use the <strong>${wantRight ? 'right' : 'left'}</strong> mouse button!`, 'state-wrong')
+      }
+      return
+    }
+
+    // Line orders are drawn along a line rather than over an area, but as a gesture they
+    // are simply a drag — direction and length carry meaning in game, not on this pad.
+    if (isLineDrag(rawAction)) {
+      if (isDrag) handleMouseComplete(false)
+      return
+    }
+
+    // The button is settled, so a right-button order judges like its left-button twin:
+    // shift-click-right asks the same of the gesture as shift-click does.
+    const action = rawAction.replace(/^right-/, '').replace(/-right$/, '')
 
     if (action === 'drag') {
       if (isDrag) handleMouseComplete(false)
@@ -2605,6 +2787,21 @@ function flashSlot(key, cls) {
   if (cls !== 'is-target') {
     slot.addEventListener('animationend', () => slot.classList.remove(cls), { once: true })
   }
+}
+
+/** Move the white border to one slot — only ever one can be pending at a time. */
+function selectSlot(key) {
+  pendingSlotKey  = key
+  pendingSlotPage = currentPage
+  clearSlotBorder()
+  const slot = $('menu-grid')?.querySelector(`[data-key="${key}"]`)
+  if (slot && !slot.classList.contains('empty')) slot.classList.add('is-selected')
+}
+
+/** Take the border off the grid without forgetting what is pending. */
+function clearSlotBorder() {
+  for (const s of document.querySelectorAll('#menu-grid .slot.is-selected'))
+    s.classList.remove('is-selected')
 }
 
 function flashBrowseSlot(key) {
@@ -3538,20 +3735,6 @@ function formatShortcutKey(shortcut, isQwertz) {
   return canonical
 }
 
-function scRangeIncludes(rangeKey, key) {
-  const parts = rangeKey.split('–')
-  if (parts.length !== 2) return false
-  const [start, end] = parts
-  if (!isNaN(start) && !isNaN(end)) {
-    const n = parseInt(key, 10)
-    return !isNaN(n) && n >= parseInt(start, 10) && n <= parseInt(end, 10)
-  }
-  if (start.startsWith('F') && end.startsWith('F')) {
-    const n = parseInt(key.slice(1), 10)
-    return key.startsWith('F') && !isNaN(n) && n >= parseInt(start.slice(1), 10) && n <= parseInt(end.slice(1), 10)
-  }
-  return false
-}
 
 // A pressed combo: { key, mods } where mods is a sorted array of Ctrl/Shift/Alt/Space.
 function scComboFromEvent(e, spaceHeld) {
@@ -3563,12 +3746,6 @@ function scComboFromEvent(e, spaceHeld) {
   return { key: normalise(e.key, settings.keyboard === 'qwertz', e.code), mods }
 }
 
-function scComboMatchesKey(combo, scKey, scMods, optionalMods = []) {
-  if (!modsSatisfy(combo.mods, scMods, optionalMods)) return false
-  return scKey.includes('–')
-    ? scRangeIncludes(scKey, combo.key)
-    : scKey.toUpperCase() === combo.key
-}
 
 // Does a shortcut's declared mouseAction match the gesture the user performed on the pad?
 // Line-vs-circle drags are indistinguishable by gesture, so both satisfy a drag.
