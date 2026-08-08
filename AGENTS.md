@@ -35,6 +35,16 @@ Handy pairs:
 
 Look ids up in `data/buildmenus.json` (`builders` and `units`).
 
+### `?mod=` — pin the constructor build modifier
+
+```
+http://localhost:3737/?queue=armcom:armsy&mod=shift-click
+```
+
+`click`, `shift-click` or `space-click`. Otherwise the modifier is drawn at random per
+question, so a Shift+click bug takes a dozen reloads to hit. Constructors only —
+factories carry their modifier on the grid key.
+
 ### `?keylog` — raw keyboard events
 
 Shows an overlay with the environment (platform, `IS_MAC`, layout detection) and every
@@ -88,6 +98,10 @@ rather than being copied into the code, so it can be refreshed when upstream cha
   on a Construction Seaplane `Y` `B` click still places the Metal Extractor while
   `Y` `B` `Y` moves the build to the Naval Metal Storage now occupying that same slot.
   Both verified in game.
+- **Every mouse release is a click or a drag, never neither.** `DRAG_MIN_PX` is the only
+  threshold. There used to be a second, lower one for clicks, and a gesture that landed
+  between them was silently dropped — the question then simply ran out of time with no
+  feedback at all. If a threshold is ever split again, make sure the gap is answered.
 - **`logic.js` carries its own cache-busting query** in the import at the top of
   `app.js`. Bump it together with the `app.js?v=` in `index.html`, or a stale copy of the
   matching rules outlives the update.

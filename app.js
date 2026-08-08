@@ -3,7 +3,7 @@ import {
   slotPicksUnit,
   // Version query kept in step with the one on this file in index.html — a module import
   // is cached on its own, so a stale logic.js would otherwise outlive an app.js update.
-} from './logic.js?v=69'
+} from './logic.js?v=71'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -1961,6 +1961,11 @@ function nextQuestion() {
         .map(([mod]) => mod)
       buildMod = availMods[Math.floor(Math.random() * availMods.length)] ?? 'click'
     }
+    // ?mod= pins the modifier, which is otherwise drawn at random — see AGENTS.md
+    const forcedMod = new URLSearchParams(location.search).get('mod')
+    if (forcedMod && settings.mouseEnabled && CONSTRUCTOR_MODS[forcedMod] !== undefined) {
+      buildMod = forcedMod
+    }
     currentEntry.buildModifier = buildMod
     if (settings.mouseEnabled) showMouseZonePending(buildMod)
   }
@@ -2618,6 +2623,10 @@ function handleMouseComplete(wasClick) {
   setTimeout(() => checkRunEnd(), 900)
 }
 
+// How far the cursor may travel and still count as a click rather than a drag. Generous
+// on purpose — nobody holds a mouse perfectly still, least of all mid-hotkey.
+const DRAG_MIN_PX = 30
+
 function initMouseZone() {
   const zone = $('mouse-zone')
   if (!zone) return
@@ -2649,7 +2658,7 @@ function initMouseZone() {
     const mx   = e.clientX - rect.left
     const my   = e.clientY - rect.top
     const r    = Math.hypot(mx - dragOrigin.x, my - dragOrigin.y)
-    if (r < 5) return
+    if (r < DRAG_MIN_PX) return   // same threshold that judges it, so preview never lies
 
     const svg = $('mouse-zone-svg')
     if (!svg) return
@@ -2678,8 +2687,12 @@ function initMouseZone() {
     if (svg) svg.innerHTML = ''
 
     const rawAction = currentMouseAction
-    const isDrag    = dist >= 20
-    const isClick   = dist < 10
+    // The game takes a click with a bit of travel in it without complaint, so this has to
+    // as well. There used to be a gap between the two thresholds where a gesture was
+    // neither: a slightly shaky Shift+click landed in it and was met with silence until
+    // the question timed out. Every release is now one or the other.
+    const isDrag    = dist >= DRAG_MIN_PX
+    const isClick   = !isDrag
 
     // Which button the gesture wants. Fight Line and Attack Line are right-drags, and a
     // left-button gesture must not pass for one — that difference is the whole point.
