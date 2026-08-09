@@ -1141,10 +1141,18 @@
         },
         {
           "id": "queue-next",
-          "label": "Queue to Next",
+          "label": "Skip to Next Order",
           "level": 0,
           "key": "N",
-          "description": "Move to the next item in the build queue"
+          "description": "Move on to the next order — a build already started is left standing, one not yet begun is dropped"
+        },
+        {
+          "id": "queue-drop-last",
+          "label": "Drop Last Order",
+          "level": 2,
+          "key": "N",
+          "modifiers": ["Ctrl"],
+          "description": "Remove the last order in the queue — the current one carries on"
         },
         {
           "id": "wait",
