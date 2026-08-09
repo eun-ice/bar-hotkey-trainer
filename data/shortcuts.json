@@ -992,7 +992,7 @@
               "id": "trajectory-auto",
               "label": "Auto",
               "taps": 1,
-              "level": 1
+              "level": 2
             },
             {
               "id": "trajectory-low",
@@ -1007,7 +1007,7 @@
               "level": 2
             }
           ],
-          "level": 1
+          "level": 2
         },
         {
           "id": "stance",
