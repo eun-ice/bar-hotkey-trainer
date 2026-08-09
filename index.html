@@ -171,12 +171,20 @@
           <div class="adv-divider"></div>
           <div class="adv-run-grid">
             <div>
-              <p class="setup-sub-label">Hint Timeout</p>
+              <p class="setup-sub-label">Build Menu Hint</p>
               <div class="slider-row">
                 <input type="range" id="hint-timeout" min="0" max="10" step="1" value="0">
                 <span id="hint-timeout-val">Always visible</span>
               </div>
               <p class="setup-hint">Seconds before the build menu is revealed</p>
+            </div>
+            <div>
+              <p class="setup-sub-label">Key Hint</p>
+              <div class="slider-row">
+                <input type="range" id="key-hint-timeout" min="0" max="10" step="1" value="3">
+                <span id="key-hint-timeout-val">3s</span>
+              </div>
+              <p class="setup-hint">Seconds before a shortcut's keys are shown</p>
             </div>
             <div>
               <p class="setup-sub-label">Time Limit</p>
@@ -539,6 +547,6 @@
   All rights remain with the original authors. If you have suggestions, mention @eunice3x on BAR discord.
 </footer>
 
-<script src="app.js?v=100" type="module"></script>
+<script src="app.js?v=104" type="module"></script>
 </body>
 </html>

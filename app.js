@@ -3,7 +3,7 @@ import {
   slotPicksUnit,
   // Version query kept in step with the one on this file in index.html — a module import
   // is cached on its own, so a stale logic.js would otherwise outlive an app.js update.
-} from './logic.js?v=100'
+} from './logic.js?v=104'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -392,7 +392,8 @@ function defaultSettings() {
     tiers:        [0, 1, 2, 3, 'optional'],
     builderTypes: ['factory', 'constructor'],
     keyboard:     '',
-    hintTimeout:  0,
+    hintTimeout:  0,   // seconds before the build menu is revealed
+    keyHintTimeout: 3, // seconds before a shortcut's keys are shown
     timeLimit:    8,   // seconds per required key press
     runLength:    20,  // questions per run (0 = unlimited)
     shortcuts:    ['general', 'move', 'groups', 'battle', 'factory', 'builder', 'blueprint', 'rezbot', 'transport', 'camera', 'pip', 'game'],
@@ -1256,15 +1257,24 @@ function clearHintTimer() {
   $('hint-overlay').classList.add('hidden')
 }
 
-const SHORTCUT_KEY_DELAY_MS = 3000
+// How long the "too slow" note stays before the key hint comes back
+const TOO_SLOW_MS = 1400
+let tooSlowTimerId = null
 
 function startShortcutKeyTimer() {
   clearTimeout(shortcutKeyTimerId)
+  // Its own setting: a shortcut has no build menu to reveal, so the two delays are
+  // different questions — one is "show me the menu", the other "show me the keys".
+  const seconds = settings.keyHintTimeout ?? 3
+  if (seconds === 0) { shortcutKeyVisible = true; updateMouseZonePendingLabel(); return }
   shortcutKeyVisible = false
+  // The pad is set up before this runs, so it still carries the last question's state
+  updateMouseZonePendingLabel()
   shortcutKeyTimerId = setTimeout(() => {
     shortcutKeyVisible = true
+    updateMouseZonePendingLabel()
     if (trainingState === State.WAITING_SHORTCUT) updateInstruction()
-  }, SHORTCUT_KEY_DELAY_MS)
+  }, seconds * 1000)
 }
 
 function clearShortcutKeyTimer() {
@@ -2511,6 +2521,12 @@ function handleShortcutKey(key, mods) {
       setInstruction(
         `Too slow — the taps have to land within ${entry.tapWindowMs} ms of each other`,
         'state-wrong')
+      // Put the keys back afterwards. Standing on a scolding with no answer is worst
+      // exactly when it happens most: you hesitated because you did not know it.
+      clearTimeout(tooSlowTimerId)
+      tooSlowTimerId = setTimeout(() => {
+        if (trainingState === State.WAITING_SHORTCUT) updateInstruction()
+      }, TOO_SLOW_MS)
       return
     }
   }
@@ -2649,9 +2665,20 @@ function showMouseZonePending(action) {
   zone.classList.add('mouse-zone-pending')
   const targetEl = $('mouse-zone-target')
   if (targetEl) targetEl.style.display = 'none'
-  const labelEl = $('mouse-zone-label')
-  if (labelEl) labelEl.textContent = MOUSE_ACTION_LABELS[action] || ''
+  updateMouseZonePendingLabel()
+}
 
+/**
+ * The waiting mouse pad names the gesture it wants. On a shortcut question that gesture
+ * is half the answer — Fight is a click, Fight Line a drag — so it stays hidden for as
+ * long as the keys do. Build questions keep it: there the card already says "Queue build",
+ * and the gesture is the task, not the answer.
+ */
+function updateMouseZonePendingLabel() {
+  const labelEl = $('mouse-zone-label')
+  if (!labelEl) return
+  const verdeckt = currentEntry?.type === 'shortcut' && !shortcutKeyVisible
+  labelEl.textContent = verdeckt ? '?' : (MOUSE_ACTION_LABELS[currentMouseAction] || '')
 }
 
 function activateMouseZone(action) {
@@ -3001,6 +3028,8 @@ function restoreSettingsUI() {
   }
   $('hint-timeout').value = settings.hintTimeout
   updateHintLabel(settings.hintTimeout)
+  $('key-hint-timeout').value = settings.keyHintTimeout
+  updateKeyHintLabel(settings.keyHintTimeout)
   $('time-limit').value = settings.timeLimit
   updateTimeLimitLabel(settings.timeLimit)
   $('run-length').value = settings.runLength
@@ -3025,6 +3054,13 @@ function initSetupScreen() {
   restoreSettingsUI()
 
   // Live updates
+  $('key-hint-timeout').addEventListener('input', e => {
+    const v = Number(e.target.value)
+    updateKeyHintLabel(v)
+    settings.keyHintTimeout = v
+    saveSettings(settings)
+  })
+
   $('hint-timeout').addEventListener('input', e => {
     const v = Number(e.target.value)
     updateHintLabel(v)
@@ -3198,6 +3234,10 @@ function onFilterChange() {
     .map(cb => cb.value)
   saveSettings(settings)
   updateBuilderCount()
+}
+
+function updateKeyHintLabel(val) {
+  $('key-hint-timeout-val').textContent = val === 0 ? 'Always visible' : `${val}s`
 }
 
 function updateHintLabel(val) {
