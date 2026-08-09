@@ -677,6 +677,28 @@ body:has(#screen-shortcuts.active) { height: 100vh }
 .target-icon-wrap { display: flex; justify-content: center; align-items: center; gap: 6px }
 .build-mod-badge { line-height: 0; flex-shrink: 0; pointer-events: none }
 .build-mod-badge.hidden { display: none }
+/* Stands in for the game's +5 / front-of-queue artwork where none exists: Ctrl subtracts
+   now, and there is no picture for that. Sized to match the 44px badge images. */
+.build-mod-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  line-height: 1;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--error);
+  border: 2px solid var(--error);
+  border-radius: 50%;
+  background: var(--error-bg);
+}
+/* Adding to the queue rather than taking off it */
+.build-mod-count.is-add {
+  color: var(--success);
+  border-color: var(--success);
+  background: var(--success-bg);
+}
 .target-card .unit-portrait { width: 88px; height: 88px }
 .target-card .name-large { text-align: center; font-size: 17px; white-space: normal }
 .target-description {
@@ -2064,3 +2086,37 @@ body:has(#screen-shortcuts.active) { height: 100vh }
   border-radius: var(--rad);
 }
 .sc-state-done .sc-state-name  { color: var(--success) }
+
+/* ─── Visual reference (in-game keyboard charts) ─────────────────────────────── */
+.sc-visual { width: 100%; max-width: 1100px; display: flex; flex-direction: column; gap: 12px }
+.sc-visual.hidden { display: none }
+
+.sc-visual-tabs { display: flex; gap: 4px; flex-wrap: wrap }
+.sc-visual-tab {
+  padding: 6px 14px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
+  background: var(--bg-panel2);
+  border: 1px solid var(--border2);
+  border-radius: var(--rad);
+  cursor: pointer;
+  transition: color .12s, border-color .12s, background .12s;
+}
+.sc-visual-tab:hover  { color: var(--text) }
+.sc-visual-tab.active { color: var(--accent); border-color: var(--accent); background: rgba(200,164,64,.10) }
+
+/* The chart is read by zooming in, so it keeps its full width and scrolls if it must */
+.sc-visual-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--rad-lg);
+}
+.sc-visual-note { font-size: 12px; color: var(--text-dim); line-height: 1.6 }
+.sc-visual-note a { color: var(--accent) }
+
+/* Trails a shown answer: what to do once you have read it */
+.answer-hint { color: var(--text-dim); font-size: .9em; white-space: nowrap }

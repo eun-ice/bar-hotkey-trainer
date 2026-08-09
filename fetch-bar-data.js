@@ -114,6 +114,26 @@ async function main() {
     }
   }
 
+  // The in-game keyboard charts, shown as a visual reference. Three variants: the plain
+  // grid, and the same board with Ctrl or Alt held. They are ~1 MB PNGs in the repo;
+  // extract-data.js converts them to webp. The `legacy_keys*` siblings are deliberately
+  // skipped — this trainer is for the grid layout only.
+  const KEYBIND_CHARTS = ['grid_keys.png', 'grid_keys_CTRL.png', 'grid_keys_ALT.png']
+  for (const name of KEYBIND_CHARTS) {
+    const relPath = `luaui/images/keybinds/${name}`
+    if (existsSync(join(BAR_DATA, relPath)) && !refresh) continue
+    process.stdout.write(`Downloading ${relPath} … `)
+    try {
+      const bytes = await rawGetBinary(`${RAW}/${relPath}`)
+      const full  = join(BAR_DATA, relPath)
+      mkdirSync(dirname(full), { recursive: true })
+      writeFileSync(full, bytes)
+      console.log(`${Math.round(bytes.length / 1024)} KB`)
+    } catch (err) {
+      console.log(`skipped (${err.message})`)
+    }
+  }
+
   // Always ensure reclaim/resurrect widgets are present regardless of --refresh
   const smartReclaimPath = join(BAR_DATA, 'luaui/Widgets/unit_smart_area_reclaim.lua')
   if (!existsSync(smartReclaimPath)) {

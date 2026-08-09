@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=50">
+  <link rel="stylesheet" href="style.css?v=59">
   <script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body>
@@ -402,10 +402,34 @@
 
     <div class="browse-sidebar">
       <div id="shortcuts-group-list" class="browse-list"></div>
+      <div class="browse-section">
+        <div class="browse-section-heading">Reference</div>
+        <div class="browse-item" id="sc-visual-item">
+          <div class="browse-item-label"><span>🖼 Visual reference</span></div>
+        </div>
+      </div>
     </div>
 
     <div class="browse-main">
       <div id="shortcuts-empty" class="browse-empty">← Select a group</div>
+
+      <!-- The in-game keyboard charts, straight from the BAR repo -->
+      <div id="sc-visual" class="sc-visual hidden">
+        <div class="sc-visual-tabs" id="sc-visual-tabs">
+          <button class="sc-visual-tab active" data-chart="grid">No modifier</button>
+          <button class="sc-visual-tab" data-chart="grid-ctrl">Ctrl held</button>
+          <button class="sc-visual-tab" data-chart="grid-alt">Alt held</button>
+        </div>
+        <a id="sc-visual-link" href="" target="_blank" rel="noopener">
+          <img id="sc-visual-img" class="sc-visual-img" src="" alt="In-game keyboard chart">
+        </a>
+        <p class="sc-visual-note">
+          Straight from the game — so it shows a <strong>US keyboard</strong> and can lag
+          behind the tables here, which are checked against the binding files.
+          Also on the <a href="https://www.beyondallreason.info/commands-2-0-grid"
+          target="_blank" rel="noopener">BAR command reference ↗</a>.
+        </p>
+      </div>
 
       <!-- One line only: the bar pinned to the bottom already explains the mouse gestures -->
       <p class="sc-intro">⌨ <strong>Hint:</strong> try the shortcuts out — you'll earn
@@ -515,6 +539,6 @@
   All rights remain with the original authors. If you have suggestions, mention @eunice3x on BAR discord.
 </footer>
 
-<script src="app.js?v=91" type="module"></script>
+<script src="app.js?v=100" type="module"></script>
 </body>
 </html>

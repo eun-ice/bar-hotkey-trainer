@@ -600,7 +600,8 @@
     "shift": 1,
     "ctrl": 1,
     "alt": 1,
-    "ctrl-shift": 1
+    "ctrl-shift": 1,
+    "alt-shift": 1
   },
   "contexts": {
     "none": "No unit selected — show prompt text only",
@@ -897,7 +898,7 @@
         },
         {
           "id": "fight",
-          "label": "Fight",
+          "label": "Fight Move",
           "level": 0,
           "key": "F",
           "description": "Attack-move: units advance while stopping to engage enemies in range",
@@ -944,7 +945,7 @@
               "id": "repeat-off",
               "label": "Off",
               "taps": 2,
-              "level": 2
+              "level": 1
             }
           ]
         },
@@ -978,7 +979,7 @@
               "id": "on-off-off",
               "label": "Off",
               "taps": 2,
-              "level": 2
+              "level": 1
             }
           ]
         },
@@ -1061,7 +1062,7 @@
               "id": "move-maneuver",
               "label": "Maneuver",
               "taps": 3,
-              "level": 2
+              "level": 1
             }
           ]
         },
@@ -1399,7 +1400,7 @@
               "id": "factory-guard-off",
               "label": "Off",
               "taps": 2,
-              "level": 2
+              "level": 1
             }
           ]
         },
@@ -1842,7 +1843,8 @@
           "modifiers": [
             "Alt"
           ],
-          "description": "Rotate the camera 180° to look from the opposite direction"
+          "description": "Rotate the camera 180° to look from the opposite direction",
+          "displayOnly": true
         },
         {
           "id": "show-pathing",

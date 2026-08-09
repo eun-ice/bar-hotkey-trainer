@@ -3,7 +3,7 @@ import {
   slotPicksUnit,
   // Version query kept in step with the one on this file in index.html — a module import
   // is cached on its own, so a stale logic.js would otherwise outlive an app.js update.
-} from './logic.js?v=91'
+} from './logic.js?v=100'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -462,7 +462,7 @@ let FACTORY_LEVELS    = {}    // { builderId → level } inverted from shortcuts
 let CONSTRUCTOR_MODS  = { 'click': 0, 'shift-click': 1, 'space-click': 1 }
 // Fallback only — data/shortcuts.json overrides these. Kept in step with it so the two
 // never quietly disagree about which modifier belongs to which difficulty.
-let FACTORY_MODS      = { 'none': 0, 'shift': 1, 'ctrl': 1, 'alt': 1, 'ctrl-shift': 1 }
+let FACTORY_MODS      = { 'none': 0, 'shift': 1, 'ctrl': 1, 'alt': 1, 'ctrl-shift': 1, 'alt-shift': 1 }
 // Ctrl used to add twenty and Ctrl+Shift a hundred. BAR changed it: Ctrl now *removes*
 // from the queue, so those two bulk-add modifiers no longer exist. Verified in game.
 
@@ -475,6 +475,7 @@ const FACTORY_MOD_INFO = {
   'shift':      { mods: ['shift'],         label: 'Build +5',     desc: 'Adds five to the end of the queue' },
   'ctrl':       { mods: ['ctrl'],          label: 'Build −1',     desc: 'Takes one back off the queue' },
   'ctrl-shift': { mods: ['ctrl','shift'],  label: 'Build −5',     desc: 'Takes five back off the queue' },
+  'alt-shift':  { mods: ['alt','shift'],   label: 'Insert next ×5', desc: 'Jumps the queue with five of them' },
   'alt':        { mods: ['alt'],           label: 'Insert next',  desc: 'Jumps the queue — builds this one next',
                   note: '<strong>Hint:</strong> if the factory is on <strong>Repeat</strong>, any unit being built is finished and this one is built next. If the factory is not on Repeat, a unit under construction is <strong>cancelled</strong> and this one starts instead.' },
 }
@@ -744,6 +745,7 @@ let showAnswerCountdownId   = null    // setInterval handle for 10-s auto-advanc
 let showAnswerCountdownSec  = 0       // remaining seconds
 let showAnswerPrefix        = ''      // prefix shown in instruction (e.g. '⏱ Time up — ')
 let showAnswerKeysHtml      = ''      // pre-built <kbd>...</kbd> HTML
+let showAnswerSuffix        = ''      // trails the keys — what to do once you have read them
 
 // ─── Reaction-time tracking ───────────────────────────────────────────────────
 
@@ -1364,7 +1366,7 @@ function handleTimeout() {
 }
 
 /** Show the correct answer and start a 10-second auto-advance countdown. */
-function showAnswer(prefix = '') {
+function showAnswer(prefix = '', suffix = '') {
   clearAnswerTimer()
   clearHintTimer()
   clearShortcutKeyTimer()
@@ -1373,10 +1375,15 @@ function showAnswer(prefix = '') {
   if (currentEntry.type === 'shortcut') {
     const keys = correctKeySequence()
     showAnswerPrefix   = prefix
+    showAnswerSuffix   = suffix
     showAnswerKeysHtml = keys.map(k => `<kbd>${k}</kbd>`).join(' → ')
     showAnswerKeysHtml += answerMouseHtml()
-    const answerMods = currentEntry.seqMods?.flat() ?? []
-    showAnswerKeysHtml += macSwapNote(answerMods)
+    // "Press ⌘ Cmd instead" is advice for practising here — nonsense on a study card,
+    // which exists precisely because the browser swallows the combo before we see it.
+    if (!currentEntry.browserReserved) {
+      const answerMods = currentEntry.seqMods?.flat() ?? []
+      showAnswerKeysHtml += macSwapNote(answerMods)
+    }
     trainingState = State.SHOW_ANSWER
     $('btn-skip').textContent = 'OK Next'
     showAnswerCountdownSec = 10
@@ -1398,6 +1405,7 @@ function showAnswer(prefix = '') {
   renderMenu(currentEntry.builder, activeCatId, currentPage, currentEntry.unitId)
 
   showAnswerPrefix   = prefix
+  showAnswerSuffix   = suffix
   showAnswerKeysHtml = answerKeysHtml() + answerMouseHtml()
   if (isFactory(currentEntry.builder) && currentEntry.buildModifier === 'alt') {
     showAnswerKeysHtml += macSwapNote(['alt'])
@@ -1422,7 +1430,7 @@ function showAnswer(prefix = '') {
 
 function updateShowAnswerInstruction() {
   setInstruction(
-    `${showAnswerPrefix}Answer: ${showAnswerKeysHtml}` +
+    `${showAnswerPrefix}Answer: ${showAnswerKeysHtml}${showAnswerSuffix}` +
     ` <span class="answer-countdown">(${showAnswerCountdownSec}s)</span>`,
     'state-wrong'
   )
@@ -1942,6 +1950,9 @@ function isOsReserved(key, mods) {
 
 function pickFactoryBuildMod(gridKey) {
   if (!settings.buildModifiers) return 'none'
+  // ?mod= pins the modifier, which is otherwise drawn at random — see AGENTS.md
+  const forced = new URLSearchParams(location.search).get('mod')
+  if (forced && FACTORY_MODS[forced] !== undefined) return forced
   const threshold = difficultyThreshold()
   let mods = Object.entries(FACTORY_MODS)
     .filter(([, lvl]) => threshold === Infinity || lvl <= threshold)
@@ -1953,7 +1964,7 @@ function pickFactoryBuildMod(gridKey) {
   const macCmdR = IS_MAC && settings.swapCmdAlt && (BROWSER_RESERVED_KEYS.mac.cmd.has(key) || ctrlR)
   if (ctrlR)   mods = mods.filter(m => m !== 'ctrl' && m !== 'ctrl-shift')
   if (csR)     mods = mods.filter(m => m !== 'ctrl-shift')
-  if (macCmdR) mods = mods.filter(m => m !== 'alt')
+  if (macCmdR) mods = mods.filter(m => m !== 'alt' && m !== 'alt-shift')
   if (!mods.length) mods = ['none']
   return mods[Math.floor(Math.random() * mods.length)]
 }
@@ -1981,7 +1992,10 @@ function nextQuestion() {
 
     if (item.browserReserved) {
       // Browser intercepts this key combo — can't be typed here. Show it as a study card.
-      showAnswer('⌨ Browser shortcut — study it, then press Enter or Space to continue')
+      // What it is, then the keys, then what to do — the call to action belongs after
+      // the thing you are meant to read, not before it
+      showAnswer('⌨ Browser shortcut — study it. ',
+                 ' <span class="answer-hint">· Enter or Space to continue</span>')
       return
     }
 
@@ -2088,6 +2102,7 @@ function buildModHint() {
     'ctrl':       `<kbd>Ctrl</kbd>`,
     'ctrl-shift': `<kbd>Ctrl</kbd>+<kbd>Shift</kbd>`,
     'alt':        `<kbd>Alt</kbd>${macSwapNote(['alt'])}`,
+    'alt-shift':  `<kbd>Alt</kbd>+<kbd>Shift</kbd>${macSwapNote(['alt'])}`,
   }
   const label = modLabels[mod]
   return label ? `Hold ${label} · ` : ''
@@ -2099,11 +2114,17 @@ const SVG_QUEUE_FRONT = `<svg width="44" height="44" viewBox="0 0 96 96" fill="n
 
 function buildModBadgeSvg(mod, factory) {
   const img = (src) => `<img src="data/${src}" width="44" height="44" alt="">`
+  // Ctrl removes from the queue now, so the game's old +20 and +100 artwork is simply
+  // wrong. There is no matching art for the subtracting variants, so those get a plain
+  // count badge rather than a picture that says the opposite of what happens.
+  const count = (text, extra = '') =>
+    `<span class="build-mod-count${extra ? ' ' + extra : ''}">${text}</span>`
   if (factory) {
     if (mod === 'shift')      return img('badge-p5.avif')
-    if (mod === 'ctrl')       return img('badge-p20.avif')
-    if (mod === 'ctrl-shift') return img('badge-p100.avif')
+    if (mod === 'ctrl')       return count('−1')
+    if (mod === 'ctrl-shift') return count('−5')
     if (mod === 'alt')        return img('badge-front.avif')
+    if (mod === 'alt-shift')  return count('↑5', 'is-add')
     return ''
   } else {
     if (mod === 'shift-click') return SVG_QUEUE
@@ -2137,6 +2158,7 @@ function updateBuildActionLabel() {
     else if (mod === 'ctrl')       text = 'Build −1'
     else if (mod === 'ctrl-shift') text = 'Build −5'
     else if (mod === 'alt')        text = 'Insert Next'
+    else if (mod === 'alt-shift')  text = 'Insert Next ×5'
     else                           text = 'Build +1'
   } else {
     if (mod === 'shift-click') text = 'Queue Build'
@@ -2429,6 +2451,9 @@ function handleGridKey(key, event) {
       } else if (mod === 'alt') {
         modOk = !!(effectiveAlt(event) && !event?.ctrlKey && !event?.shiftKey)
         modHint = `Hold <kbd>Alt</kbd>${macSwapNote(['alt'])} while pressing the grid key!`
+      } else if (mod === 'alt-shift') {
+        modOk = !!(effectiveAlt(event) && event?.shiftKey && !event?.ctrlKey)
+        modHint = `Hold <kbd>Alt+Shift</kbd>${macSwapNote(['alt'])} while pressing the grid key!`
       }
       if (!modOk) {
         questionHadWrong = true
@@ -4205,6 +4230,7 @@ function initShortcutsScreen() {
     list.appendChild(item)
   }
 
+  initVisualReference()
   if (SHORTCUTS.length) selectShortcutsGroup(SHORTCUTS[0].id)
 }
 
@@ -4257,7 +4283,48 @@ function initKeyLog() {
   $('keylog-clear').addEventListener('click', () => { lines.length = 0; out.textContent = 'press keys…' })
 }
 
+// The in-game keyboard charts, fetched from the BAR repo by fetch-bar-data.js and
+// converted by extract-data.js. Three variants of the same board: plain, Ctrl held,
+// Alt held. Loaded only when the panel is opened — together they are ~700 KB.
+const KEYBIND_CHART_SRC = 'https://github.com/beyond-all-reason/Beyond-All-Reason/blob/master/luaui/images/keybinds'
+
+function initVisualReference() {
+  const item = $('sc-visual-item')
+  const panel = $('sc-visual')
+  if (!item || !panel) return
+
+  let geladen = false
+  const show = chart => {
+    $('sc-visual-img').src = `data/keybinds/${chart}.webp`
+    $('sc-visual-link').href =
+      `${KEYBIND_CHART_SRC}/${chart === 'grid' ? 'grid_keys' : 'grid_keys_' + chart.slice(5).toUpperCase()}.png`
+    for (const tab of $('sc-visual-tabs').querySelectorAll('.sc-visual-tab'))
+      tab.classList.toggle('active', tab.dataset.chart === chart)
+  }
+
+  item.addEventListener('click', () => {
+    activeShortcutsGroupId = null
+    for (const el of $('shortcuts-group-list').querySelectorAll('.browse-item'))
+      el.classList.remove('active')
+    item.classList.add('active')
+    $('shortcuts-empty').classList.add('hidden')
+    $('shortcuts-content').classList.add('hidden')
+    document.querySelector('.sc-intro')?.classList.add('hidden')
+    panel.classList.remove('hidden')
+    // Not `if (!img.src)`: an empty src attribute resolves to the page URL, so it is
+    // never falsy. Track it ourselves instead.
+    if (!geladen) { geladen = true; show('grid') }
+  })
+
+  for (const tab of $('sc-visual-tabs').querySelectorAll('.sc-visual-tab'))
+    tab.addEventListener('click', () => show(tab.dataset.chart))
+}
+
 function selectShortcutsGroup(id) {
+  // Leaving the chart behind — a key press can pull the view back to a group at any time
+  $('sc-visual')?.classList.add('hidden')
+  $('sc-visual-item')?.classList.remove('active')
+  document.querySelector('.sc-intro')?.classList.remove('hidden')
   activeShortcutsGroupId = id
   const isQwertz = settings.keyboard === 'qwertz'
 

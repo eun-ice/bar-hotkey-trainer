@@ -17,12 +17,20 @@
  */
 
 import { execFileSync } from 'node:child_process'
-import { mkdirSync, writeFileSync, readFileSync, existsSync, unlinkSync } from 'node:fs'
+import { mkdirSync, writeFileSync, readFileSync, existsSync, unlinkSync, statSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const BAR_DATA = join(__dirname, 'bar-data')
+
+// The in-game keyboard charts: source name in bar-data → output name in data/keybinds.
+// Only the grid variants; the legacy layout is not what this trainer teaches.
+const KEYBIND_CHARTS = {
+  'grid_keys.png':      'grid.webp',
+  'grid_keys_CTRL.png': 'grid-ctrl.webp',
+  'grid_keys_ALT.png':  'grid-alt.webp',
+}
 
 const RAW = 'https://raw.githubusercontent.com/beyond-all-reason/Beyond-All-Reason/master'
 const API = 'https://api.github.com/repos/beyond-all-reason/Beyond-All-Reason'
@@ -644,6 +652,36 @@ function findMagick() {
   return null
 }
 
+/**
+ * The in-game keyboard charts, used as a visual reference in the shortcuts screen.
+ * ~1 MB PNGs in the repo, ~280 KB as webp — worth converting, not worth resizing: they
+ * are read by zooming in, so the 2000px width is the point.
+ */
+function convertKeybindCharts() {
+  const magick = findMagick()
+  if (!magick) return
+  const srcDir = join(BAR_DATA, 'luaui', 'images', 'keybinds')
+  const outDir = join(__dirname, 'data', 'keybinds')
+  mkdirSync(outDir, { recursive: true })
+
+  for (const [src, out] of Object.entries(KEYBIND_CHARTS)) {
+    const srcPath = join(srcDir, src)
+    const outPath = join(outDir, out)
+    if (!existsSync(srcPath)) {
+      console.warn(`  keyboard chart missing: ${src} — run fetch-bar-data.js`)
+      continue
+    }
+    if (existsSync(outPath)) continue
+    const args = [srcPath, '-quality', '82', outPath]
+    try {
+      execFileSync(magick === 'magick' ? 'magick' : 'convert', args, { stdio: 'pipe' })
+      console.log(`  ${out} (${Math.round(statSync(outPath).size / 1024)} KB)`)
+    } catch (err) {
+      console.warn(`  could not convert ${src}: ${err.message}`)
+    }
+  }
+}
+
 async function convertIcons(unitIds, buildpicMap = {}) {
   const magick = findMagick()
   if (!magick) {
@@ -951,6 +989,9 @@ async function main() {
     console.log(`Converting ${neededIds.size} icons …`)
     await convertIcons([...neededIds], buildpicMap)
   }
+
+  // Three images, not 569 — --skip-icons is about the unit icons, not these
+  convertKeybindCharts()
 
   console.log('Done.')
 }
