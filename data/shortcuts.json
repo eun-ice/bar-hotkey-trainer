@@ -598,9 +598,9 @@
   "factoryModifiers": {
     "none": 0,
     "shift": 1,
-    "ctrl": 2,
+    "ctrl": 1,
     "alt": 1,
-    "ctrl-shift": 2
+    "ctrl-shift": 1
   },
   "contexts": {
     "none": "No unit selected — show prompt text only",
@@ -623,6 +623,14 @@
           "displayOnly": true,
           "description": "Left-click a unit — selects just that one, replacing the current selection",
           "mouseAction": "click"
+        },
+        {
+          "id": "deselect",
+          "label": "Deselect",
+          "level": 0,
+          "displayOnly": true,
+          "key": "Escape",
+          "description": "Drop the current selection without giving it an order"
         },
         {
           "id": "select-box",
@@ -924,7 +932,21 @@
           "label": "Repeat",
           "level": 1,
           "key": "T",
-          "description": "Toggle repeat orders in the queue"
+          "description": "Repeat currently queued orders",
+          "states": [
+            {
+              "id": "repeat-on",
+              "label": "On",
+              "taps": 1,
+              "level": 1
+            },
+            {
+              "id": "repeat-off",
+              "label": "Off",
+              "taps": 2,
+              "level": 2
+            }
+          ]
         },
         {
           "id": "stop",
@@ -944,34 +966,111 @@
           "label": "On / Off",
           "level": 1,
           "key": "B",
-          "description": "Toggle unit active state (shields, cloak fields, etc.)"
+          "description": "Activate shields, cloak fields and the like",
+          "states": [
+            {
+              "id": "on-off-on",
+              "label": "On",
+              "taps": 1,
+              "level": 1
+            },
+            {
+              "id": "on-off-off",
+              "label": "Off",
+              "taps": 2,
+              "level": 2
+            }
+          ]
         },
         {
           "id": "trajectory",
           "label": "Trajectory",
           "key": "B",
-          "description": "Toggle high / low trajectory for artillery and ballistic units"
+          "description": "How artillery and ballistic units arc their shots",
+          "states": [
+            {
+              "id": "trajectory-auto",
+              "label": "Auto",
+              "taps": 1,
+              "level": 1
+            },
+            {
+              "id": "trajectory-low",
+              "label": "Low",
+              "taps": 2,
+              "level": 2
+            },
+            {
+              "id": "trajectory-high",
+              "label": "High",
+              "taps": 3,
+              "level": 2
+            }
+          ],
+          "level": 1
         },
         {
           "id": "stance",
-          "label": "Stance",
+          "label": "Fire Stance",
+          "level": 1,
           "key": "L",
-          "description": "Cycle fire stance: Hold Fire → Fire at Will → Return Fire"
+          "description": "How units decide when to shoot",
+          "states": [
+            {
+              "id": "fire-at-will",
+              "label": "Fire at Will",
+              "taps": 1,
+              "level": 1
+            },
+            {
+              "id": "hold-fire",
+              "label": "Hold Fire",
+              "taps": 2,
+              "level": 1
+            },
+            {
+              "id": "return-fire",
+              "label": "Return Fire",
+              "taps": 3,
+              "level": 2,
+              "displayOnly": true
+            }
+          ]
         },
         {
           "id": "position",
-          "label": "Position",
+          "label": "Move Stance",
           "level": 1,
           "key": ";",
           "note": "';' — QWERTY: ; key  QWERTZ: Ö key (same physical position)",
-          "description": "Cycle movement stance: Hold Position → Maneuver → Roam"
+          "description": "How far units stray from where you put them",
+          "states": [
+            {
+              "id": "move-roam",
+              "label": "Roam",
+              "taps": 1,
+              "level": 1
+            },
+            {
+              "id": "move-hold-position",
+              "label": "Hold Position",
+              "taps": 2,
+              "level": 1
+            },
+            {
+              "id": "move-maneuver",
+              "label": "Maneuver",
+              "taps": 3,
+              "level": 2
+            }
+          ]
         },
         {
           "id": "cloak",
           "label": "Cloak",
           "level": 0,
           "key": "K",
-          "description": "Toggle cloaking on units that support it"
+          "description": "Toggle cloaking on units that support it — one press either way"
         },
         {
           "id": "dgun",
@@ -1151,7 +1250,9 @@
           "label": "Drop Last Order",
           "level": 2,
           "key": "N",
-          "modifiers": ["Ctrl"],
+          "modifiers": [
+            "Ctrl"
+          ],
           "description": "Remove the last order in the queue — the current one carries on"
         },
         {
@@ -1160,7 +1261,7 @@
           "level": 1,
           "key": "Y",
           "note": "QWERTY: Y (top row), QWERTZ: Z (same physical position, Y/Z swapped)",
-          "description": "Pause the unit until further orders"
+          "description": "Pause the unit until further orders — one press flips it back on"
         },
         {
           "id": "self-destruct",
@@ -1171,6 +1272,14 @@
             "Ctrl"
           ],
           "description": "Order the unit to self-destruct"
+        },
+        {
+          "id": "restore-ground",
+          "label": "Restore Ground",
+          "level": 2,
+          "key": "M",
+          "description": "Drag an area to have builders flatten the terrain back to its original shape",
+          "mouseAction": "drag"
         },
         {
           "id": "repair-reclaim-area",
@@ -1233,6 +1342,28 @@
           ],
           "note": "QWERTY: Alt+]  QWERTZ: Alt++ (same physical key; normalised in trainer)",
           "description": "Cycle to the next blueprint in your list"
+        },
+        {
+          "id": "prev-blueprint",
+          "label": "Previous Blueprint",
+          "level": 1,
+          "key": "[",
+          "modifiers": [
+            "Alt"
+          ],
+          "note": "QWERTY: Alt+[  QWERTZ: Alt+ü (same physical key; normalised in trainer)",
+          "description": "Cycle to the previous blueprint in your list"
+        },
+        {
+          "id": "delete-blueprint",
+          "label": "Delete Blueprint",
+          "level": 2,
+          "displayOnly": true,
+          "key": "Y",
+          "modifiers": [
+            "Alt"
+          ],
+          "description": "Discard the blueprint you are currently holding"
         }
       ]
     },
@@ -1250,13 +1381,27 @@
         },
         {
           "id": "factory-guard",
-          "label": "Factory Guard Toggle",
+          "label": "Factory Guard",
           "level": 1,
           "key": "G",
           "modifiers": [
             "Ctrl"
           ],
-          "description": "Toggle whether newly built units guard the factory"
+          "description": "Whether newly built units stay and guard the factory",
+          "states": [
+            {
+              "id": "factory-guard-on",
+              "label": "On",
+              "taps": 1,
+              "level": 1
+            },
+            {
+              "id": "factory-guard-off",
+              "label": "Off",
+              "taps": 2,
+              "level": 2
+            }
+          ]
         },
         {
           "id": "show-build-queue",
@@ -1267,6 +1412,16 @@
             "Shift"
           ],
           "description": "Show the factory's current build queue overlay"
+        },
+        {
+          "id": "factory-queue-mode",
+          "label": "Factory Queue Mode",
+          "level": 2,
+          "key": "G",
+          "modifiers": [
+            "Alt"
+          ],
+          "description": "Switch the factory between queue mode and quota mode — one press flips it"
         }
       ]
     },
@@ -1670,13 +1825,14 @@
         },
         {
           "id": "camera-toggle-overview",
-          "label": "Toggle Overhead / Tilted View",
+          "label": "Map Overview",
           "level": 1,
+          "displayOnly": true,
           "key": "T",
           "modifiers": [
             "Ctrl"
           ],
-          "description": "Switch between the overhead (top-down) and tilted perspective camera modes"
+          "description": "Zoom out to the whole map, then press again or click a spot to jump back in"
         },
         {
           "id": "camera-flip",
@@ -1691,6 +1847,8 @@
         {
           "id": "show-pathing",
           "label": "Show Pathing",
+          "level": 1,
+          "displayOnly": true,
           "key": "F6",
           "description": "Toggle pathfinding debug overlay",
           "sixty": {
@@ -1699,6 +1857,58 @@
               "Space"
             ]
           }
+        },
+        {
+          "id": "goto-ping",
+          "label": "Jump to Last Ping",
+          "level": 1,
+          "key": "F5",
+          "description": "Move the camera to the most recent map marker or message position"
+        },
+        {
+          "id": "metal-view",
+          "label": "Metal View",
+          "level": 2,
+          "key": "F7",
+          "description": "Toggle the metal map — shows every extractor spot and how rich it is"
+        },
+        {
+          "id": "map-elevation",
+          "label": "Map Elevation",
+          "level": 2,
+          "key": "F8",
+          "description": "Toggle the height map, so you can read ridges and valleys at a glance"
+        },
+        {
+          "id": "camera-overhead",
+          "label": "Overhead Camera",
+          "level": 2,
+          "displayOnly": true,
+          "key": "F5",
+          "modifiers": [
+            "Ctrl"
+          ],
+          "description": "TA-style camera — straight down on the map, and it does not rotate"
+        },
+        {
+          "id": "camera-spring",
+          "label": "Spring Camera",
+          "level": 2,
+          "displayOnly": true,
+          "key": "F6",
+          "modifiers": [
+            "Ctrl"
+          ],
+          "description": "The free camera — tilts and rotates, the default way to play"
+        },
+        {
+          "id": "toggle-los",
+          "label": "LOS View",
+          "level": 1,
+          "displayOnly": true,
+          "key": "'",
+          "note": "The key right of Ö / ; — BAR binds it by position",
+          "description": "Toggle the line-of-sight overlay, shading everything your units cannot see"
         },
         {
           "id": "toggle-hud",
@@ -1809,6 +2019,135 @@
           "level": 0,
           "key": "Backspace",
           "description": "Toggle the game sound — press again to undo an accidental mute"
+        },
+        {
+          "id": "volume-down",
+          "label": "Volume Down",
+          "level": 0,
+          "displayOnly": true,
+          "key": "-",
+          "description": "Turn the game sound down a step"
+        },
+        {
+          "id": "volume-up",
+          "label": "Volume Up",
+          "level": 0,
+          "displayOnly": true,
+          "key": "=",
+          "note": "QWERTY: =  QWERTZ: ´ (same physical key, right of the 0)",
+          "description": "Turn the game sound up a step"
+        },
+        {
+          "id": "gamespeed-down",
+          "label": "Game Speed Down",
+          "level": 1,
+          "displayOnly": true,
+          "key": "-",
+          "modifiers": [
+            "Alt"
+          ],
+          "description": "Slow the game down — host and single player only"
+        },
+        {
+          "id": "gamespeed-up",
+          "label": "Game Speed Up",
+          "level": 1,
+          "displayOnly": true,
+          "key": "=",
+          "modifiers": [
+            "Alt"
+          ],
+          "description": "Speed the game up — host and single player only"
+        },
+        {
+          "id": "unit-info",
+          "label": "Unit Info",
+          "level": 1,
+          "displayOnly": true,
+          "key": "I",
+          "description": "Toggle the stats panel for the unit under the cursor"
+        },
+        {
+          "id": "map-details",
+          "label": "Map Details",
+          "level": 2,
+          "displayOnly": true,
+          "key": "I",
+          "modifiers": [
+            "Ctrl"
+          ],
+          "description": "Toggle the map and game info panel"
+        },
+        {
+          "id": "draw-ping",
+          "label": "Ping the Map",
+          "level": 0,
+          "displayOnly": true,
+          "key": "`",
+          "description": "Hold the key and middle-click — drops a marker your allies see and hear",
+          "mouseAction": "middle-click"
+        },
+        {
+          "id": "draw-label",
+          "label": "Place a Label",
+          "level": 1,
+          "displayOnly": true,
+          "key": "`",
+          "description": "Hold the key and double-click — opens a text label at that spot",
+          "mouseAction": "double-click"
+        },
+        {
+          "id": "draw-line",
+          "label": "Draw on the Map",
+          "level": 1,
+          "displayOnly": true,
+          "key": "`",
+          "description": "Hold the key and drag — freehand lines for your allies",
+          "mouseAction": "drag-line"
+        },
+        {
+          "id": "widget-selector",
+          "label": "Widget Selector",
+          "level": 2,
+          "displayOnly": true,
+          "key": "F11",
+          "description": "Open the list of UI widgets to switch them on and off"
+        },
+        {
+          "id": "options-menu",
+          "label": "Options Menu",
+          "level": 1,
+          "displayOnly": true,
+          "key": "F10",
+          "description": "Open the settings menu"
+        },
+        {
+          "id": "screenshot",
+          "label": "Screenshot",
+          "level": 1,
+          "displayOnly": true,
+          "key": "F12",
+          "description": "Save a screenshot to your BAR folder"
+        },
+        {
+          "id": "forcestart-vote",
+          "label": "Force Start Vote",
+          "level": 2,
+          "displayOnly": true,
+          "key": "F",
+          "modifiers": [
+            "Alt"
+          ],
+          "description": "Call a vote to start the game without waiting for everyone"
+        },
+        {
+          "id": "draw-erase",
+          "label": "Erase Drawings",
+          "level": 1,
+          "displayOnly": true,
+          "key": "`",
+          "description": "Hold the key and right-drag — wipes drawings and markers you pass over",
+          "mouseAction": "right-drag-line"
         }
       ]
     }

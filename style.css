@@ -2029,3 +2029,38 @@ body:has(#screen-shortcuts.active) { height: 100vh }
 .touch-only .sc-intro,
 .touch-only .sc-pad-label { display: none }
 .touch-only #screen-shortcuts .browse-main { padding-bottom: 14px }
+
+/* A toggle's states, one line per tap count, inside a single table row. Each carries its
+   own checkmark: they are separate things to learn, so one tick for the whole row would
+   go green the moment you found the easiest of them. */
+.sc-states { display: flex; flex-direction: column; align-items: flex-end; gap: 4px }
+/* Negative margin cancels the padding, so the flash has room to breathe without
+   nudging anything out of line */
+.sc-state  { display: flex; align-items: center; justify-content: flex-end; gap: 6px;
+             padding: 2px 6px; margin: -2px -6px }
+.sc-state-name {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.sc-state-check {
+  color: var(--success);
+  font-weight: 700;
+  font-size: 12px;
+  opacity: 0;
+  transition: opacity .15s;
+}
+.sc-state-done .sc-state-check { opacity: 1 }
+
+/* Only the state that was actually tapped flashes — flashing the whole row said
+   "something on this key matched" without saying which tap count it was. */
+@keyframes sc-state-flash {
+  0%   { background: var(--success-bg) }
+  70%  { background: var(--success-bg) }
+  100% { background: transparent }
+}
+.sc-state-flash {
+  animation: sc-state-flash .8s ease-out;
+  border-radius: var(--rad);
+}
+.sc-state-done .sc-state-name  { color: var(--success) }

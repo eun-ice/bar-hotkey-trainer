@@ -94,6 +94,27 @@ rather than being copied into the code, so it can be refreshed when upstream cha
 
 ## Things that bite
 
+- **A toggle is one entry with `states`, not one entry per state.** The reference
+  shows a single row listing each state next to the taps that reach it; `expandStates()`
+  turns them into one trainable question each. Add a state, not a sibling shortcut.
+  Repeated taps must land within `TAP_WINDOW_MS` (500 ms, measured in game) — a spelled
+  out sequence like `Z` `Z` for Area MEX has no window and must keep none.
+- **Which keys are tap-count and which are plain toggles** — all verified in game, do not
+  re-derive from `grid_keys.txt` alone, it does not distinguish them:
+  | Key | Behaviour |
+  | --- | --- |
+  | `L` | 1 = Fire at Will · 2 = Hold Fire · 3 = Return Fire |
+  | `;` | 1 = Roam · 2 = Hold Position · 3 = Maneuver |
+  | `T` | 1 = Repeat on · 2 = Repeat off |
+  | `B` | 1 = On · 2 = Off — *not* a toggle |
+  | `Ctrl+G` | 1 = Factory Guard on · 2 = off (Ctrl stays held) |
+  | `Y` (Wait) | plain toggle, one press either way |
+  | `K` (Cloak) | plain toggle |
+  | `Alt+G` | plain toggle, queue mode ↔ quota mode |
+
+- **Factory build modifiers changed in BAR.** `Ctrl` used to add twenty to the queue and
+  `Ctrl+Shift` a hundred; both now *remove* — `Ctrl` takes one off, `Ctrl+Shift` five.
+  Verified in game. There is no bulk-add beyond `Shift` (×5) any more.
 - **Keys are positions, not characters.** BAR binds the grid positionally, so matching
   goes through `event.code`; the printed label is only for display. `KeyLayout` uses
   `navigator.keyboard.getLayoutMap()` where available (Chromium, secure context) and

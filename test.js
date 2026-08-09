@@ -195,6 +195,53 @@ for (const [builderId, builder] of Object.entries(MENUS.builders)) {
 console.log(`  ${reachable} units reachable through their bottom-left counterpart`)
 check('the shortcut applies somewhere', reachable > 0)
 
+// ─── Tap-count sequences ──────────────────────────────────────────────────────
+// BAR spells a toggle's states as repeats of the whole combo: Factory Guard off is
+// Ctrl+G twice, not Ctrl+G and then a bare G. Every step therefore carries the same
+// modifiers, which is what app.js builds seqMods from.
+group('Repeated-combo sequences carry their modifiers on every step')
+const sequences = SC.groups.flatMap(g => g.shortcuts).filter(s => s.keys)
+check('sequences exist', sequences.length > 0)
+for (const sc of sequences) {
+  const bind = resolveBinding(sc)
+  const mods = bind.modifiers
+  bind.keys.forEach((key, idx) => {
+    check(`${sc.id} step ${idx + 1} matches ${[...mods, key].join('+')}`,
+      scComboMatchesKey({ key: key.toUpperCase(), mods }, key, mods))
+    if (!mods.length) return
+    // …and the bare key must not pass for a step that wants a modifier
+    check(`${sc.id} step ${idx + 1} rejects a bare ${key}`,
+      !scComboMatchesKey({ key: key.toUpperCase(), mods: [] }, key, mods))
+  })
+}
+// Tap-count toggles live as one entry with a `states` list — one reference row, but one
+// trainable question per state. Verified in game, so the tap counts are not guesses.
+group('Tap-count toggles')
+const toggles = SC.groups.flatMap(g => g.shortcuts).filter(s => s.states)
+check('toggles carry states', toggles.length === 6, `found ${toggles.length}`)
+for (const sc of toggles) {
+  check(`${sc.id} has a base key`, !!sc.key)
+  check(`${sc.id} has no keys of its own`, !sc.keys)
+  const taps = sc.states.map(state => state.taps)
+  check(`${sc.id} taps start at 1 and rise by one`,
+    taps.every((n, idx) => n === idx + 1), taps.join(','))
+  for (const state of sc.states) {
+    check(`${sc.id}/${state.id} has an id and label`, !!state.id && !!state.label)
+    // Every tap repeats the whole combo, modifiers included
+    check(`${sc.id}/${state.id} matches ${[...(sc.modifiers ?? []), sc.key].join('+')}`,
+      scComboMatchesKey({ key: sc.key.toUpperCase(), mods: sc.modifiers ?? [] },
+                        sc.key, sc.modifiers ?? []))
+  }
+}
+const guard = toggles.find(s => s.id === 'factory-guard')
+check('Factory Guard is Ctrl+G, off on the second tap',
+  guard?.key === 'G' && guard?.modifiers?.join() === 'Ctrl'
+  && guard?.states.find(state => state.label === 'Off')?.taps === 2)
+const stance = toggles.find(s => s.id === 'stance')
+check('Fire stance is Fire at Will → Hold Fire → Return Fire',
+  stance?.states.map(state => state.label).join(' → ')
+    === 'Fire at Will → Hold Fire → Return Fire')
+
 // ─── Shortcut table sanity ────────────────────────────────────────────────────
 group('Every shortcut matches its own binding')
 for (const g of SC.groups) {

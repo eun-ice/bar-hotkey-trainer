@@ -8,7 +8,8 @@
     "extract": "node extract-data.js",
     "extract:no-icons": "node extract-data.js --skip-icons",
     "bump": "node bump.js",
-    "test": "node test.js"
+    "test": "node test.js",
+    "check:bindings": "node check-bindings.js"
   },
   "engines": {
     "node": ">=18"

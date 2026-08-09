@@ -3,7 +3,7 @@ import {
   slotPicksUnit,
   // Version query kept in step with the one on this file in index.html — a module import
   // is cached on its own, so a stale logic.js would otherwise outlive an app.js update.
-} from './logic.js?v=78'
+} from './logic.js?v=91'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -100,7 +100,12 @@ const KeyLayout = {
   getDisplayKey(name, isQwertz) {
     if (this.map) {
       const label = this.map.get(this.toCode[name])
-      if (label) return label.length === 1 ? label.toUpperCase() : label
+      if (label) {
+        // Upper-case for the keycap look, but not where that changes the character: German
+        // ß upper-cases to "SS", which is not what is printed on the key next to the 0.
+        const upper = label.toUpperCase()
+        return label.length === 1 && upper.length === 1 ? upper : label
+      }
       return name          // ranges like "0–9", F-keys, Tab … have no printed label
     }
     return displayByLayout(name, isQwertz)
@@ -455,17 +460,21 @@ let WATER_EQUIVALENTS = {}    // bidirectional land↔water unit ID map
 let UNIT_LEVELS       = {}    // { unitId → level } inverted from shortcuts.json unitLevels
 let FACTORY_LEVELS    = {}    // { builderId → level } inverted from shortcuts.json factoryLevels
 let CONSTRUCTOR_MODS  = { 'click': 0, 'shift-click': 1, 'space-click': 1 }
-let FACTORY_MODS      = { 'none': 0, 'shift': 1, 'ctrl': 1, 'alt': 1, 'ctrl-shift': 2 }
+// Fallback only — data/shortcuts.json overrides these. Kept in step with it so the two
+// never quietly disagree about which modifier belongs to which difficulty.
+let FACTORY_MODS      = { 'none': 0, 'shift': 1, 'ctrl': 1, 'alt': 1, 'ctrl-shift': 1 }
+// Ctrl used to add twenty and Ctrl+Shift a hundred. BAR changed it: Ctrl now *removes*
+// from the queue, so those two bulk-add modifiers no longer exist. Verified in game.
 
 // What each build modifier does, for the reference screen's legend and result cards.
 // `mods` are the modifier names held together with the grid key (factories) or the
 // mouse click (constructors); order matters for display. `note` is an extra caveat
 // shown only on the result card, where there is room for it.
 const FACTORY_MOD_INFO = {
-  'none':       { mods: [],                label: 'Build 1',      desc: 'Adds one to the end of the queue' },
-  'shift':      { mods: ['shift'],         label: 'Queue ×5',     desc: 'Adds five to the end of the queue' },
-  'ctrl':       { mods: ['ctrl'],          label: 'Queue ×20',    desc: 'Adds twenty to the end of the queue' },
-  'ctrl-shift': { mods: ['ctrl','shift'],  label: 'Queue ×100',   desc: 'Adds a hundred to the end of the queue' },
+  'none':       { mods: [],                label: 'Build +1',     desc: 'Adds one to the end of the queue' },
+  'shift':      { mods: ['shift'],         label: 'Build +5',     desc: 'Adds five to the end of the queue' },
+  'ctrl':       { mods: ['ctrl'],          label: 'Build −1',     desc: 'Takes one back off the queue' },
+  'ctrl-shift': { mods: ['ctrl','shift'],  label: 'Build −5',     desc: 'Takes five back off the queue' },
   'alt':        { mods: ['alt'],           label: 'Insert next',  desc: 'Jumps the queue — builds this one next',
                   note: '<strong>Hint:</strong> if the factory is on <strong>Repeat</strong>, any unit being built is finished and this one is built next. If the factory is not on Repeat, a unit under construction is <strong>cancelled</strong> and this one starts instead.' },
 }
@@ -534,10 +543,14 @@ function fixedQueueFromUrl() {
   const items = []
   for (const pair of spec.split(',')) {
     const [builderId, unitId] = pair.split(':')
-    // `sc:<shortcut-id>` pins a shortcut question — the only way to reach one on demand
+    // `sc:<shortcut-id>` pins a shortcut question — the only way to reach one on demand.
+    // A toggle's states are addressable by their own ids (sc:hold-fire), since that is
+    // what the trainer asks about even though the reference shows them on one row.
     if (builderId === 'sc') {
       for (const group of SHORTCUTS) {
-        const shortcut = group.shortcuts.find(s => s.id === unitId)
+        const shortcut = group.shortcuts
+          .flatMap(expandStates)
+          .find(s => s.id === unitId)
         if (!shortcut) continue
         const item = shortcutQueueItem(group, shortcut)
         if (item) items.push(item)
@@ -598,6 +611,11 @@ function shuffle(arr) {
   }
 }
 
+// How fast the repeated taps of a toggle have to follow one another. Measured in game:
+// L L for Hold Fire only registers when they come quickly, while a spelled-out sequence
+// like Z Z for Area MEX tolerates a long pause.
+const TAP_WINDOW_MS = 500
+
 function buildShortcutQueue() {
   const items = []
   for (const group of SHORTCUTS) {
@@ -608,12 +626,44 @@ function buildShortcutQueue() {
       if (threshold < Infinity) {
         if (shortcut.level === undefined || shortcut.level > threshold) continue
       }
-      const item = shortcutQueueItem(group, shortcut)
-      if (item) items.push(item)
+      for (const variant of expandStates(shortcut)) {
+        // A single state can be reference-only while its siblings stay trainable —
+        // Return Fire is worth knowing about without being worth drilling
+        if (variant.displayOnly) continue
+        if (threshold < Infinity && variant.level > threshold) continue
+        const item = shortcutQueueItem(group, variant)
+        if (item) items.push(item)
+      }
     }
   }
   shuffle(items)
   return items
+}
+
+/**
+ * A toggle whose states are chosen by tap count becomes one question per state.
+ *
+ * BAR spells them that way — L is Fire at Will, L L is Hold Fire, L L L is Return Fire —
+ * so each is its own thing to learn. The reference still shows them on one row; this only
+ * governs what the trainer asks for. Entries without `states` pass through untouched.
+ */
+function expandStates(shortcut) {
+  if (!shortcut.states?.length) return [{ ...shortcut, rowId: shortcut.id }]
+  return shortcut.states.map(state => ({
+    ...shortcut,
+    id:          state.id,
+    rowId:       shortcut.id,   // the reference row all these states share
+    displayOnly: state.displayOnly ?? shortcut.displayOnly,
+    label:       `${shortcut.label}: ${state.label}`,
+    level:       state.level ?? shortcut.level,
+    description: shortcut.description,
+    // `key` stays so the reserved-key checks still see the real combo; `keys` is what
+    // the question actually asks for
+    keys:        Array.from({ length: state.taps }, () => shortcut.key),
+    // Only a repeated tap has to be fast; a spelled-out sequence like Z Z does not
+    tapWindowMs: state.taps > 1 ? TAP_WINDOW_MS : null,
+    states:      undefined,
+  }))
 }
 
 /** One queue entry for a shortcut, or null when this browser/OS cannot reach its key. */
@@ -624,10 +674,11 @@ function shortcutQueueItem(group, shortcut) {
   // Normalise keys and per-key modifier arrays
   const seqKeys = bind.keys ?? (bind.key ? [bind.key] : null)
   if (!seqKeys) return null
-  // A sequence carries no modifiers on its steps; a single key may carry some
-  const seqMods = bind.keys
-    ? bind.keys.map(() => [])
-    : [bind.modifiers.map(m => m.toLowerCase())]
+  // Every step of a sequence repeats the whole combo, modifiers included: Factory Guard
+  // off is Ctrl+G twice, not Ctrl+G then a bare G. Sequences without modifiers (Z Z for
+  // Area MEX) are unaffected — they map to empty arrays exactly as before.
+  const mods = bind.modifiers.map(m => m.toLowerCase())
+  const seqMods = bind.keys ? bind.keys.map(() => mods) : [mods]
   return {
     type:            'shortcut',
     id:              shortcut.id,
@@ -639,6 +690,7 @@ function shortcutQueueItem(group, shortcut) {
     optionalMods:    bind.optionalModifiers.map(m => m.toLowerCase()),
     mouseAction:     shortcut.mouseAction ?? 'none',
     browserReserved: isBrowserReserved(bind.key, bind.modifiers),
+    tapWindowMs:     shortcut.tapWindowMs ?? null,
   }
 }
 
@@ -1841,7 +1893,10 @@ function resolveShortcutContextUnit(context) {
 // keep their known browser bindings. Ctrl+C/V/X/D still fire keydown before the browser
 // acts on them, so they are NOT reserved even though the browser reacts too.
 const BROWSER_RESERVED_KEYS = {
-  all:      { ctrl:      new Set(['Tab']),
+  // `plain` is for keys the browser keeps with no modifier at all. F11 is fullscreen on
+  // Windows and Linux and Show Desktop on macOS — either way the page never sees it.
+  all:      { plain:     new Set(['F11']),
+              ctrl:      new Set(['Tab']),
               ctrlShift: new Set(['Tab']) },
   winlinux: { ctrl:      new Set(['W','T','H','L','J','U','P','N','O','1','2','3','4','5','6','7','8']),
               ctrlShift: new Set(['W','T','N','J','I']),
@@ -1858,6 +1913,7 @@ const BROWSER_RESERVED_KEYS = {
 }
 
 function isBrowserReserved(key, mods) {
+  if (!mods.length && BROWSER_RESERVED_KEYS.all.plain.has(key)) return true
   if (mods.some(m => m === 'Ctrl')) {
     const type = mods.some(m => m === 'Shift') ? 'ctrlShift' : 'ctrl'
     if (BROWSER_RESERVED_KEYS.all[type]?.has(key))                    return true
@@ -2077,10 +2133,11 @@ function updateBuildActionLabel() {
   const mod = currentEntry?.buildModifier
   let text = 'Build'
   if (isFactory(currentEntry?.builder)) {
-    if (mod === 'shift')      text = 'Queue Build ×5'
-    else if (mod === 'ctrl')       text = 'Queue Build ×20'
-    else if (mod === 'ctrl-shift') text = 'Queue Build ×100'
-    else if (mod === 'alt')        text = 'Queue to Front'
+    if (mod === 'shift')      text = 'Build +5'
+    else if (mod === 'ctrl')       text = 'Build −1'
+    else if (mod === 'ctrl-shift') text = 'Build −5'
+    else if (mod === 'alt')        text = 'Insert Next'
+    else                           text = 'Build +1'
   } else {
     if (mod === 'shift-click') text = 'Queue Build'
     else if (mod === 'space-click') text = 'Build (instant)'
@@ -2417,7 +2474,24 @@ function handleShortcutKey(key, mods) {
   const modsMatch    = modsSatisfy(mods, expectedMods, optional)
   const keyMatch     = keysMatch(key, expectedKey.toUpperCase())
 
+  // A toggle's states are told apart by how fast the taps come. Too slow and the game
+  // reads two single taps, landing on the wrong state — so the trainer must not accept
+  // it either. Only tap-count entries carry a window; Z Z for Area MEX has none.
+  if (modsMatch && keyMatch && entry.seqStep > 0 && entry.tapWindowMs) {
+    const gap = Date.now() - (entry.lastTapAt ?? 0)
+    if (gap > entry.tapWindowMs) {
+      questionHadWrong = true
+      entry.seqStep  = 1          // this press counts as a fresh first tap
+      entry.lastTapAt = Date.now()
+      setInstruction(
+        `Too slow — the taps have to land within ${entry.tapWindowMs} ms of each other`,
+        'state-wrong')
+      return
+    }
+  }
+
   if (modsMatch && keyMatch) {
+    entry.lastTapAt = Date.now()
     if (entry.seqStep < entry.seqKeys.length - 1) {
       // More keys in the sequence to come
       entry.seqStep++
@@ -3685,10 +3759,17 @@ let scSeqTimer   = null
 
 const SC_PAD_IDLE = 'Press any shortcut to check it — then click or drag anywhere for its mouse action'
 
+// How long a half-typed sequence waits for its next key before it is forgotten. Generous,
+// because a spelled-out shortcut like Z Z is two deliberate presses — tap-count toggles
+// override it with their own, much shorter window.
+const SC_SEQ_TIMEOUT_MS = 2000
+
 function formatMouseAction(mouseAction) {
   if (!mouseAction) return ''
 
   const isRight  = mouseAction === 'click-right' || mouseAction.startsWith('right-') || mouseAction.endsWith('-click-right')
+  const isMiddle = mouseAction.includes('middle')
+  const isDouble = mouseAction.includes('double')
   const isLine   = mouseAction.includes('line')
   const isDrag   = mouseAction.includes('drag')
   const modifier = mouseAction.startsWith('alt-')   ? 'Alt'
@@ -3698,6 +3779,9 @@ function formatMouseAction(mouseAction) {
 
   const leftBtn  = `<path d="M.75 6.5Q.75.75 7 .75L7 9.5H.75Z" fill="rgba(220,155,30,.7)"/>`
   const rightBtn = `<path d="M13.25 6.5Q13.25.75 7 .75L7 9.5H13.25Z" fill="rgba(220,155,30,.7)"/>`
+  // The wheel, drawn over the divider the two buttons meet at
+  const middleBtn = `<rect x="5.5" y="1.5" width="3" height="7" rx="1.5" fill="rgba(220,155,30,.7)"/>`
+  const button = isMiddle ? middleBtn : isRight ? rightBtn : leftBtn
 
   const mouseBody = (btn) => `
     <rect x=".75" y=".75" width="12.5" height="18.5" rx="5.5" fill="rgba(255,255,255,.07)" stroke="rgba(255,255,255,.35)" stroke-width="1.5"/>
@@ -3706,15 +3790,21 @@ function formatMouseAction(mouseAction) {
     ${btn}`
 
   let svg
-  if (!isDrag) {
-    // Click icon: show which button (left or right)
+  if (isDouble) {
+    // Two clicks: the ×2 says it, which beats trying to draw a repeat on a 14px mouse
+    svg = `<svg class="sc-mouse-svg" viewBox="0 0 25 20" height="22" aria-hidden="true">
+      ${mouseBody(button)}
+      <text x="16" y="13" font-size="9" font-weight="700" fill="rgba(220,155,30,.85)">×2</text>
+    </svg>`
+  } else if (!isDrag) {
+    // Click icon: show which button (left, middle or right)
     svg = `<svg class="sc-mouse-svg" viewBox="0 0 14 20" height="22" aria-hidden="true">
-      ${mouseBody(isRight ? rightBtn : leftBtn)}
+      ${mouseBody(button)}
     </svg>`
   } else if (isLine) {
     // Diagonal dashed line starting just right of mouse, angled ~35° down — avoids aligning with the mouse's horizontal divider
     svg = `<svg class="sc-mouse-svg" viewBox="0 0 25 20" height="22" aria-hidden="true">
-      ${mouseBody(isRight ? rightBtn : leftBtn)}
+      ${mouseBody(button)}
       <path d="M15 10L22 15" stroke="rgba(255,255,255,.38)" stroke-width="1.2" stroke-dasharray="2,1.5" stroke-linecap="round"/>
       <polygon points="19.2,14.6 22,15 20.7,12.5" fill="rgba(255,255,255,.38)"/>
     </svg>`
@@ -3724,7 +3814,7 @@ function formatMouseAction(mouseAction) {
     svg = `<svg class="sc-mouse-svg" viewBox="0 0 25 20" height="22" aria-hidden="true">
       <circle cx="17" cy="10" r="7" fill="rgba(220,155,30,.07)" stroke="rgba(220,155,30,.55)" stroke-width="1.3" stroke-dasharray="2.5,2"/>
       <rect class="sc-mouse-bg" x=".75" y=".75" width="12.5" height="18.5" rx="5.5"/>
-      ${mouseBody(leftBtn)}
+      ${mouseBody(button)}
     </svg>`
   }
 
@@ -3732,7 +3822,28 @@ function formatMouseAction(mouseAction) {
   return `<span class="sc-mouse-action">${modKbd}${svg}</span>`
 }
 
+/**
+ * One row for a toggle, listing every state next to the taps that reach it. Three rows
+ * for one key read as three unrelated shortcuts; what you actually have to learn is that
+ * the same key steps through a set.
+ */
+function formatShortcutStates(shortcut, isQwertz) {
+  return `<div class="sc-states">${shortcut.states.map(state => {
+    const variant = { ...shortcut, key: shortcut.key, states: undefined,
+                      keys: Array.from({ length: state.taps }, () => shortcut.key) }
+    // Each state earns its own checkmark — they are separate things to learn, and one
+    // tick for the whole row would go green the moment you found the easiest of them
+    const done = scCheckedIds.has(state.id) ? ' sc-state-done' : ''
+    return `<div class="sc-state${done}" data-state-id="${state.id}">
+      <span class="sc-state-check">✓</span>
+      <span class="sc-state-name">${state.label}</span>
+      ${formatShortcutKey(variant, isQwertz)}
+    </div>`
+  }).join('')}</div>`
+}
+
 function formatShortcutKey(shortcut, isQwertz) {
+  if (shortcut.states?.length) return formatShortcutStates(shortcut, isQwertz)
   const bind = binding(shortcut)
   if (!bind.key && !bind.keys) return ''
   const mods = bind.modifiers
@@ -3810,12 +3921,16 @@ function scResolveSequence(seq) {
   const combo = seq[seq.length - 1]
   const complete = [], partial = []
   for (const group of SHORTCUTS) {
-    for (const sc of group.shortcuts) {
+    // A toggle's states each match on their own tap count, so they resolve separately —
+    // `stateOf` carries which one, and the row it belongs to stays `sc.id`.
+    for (const sc of group.shortcuts.flatMap(expandStates)) {
       if (sc.learnHidden) continue
       const bind = binding(sc)
       if (bind.keys) {
+        // Each step repeats the full combo — Ctrl+G twice, not Ctrl+G then G. Only the
+        // optional modifiers stay tied to the first press.
         const prefixOk = seq.length <= bind.keys.length && seq.every((cb, i) =>
-          scComboMatchesKey(cb, bind.keys[i], i === 0 ? bind.modifiers : [],
+          scComboMatchesKey(cb, bind.keys[i], bind.modifiers,
                             i === 0 ? bind.optionalModifiers : []))
         if (!prefixOk) continue
         const entry = { group, sc, pressed: seq.length }
@@ -3967,12 +4082,27 @@ function initShortcutsScreen() {
     requestAnimationFrame(() => {
       let first = true
       for (const { sc } of visible) {
-        const row = document.querySelector(`[data-sc-id="${sc.id}"]`)
+        const row = document.querySelector(`[data-sc-id="${sc.rowId ?? sc.id}"]`)
         if (!row) continue
-        row.classList.add('sc-row-checked')
-        row.classList.remove('sc-row-flash')
-        void row.offsetWidth
-        row.classList.add('sc-row-flash')
+        // On a toggle only the state that was actually tapped goes green; the row itself
+        // waits until every one of them has been
+        const state = row.querySelector(`.sc-state[data-state-id="${sc.id}"]`)
+        if (state) {
+          // Flash the one state that was hit, not the row: flashing all three said
+          // "something on this key matched" without saying which tap count it was.
+          state.classList.add('sc-state-done')
+          state.classList.remove('sc-state-flash')
+          void state.offsetWidth
+          state.classList.add('sc-state-flash')
+          const alle = [...row.querySelectorAll('.sc-state')]
+          if (alle.every(el => el.classList.contains('sc-state-done')))
+            row.classList.add('sc-row-checked')
+        } else {
+          row.classList.add('sc-row-checked')
+          row.classList.remove('sc-row-flash')
+          void row.offsetWidth
+          row.classList.add('sc-row-flash')
+        }
         if (first) { row.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); first = false }
       }
     })
@@ -4021,7 +4151,15 @@ function initShortcutsScreen() {
 
     scKeySeq = partial.length ? seq : []
     if (scSeqTimer !== null) clearTimeout(scSeqTimer)
-    if (partial.length) scSeqTimer = setTimeout(() => { scKeySeq = []; scDisarmPad() }, 2000)
+    if (partial.length) {
+      // How long the buffer may sit before the next press starts a fresh sequence. A
+      // toggle's taps have to land inside the game's window, so B B then a pause then B
+      // is Auto again, not High. A spelled-out sequence like Z Z may be typed at leisure.
+      const window = partial.every(m => m.sc.tapWindowMs)
+        ? Math.min(...partial.map(m => m.sc.tapWindowMs))
+        : SC_SEQ_TIMEOUT_MS
+      scSeqTimer = setTimeout(() => { scKeySeq = []; scDisarmPad() }, window)
+    }
 
     if (!complete.length && !partial.length) { scHintHiddenAlt(combo); return }
     e.preventDefault()
@@ -4148,7 +4286,10 @@ function selectShortcutsGroup(id) {
       : sc.level === 1
         ? '<span class="sc-lvl sc-lvl-1">Mid</span>'
         : '<span class="sc-lvl sc-lvl-cmd">Commander</span>'
-    const checked = scCheckedIds.has(sc.id) ? ' sc-row-checked' : ''
+    // A toggle's row only counts as done once every one of its states has been tried
+    const checked = (sc.states?.length
+      ? sc.states.every(state => scCheckedIds.has(state.id))
+      : scCheckedIds.has(sc.id)) ? ' sc-row-checked' : ''
     return `
       <tr data-sc-id="${sc.id}"${checked ? ` class="${checked.trim()}"` : ''}>
         <td class="sc-check-col"><span class="sc-check">✓</span></td>
