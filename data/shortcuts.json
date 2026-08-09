@@ -1797,10 +1797,10 @@
         },
         {
           "id": "mute",
-          "label": "Mute",
+          "label": "Mute / Unmute",
           "level": 0,
           "key": "Backspace",
-          "description": "Mute or unmute the game sound"
+          "description": "Toggle the game sound — press again to undo an accidental mute"
         }
       ]
     }
