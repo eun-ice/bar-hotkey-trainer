@@ -134,6 +134,26 @@ async function main() {
     }
   }
 
+  // Every hotkey file the game ships, not just the grid one. `gridmenu_keys.txt` holds
+  // the build-menu keys themselves — including `sc_.` for cycling builders, which we
+  // wrongly took for unbound while mirroring only two of the eight files.
+  const HOTKEY_FILES = [
+    'grid_keys.txt', 'grid_keys_60pct.txt', 'gridmenu_keys.txt',
+    'chat_and_ui_keys.txt', 'num_keys.txt', 'dev_keys.txt',
+    'legacy_keys.txt', 'legacy_keys_60pct.txt',
+  ]
+  for (const name of HOTKEY_FILES) {
+    const relPath = `luaui/configs/hotkeys/${name}`
+    if (existsSync(join(BAR_DATA, relPath)) && !refresh) continue
+    process.stdout.write(`Downloading ${relPath} … `)
+    try {
+      saveFile(relPath, await rawGet(`${RAW}/${relPath}`))
+      console.log('done')
+    } catch (err) {
+      console.log(`skipped (${err.message})`)
+    }
+  }
+
   // Always ensure reclaim/resurrect widgets are present regardless of --refresh
   const smartReclaimPath = join(BAR_DATA, 'luaui/Widgets/unit_smart_area_reclaim.lua')
   if (!existsSync(smartReclaimPath)) {

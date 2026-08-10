@@ -1499,6 +1499,34 @@ body:has(#screen-shortcuts.active) { height: 100vh }
   text-align: right;
   white-space: nowrap;
 }
+/* The same badge the training card shows, scaled down for a list row. Fixed width so the
+   labels line up whether or not a row has one. */
+.bml-badge {
+  flex: 0 0 30px;
+  display: flex;
+  justify-content: center;
+  /* Top, not centre: rows carrying a long note are tall, and a centred badge drifts far
+     below the label it belongs to. The nudge lines it up with the first text line. */
+  align-self: flex-start;
+  margin-top: -5px;
+}
+.bml-badge img,
+.bml-badge .build-mod-stack img { width: 28px; height: 28px }
+.bml-badge .build-mod-count {
+  width: 28px;
+  height: 28px;
+  font-size: 13px;
+  border-width: 1.5px;
+}
+.bml-badge .build-mod-chip {
+  right: -5px;
+  bottom: -3px;
+  font-size: 10px;
+  line-height: 13px;
+  padding: 0 3px;
+}
+.bml-badge svg { width: 28px; height: 28px }
+
 .bml-text { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px }
 .bml-label { font-size: 13px; font-weight: 600; color: var(--text-bright) }
 .bml-desc  { font-size: 12px; color: var(--text-dim) }
@@ -2120,3 +2148,20 @@ body:has(#screen-shortcuts.active) { height: 100vh }
 
 /* Trails a shown answer: what to do once you have read it */
 .answer-hint { color: var(--text-dim); font-size: .9em; white-space: nowrap }
+
+/* A count laid over one of the game's badge images — used where BAR has art for the
+   action but not for the quantity (Alt+Shift = five to the front of the queue) */
+.build-mod-stack { position: relative; display: inline-block; line-height: 0 }
+.build-mod-chip {
+  position: absolute;
+  right: -4px;
+  bottom: -2px;
+  padding: 0 4px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 16px;
+  color: var(--accent);
+  background: var(--bg);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+}

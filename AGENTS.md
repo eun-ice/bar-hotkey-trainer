@@ -115,6 +115,12 @@ rather than being copied into the code, so it can be refreshed when upstream cha
 - **Factory build modifiers changed in BAR.** `Ctrl` used to add twenty to the queue and
   `Ctrl+Shift` a hundred; both now *remove* — `Ctrl` takes one off, `Ctrl+Shift` five.
   Verified in game. There is no bulk-add beyond `Shift` (×5) any more.
+- **`grid_keys.txt` is the authority, not the in-game chart.** The keyboard images under
+  `luaui/images/keybinds/` — the ones the visual reference shows — lag behind. Verified:
+  they display `F9 Hide HP Bars`, which is in no binding file and does nothing in game,
+  and their ALT page omits nine bindings that do exist (`Alt+Q`, the blueprint keys,
+  `Alt+G`, …). Never add an entry on the strength of the picture; check
+  `npm run check:bindings` and, where the binding file is silent, the game itself.
 - **Keys are positions, not characters.** BAR binds the grid positionally, so matching
   goes through `event.code`; the printed label is only for display. `KeyLayout` uses
   `navigator.keyboard.getLayoutMap()` where available (Chromium, secure context) and

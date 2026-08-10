@@ -1314,6 +1314,13 @@
           "description": "Upgrade T1 metal extractors to T2 in a circle — own mexes only, not allied",
           "contextOverride": "builder-t2",
           "mouseAction": "alt-drag"
+        },
+        {
+          "id": "cycle-builder",
+          "label": "Cycle Builder",
+          "level": 2,
+          "key": ".",
+          "description": "With several builders or factories selected, step the build menu to the next one"
         }
       ]
     },
@@ -1373,13 +1380,6 @@
       "name": "Factory",
       "context": "factory",
       "shortcuts": [
-        {
-          "id": "factory-cycle",
-          "label": "Factory Cycle",
-          "level": 1,
-          "key": ".",
-          "description": "Cycle through available build queues / factory modes"
-        },
         {
           "id": "factory-guard",
           "label": "Factory Guard",
@@ -1720,6 +1720,98 @@
           ],
           "displayOnly": true,
           "description": "Recall a saved autogroup configuration — preset 1 is selected automatically at match start"
+        },
+        {
+          "id": "group-selectadd-1",
+          "label": "Add Group 1 to Selection",
+          "level": 1,
+          "key": "1",
+          "modifiers": [
+            "Shift"
+          ],
+          "learnHidden": true,
+          "description": "Add group 1 to what is already selected, instead of replacing it"
+        },
+        {
+          "id": "group-selectadd-2",
+          "label": "Add Group 2 to Selection",
+          "level": 1,
+          "key": "2",
+          "modifiers": [
+            "Shift"
+          ],
+          "learnHidden": true,
+          "description": "Add group 2 to what is already selected, instead of replacing it"
+        },
+        {
+          "id": "group-selectadd-3",
+          "label": "Add Group 3 to Selection",
+          "level": 1,
+          "key": "3",
+          "modifiers": [
+            "Shift"
+          ],
+          "learnHidden": true,
+          "description": "Add group 3 to what is already selected, instead of replacing it"
+        },
+        {
+          "id": "group-selectadd-range",
+          "label": "Add Group to Selection",
+          "level": 1,
+          "key": "0–9",
+          "modifiers": [
+            "Shift"
+          ],
+          "displayOnly": true,
+          "description": "Add that group to what is already selected, instead of replacing it"
+        },
+        {
+          "id": "group-selecttoggle-1",
+          "label": "Toggle Group 1 in Selection",
+          "level": 2,
+          "key": "1",
+          "modifiers": [
+            "Ctrl",
+            "Alt"
+          ],
+          "learnHidden": true,
+          "description": "Add group 1 to the selection, or drop it again if it is already in"
+        },
+        {
+          "id": "group-selecttoggle-2",
+          "label": "Toggle Group 2 in Selection",
+          "level": 2,
+          "key": "2",
+          "modifiers": [
+            "Ctrl",
+            "Alt"
+          ],
+          "learnHidden": true,
+          "description": "Add group 2 to the selection, or drop it again if it is already in"
+        },
+        {
+          "id": "group-selecttoggle-3",
+          "label": "Toggle Group 3 in Selection",
+          "level": 2,
+          "key": "3",
+          "modifiers": [
+            "Ctrl",
+            "Alt"
+          ],
+          "learnHidden": true,
+          "description": "Add group 3 to the selection, or drop it again if it is already in"
+        },
+        {
+          "id": "group-selecttoggle-range",
+          "label": "Toggle Group in Selection",
+          "level": 2,
+          "key": "0–9",
+          "modifiers": [
+            "Ctrl",
+            "Alt"
+          ],
+          "displayOnly": true,
+          "description": "Add that group to the selection, or drop it again if it is already in"
         }
       ]
     },

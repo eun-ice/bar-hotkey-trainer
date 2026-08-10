@@ -3,7 +3,7 @@ import {
   slotPicksUnit,
   // Version query kept in step with the one on this file in index.html — a module import
   // is cached on its own, so a stale logic.js would otherwise outlive an app.js update.
-} from './logic.js?v=104'
+} from './logic.js?v=109'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -2134,7 +2134,10 @@ function buildModBadgeSvg(mod, factory) {
     if (mod === 'ctrl')       return count('−1')
     if (mod === 'ctrl-shift') return count('−5')
     if (mod === 'alt')        return img('badge-front.avif')
-    if (mod === 'alt-shift')  return count('↑5', 'is-add')
+    // Five to the front: the game's own front-of-queue art with a count on it, rather
+    // than a shape of our own invention sitting next to BAR's artwork
+    if (mod === 'alt-shift')  return `<span class="build-mod-stack">${
+      img('badge-front.avif')}<span class="build-mod-chip">×5</span></span>`
     return ''
   } else {
     if (mod === 'shift-click') return SVG_QUEUE
@@ -2845,6 +2848,32 @@ function initMouseZone() {
     // The button is settled, so a right-button order judges like its left-button twin:
     // shift-click-right asks the same of the gesture as shift-click does.
     const action = rawAction.replace(/^right-/, '').replace(/-right$/, '')
+
+    // A modifier turns one command into another: Shift+click queues the build instead of
+    // placing it, Alt+drag reclaims by type instead of everything. The branches below
+    // already insist on a modifier the action asks for; this insists on its absence when
+    // it asks for none, so the two directions are judged alike.
+    const wantMod = /^(alt|ctrl|shift|space)-/.exec(action)?.[1] ?? null
+    if (!wantMod && (isClick || isDrag)) {
+      // Only insist on modifiers this question actually teaches. Shift and Space are the
+      // queue modifiers of a *build* order — on a shortcut, or with build modifiers
+      // switched off, they change nothing we ask about, so holding them is no mistake.
+      // Noob is exempt entirely: there the point is the key, not the fine print.
+      const queueMods = currentEntry?.type !== 'shortcut' && settings.buildModifiers
+      const held = [
+        effectiveAlt(e)                 ? 'Alt'   : null,
+        e?.ctrlKey                      ? 'Ctrl'  : null,
+        e?.shiftKey        && queueMods ? 'Shift' : null,
+        mouseZoneSpaceHeld && queueMods ? 'Space' : null,
+      ].filter(Boolean)
+      if (held.length && settings.difficulty !== 'noob') {
+        questionHadWrong = true
+        setInstruction(
+          `Let go of <kbd>${held.join('</kbd>+<kbd>')}</kbd> — that makes it a different command`,
+          'state-wrong')
+        return
+      }
+    }
 
     if (action === 'drag') {
       if (isDrag) handleMouseComplete(false)
@@ -3698,9 +3727,10 @@ function renderBrowseModLegend(totalPages = 1) {
   const info    = browseModInfo()
   const anyKey  = factory ? 'key' : 'Click'
 
-  const row = (keys, label, desc = '', notes = []) => `
+  const row = (keys, label, desc = '', notes = [], badge = '') => `
     <div class="bml-row">
       <div class="bml-keys">${keys}</div>
+      <div class="bml-badge">${badge}</div>
       <div class="bml-text">
         <span class="bml-label">${label}</span>${desc ? `<span class="bml-desc">${desc}</span>` : ''}
         ${notes.filter(Boolean).map(n => `<div class="bml-note">${n}</div>`).join('')}
@@ -3711,14 +3741,16 @@ function renderBrowseModLegend(totalPages = 1) {
   // but that is a quirk of this page, not something to memorise, so it goes in a note on
   // the row itself rather than into the heading where it reads like the real binding.
   const swapNote = macSwapNote(['alt'])
-  const modRows = Object.values(info)
-    .map(({ mods, label, desc, note }) => {
+  const modRows = Object.entries(info)
+    .map(([mod, { mods, label, desc, note }]) => {
       const keys  = mods.map(m => `<kbd>${capitalize(m)}</kbd>`)
       keys.push(`<kbd class="mod-anykey">${anyKey}</kbd>`)
       const extra = mods.includes('alt') && swapNote
         ? `Press <kbd>⌘ Cmd</kbd> instead of <kbd>Alt</kbd> here in the trainer — the game uses Alt.`
         : ''
-      return row(keys.join('<span class="mod-plus">+</span>'), label, desc, [note, extra])
+      // Same badge the training card shows, so the two screens teach one visual language
+      return row(keys.join('<span class="mod-plus">+</span>'), label, desc, [note, extra],
+                 buildModBadgeSvg(mod, factory))
     })
     .join('')
 

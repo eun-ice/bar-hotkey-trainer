@@ -13,7 +13,7 @@
  * that combo, not that the description is right. Read the pairs it prints.
  */
 
-import { readFileSync, readdirSync } from 'node:fs'
+import { readFileSync, existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 
@@ -69,10 +69,32 @@ const comboId = ({ mods, keys }) =>
   [...mods].sort((a, b) => ORDER[a] - ORDER[b]).concat(keys.join(',')).join('+')
 
 // ── What the game binds ───────────────────────────────────────────────────────
+/**
+ * Which files the grid layout is actually made of. BAR's preset files pull in the shared
+ * ones with `keyload`, so following those from grid_keys.txt gives exactly the set the
+ * game loads — and leaves out the legacy layout, the 60% preset and the dev keys without
+ * anyone having to maintain a list of exclusions. (Notably legacy_keys.txt does *not*
+ * keyload gridmenu_keys.txt: no grid menu, no grid menu keys.)
+ */
+function keyloadChain(root) {
+  const seen = new Set()
+  const queue = [root]
+  while (queue.length) {
+    const file = queue.shift()
+    if (seen.has(file)) continue
+    seen.add(file)
+    const path = join(HOTKEYS, file)
+    if (!existsSync(path)) { console.error(`  ! ${file} not mirrored — run fetch-bar-data.js`); continue }
+    for (const line of readFileSync(path, 'utf8').split('\n')) {
+      const hit = line.match(/^\s*keyload\s+\S*\/([^/\s]+\.txt)/)
+      if (hit) queue.push(hit[1])
+    }
+  }
+  return [...seen]
+}
+
 const bound = new Map()   // comboId → Set of actions
-for (const file of readdirSync(HOTKEYS).filter(f => f.endsWith('.txt'))) {
-  // The 60% preset is an alternative for the same actions, not extra bindings
-  if (file.includes('60pct')) continue
+for (const file of keyloadChain('grid_keys.txt')) {
   for (const line of readFileSync(join(HOTKEYS, file), 'utf8').split('\n')) {
     const match = line.match(/^bind\s+(\S+)\s+(.+?)\s*(?:\/\/.*)?$/)
     if (!match) continue
