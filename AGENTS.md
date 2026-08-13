@@ -115,6 +115,14 @@ rather than being copied into the code, so it can be refreshed when upstream cha
 - **Factory build modifiers changed in BAR.** `Ctrl` used to add twenty to the queue and
   `Ctrl+Shift` a hundred; both now *remove* — `Ctrl` takes one off, `Ctrl+Shift` five.
   Verified in game. There is no bulk-add beyond `Shift` (×5) any more.
+- **Two widgets share the area commands; read both before rewriting a description.**
+  `cmd_area_commands_filter.lua` ("Area Command Filter") acts *only* with Alt or Ctrl and
+  filters by `unitDefID` / `featureDefID` — Alt means same type, Ctrl means same tech
+  level. `unit_smart_area_reclaim.lua` ("Smart Area Reclaim") acts on *every* area reclaim
+  with no modifier and picks metal or energy from the centre feature. Both ship enabled;
+  the filter carries `layer = -1` so it runs first. Reading only the second one once led
+  to "correcting" the Alt+drag reclaim text to metal/energy, which is the no-modifier
+  behaviour — verified in game as unit id.
 - **`grid_keys.txt` is the authority, not the in-game chart.** The keyboard images under
   `luaui/images/keybinds/` — the ones the visual reference shows — lag behind. Verified:
   they display `F9 Hide HP Bars`, which is in no binding file and does nothing in game,

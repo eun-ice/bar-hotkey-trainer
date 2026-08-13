@@ -3,7 +3,7 @@ import {
   slotPicksUnit,
   // Version query kept in step with the one on this file in index.html — a module import
   // is cached on its own, so a stale logic.js would otherwise outlive an app.js update.
-} from './logic.js?v=109'
+} from './logic.js?v=110'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -2647,6 +2647,7 @@ const MOUSE_ACTION_LABELS = {
   'click-unit':         'Click the unit',
   'drag':               'Drag to set area',
   'alt-drag':           'Hold Alt · Drag area',
+  'ctrl-drag':          'Hold Ctrl · Drag area',
   'click-or-drag':      'Click or drag',
   'click-unit-or-drag': 'Click unit or drag',
   'click-right':        'Right-click',
@@ -2712,7 +2713,9 @@ function activateMouseZone(action) {
 
   const instrHtml = action === 'alt-drag'
     ? `Hold <kbd>Alt</kbd>${macSwapNote(['alt'])} · Drag area`
-    : (labelText || 'Click to place')
+    : action === 'ctrl-drag'
+      ? 'Hold <kbd>Ctrl</kbd> · Drag area'
+      : (labelText || 'Click to place')
   setInstruction(instrHtml, 'state-correct')
 
   // Give a fresh timer window for the mouse phase so leftover keyboard time doesn't cut it short
@@ -2766,7 +2769,7 @@ function initMouseZone() {
   let dragOrigin  = null    // { x, y } zone-local px, set on mousedown
   let dragButton  = 'left'  // Attack Line is a *right* drag — the button is part of the answer
 
-  const AREA_DRAGS = ['drag', 'alt-drag', 'click-or-drag', 'click-unit-or-drag']
+  const AREA_DRAGS = ['drag', 'alt-drag', 'ctrl-drag', 'click-or-drag', 'click-unit-or-drag']
   const isLineDrag = action => (action ?? '').includes('line')
 
   // Without this the browser menu swallows every right-button gesture, so Attack Line
@@ -2882,6 +2885,14 @@ function initMouseZone() {
       if (!effectiveAlt(e)) {
         questionHadWrong = true
         setInstruction(`Hold <kbd>Alt</kbd>${macSwapNote(['alt'])} while dragging!`, 'state-wrong')
+        return
+      }
+      handleMouseComplete(false)
+    } else if (action === 'ctrl-drag') {
+      if (!isDrag) return
+      if (!e?.ctrlKey) {
+        questionHadWrong = true
+        setInstruction('Hold <kbd>Ctrl</kbd> while dragging!', 'state-wrong')
         return
       }
       handleMouseComplete(false)

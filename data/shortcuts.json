@@ -1127,8 +1127,16 @@
           "label": "Reclaim Area by Type",
           "level": 2,
           "key": "E",
-          "description": "Hold Alt while dragging the reclaim circle to reclaim only wrecks of the same unit type as the one at the center",
+          "description": "Hold Alt while dragging the reclaim circle: centered on a unit wreck it takes only wrecks of that type, centered on metal only metal, centered on energy only energy",
           "mouseAction": "alt-drag"
+        },
+        {
+          "id": "reclaim-area-tech",
+          "label": "Reclaim Area by Tech Level",
+          "level": 2,
+          "key": "E",
+          "description": "Hold Ctrl while dragging the reclaim circle: centered on a unit wreck it takes only wrecks of the same tech level, centered on metal only metal, centered on energy only energy",
+          "mouseAction": "ctrl-drag"
         },
         {
           "id": "repair",
@@ -1169,6 +1177,14 @@
           "key": "W",
           "description": "Hold Alt while dragging the resurrect circle to resurrect only wrecks of the same unit type as the one at the center",
           "mouseAction": "alt-drag"
+        },
+        {
+          "id": "resurrect-area-tech",
+          "label": "Resurrect Area by Tech Level",
+          "level": 2,
+          "key": "W",
+          "description": "Hold Ctrl while dragging the resurrect circle to raise only wrecks of the same tech level as the one at the center",
+          "mouseAction": "ctrl-drag"
         },
         {
           "id": "repair-reclaim-area-rezbot",

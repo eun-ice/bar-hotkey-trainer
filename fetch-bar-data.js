@@ -154,6 +154,21 @@ async function main() {
     }
   }
 
+  // The widget that gives Alt and Ctrl their meaning on area commands — the source for
+  // every "by Type" entry in shortcuts.json. Without it we once "corrected" the reclaim
+  // description from the smart-reclaim widget alone and got it backwards.
+  const areaFilterPath = join(BAR_DATA, 'luaui/Widgets/cmd_area_commands_filter.lua')
+  if (!existsSync(areaFilterPath)) {
+    process.stdout.write('Downloading luaui/Widgets/cmd_area_commands_filter.lua … ')
+    try {
+      saveFile('luaui/Widgets/cmd_area_commands_filter.lua',
+               await rawGet(`${RAW}/luaui/Widgets/cmd_area_commands_filter.lua`))
+      console.log('done')
+    } catch (err) {
+      console.log(`skipped (${err.message})`)
+    }
+  }
+
   // Always ensure reclaim/resurrect widgets are present regardless of --refresh
   const smartReclaimPath = join(BAR_DATA, 'luaui/Widgets/unit_smart_area_reclaim.lua')
   if (!existsSync(smartReclaimPath)) {
