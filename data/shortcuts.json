@@ -3,7 +3,7 @@
   "note": "Key values match browser event.key (uppercase letters, special keys by name).",
   "note_zy": "Z and Y are always treated as equivalent — handles QWERTY/QWERTZ confusion.",
   "note_colon": "Position uses ':' — on QWERTY: Shift+; — on QWERTZ: Shift+. — both produce event.key ':' so no special handling needed.",
-  "note_reclaim_space": "Space + drag reclaim (engine META_KEY) is meant to reclaim enemy units in the area: the Area Reclaim Enemy widget (layer 0) handles it when enemies are in the radius and the center is ground or a unit, and only otherwise does the command insert widget (layer 5) turn it into a plain queue-front insert. Reported as not working in game on 2026-09-15, cause unconfirmed, so it is deliberately not listed as a shortcut.",
+  "note_reclaim_space": "Space + drag reclaim (engine META_KEY) is handled by the Area Reclaim Enemy widget (layer 0) when an enemy unit is inside the circle and the center is ground or a unit; confirmed in game 2026-09-15 and listed as reclaim-area-enemy. With no enemy inside, the command insert widget (layer 5) turns it into a plain queue-front insert. Space with Fight (engine: also reclaim enemy units) is untested and not listed.",
   "unitLevels": {
     "0": [
       "armaap",
@@ -1325,6 +1325,15 @@
           "mouseAction": "ctrl-drag"
         },
         {
+          "id": "reclaim-area-enemy",
+          "label": "Reclaim Enemies in Area",
+          "action": "reclaim",
+          "level": 2,
+          "key": "E",
+          "description": "Hold Space while dragging the reclaim circle to reclaim every enemy unit inside it, nearest first; with no enemy in the circle it becomes a plain reclaim at the front of the queue",
+          "mouseAction": "space-drag"
+        },
+        {
           "id": "repair",
           "label": "Repair",
           "action": "repair",
@@ -1379,6 +1388,16 @@
           "mouseAction": "ctrl-drag"
         },
         {
+          "id": "fight-rezbot",
+          "label": "Repair & Reclaim Move",
+          "action": "fight",
+          "level": 1,
+          "key": "F",
+          "displayOnly": true,
+          "description": "Click a point: rezbots walk there and on the way repair damaged friendlies first, then reclaim wrecks within reach, searching further the more freely their move state lets them roam",
+          "mouseAction": "click"
+        },
+        {
           "id": "repair-reclaim-area-rezbot",
           "label": "Repair & Reclaim Line",
           "action": "fight",
@@ -1395,7 +1414,7 @@
           "level": 2,
           "key": "F",
           "mouseAction": "alt-right-drag-line",
-          "description": "Hold Alt while right-dragging the line: builders repair friendlies and resurrect wrecks along it, reclaiming only what cannot be resurrected"
+          "description": "Hold Alt while right-dragging the line: rezbots repair friendlies first, then resurrect wrecks along it and reclaim only what cannot be resurrected"
         }
       ]
     },
@@ -1461,6 +1480,15 @@
           "key": "M",
           "description": "Drag an area to have builders flatten the terrain back to its original shape",
           "mouseAction": "drag"
+        },
+        {
+          "id": "fight-builder",
+          "label": "Repair & Reclaim Move",
+          "action": "fight",
+          "level": 1,
+          "key": "F",
+          "description": "Click a point: builders walk there and on the way repair damaged friendlies first, then reclaim wrecks within reach, searching further the more freely their move state lets them roam",
+          "mouseAction": "click"
         },
         {
           "id": "repair-reclaim-area",

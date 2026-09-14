@@ -3,7 +3,7 @@ import {
   slotPicksUnit,
   // Version query kept in step with the one on this file in index.html — a module import
   // is cached on its own, so a stale logic.js would otherwise outlive an app.js update.
-} from './logic.js?v=121'
+} from './logic.js?v=122'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -2785,7 +2785,7 @@ function initMouseZone() {
   let dragOrigin  = null    // { x, y } zone-local px, set on mousedown
   let dragButton  = 'left'  // Attack Line is a *right* drag — the button is part of the answer
 
-  const AREA_DRAGS = ['drag', 'alt-drag', 'ctrl-drag', 'click-or-drag', 'click-unit-or-drag']
+  const AREA_DRAGS = ['drag', 'alt-drag', 'ctrl-drag', 'space-drag', 'click-or-drag', 'click-unit-or-drag']
   const isLineDrag = action => (action ?? '').includes('line')
 
   // Without this the browser menu swallows every right-button gesture, so Attack Line
@@ -2926,6 +2926,14 @@ function initMouseZone() {
       if (!e?.ctrlKey) {
         questionHadWrong = true
         setInstruction('Hold <kbd>Ctrl</kbd> while dragging!', 'state-wrong')
+        return
+      }
+      handleMouseComplete(false)
+    } else if (action === 'space-drag') {
+      if (!isDrag) return
+      if (!mouseZoneSpaceHeld) {
+        questionHadWrong = true
+        setInstruction('Hold <kbd>Space</kbd> while dragging!', 'state-wrong')
         return
       }
       handleMouseComplete(false)
