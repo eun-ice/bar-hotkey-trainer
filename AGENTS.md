@@ -81,6 +81,33 @@ every land/water pair of every builder. It runs in milliseconds and is the right
 add a case. It does **not** cover the DOM — key resolution through `KeyLayout`, flashing,
 pad state and the training flow all need the browser.
 
+## Where BAR files come from
+
+`bar-data/` is the download cache and only holds what the scripts were told to fetch. If
+you have a full game checkout, point at it and skip the downloads entirely:
+
+```bash
+BAR_REPO=~/Projects/bar/Beyond-All-Reason npm run check:bindings
+```
+
+`bar-source.js` is the one resolver; `check-bindings.js` and `extract-data.js` both go
+through it, so neither has to know which of the two it is reading. A `BAR_REPO` that does
+not exist is an error rather than a silent fall back to the cache, which would otherwise
+look like the checkout was merely stale.
+
+**The `luaui/configs/hotkeys/*.txt` presets are gone upstream.** The in-game keybind editor
+(Sept 2026) replaced all eight with `common/configs/keybind_defaults.json` — every shipped
+profile as `{keyset, action}` pairs, plus `fakeMeta` naming the meta key — and
+`common/configs/keybind_catalog.json`, which carries categories, i18n label keys and a
+`hidden` list. `check-bindings.js` reads those two and nothing else — there is no `.txt`
+fallback, because upstream deleted the files; a cache without them says so and names the
+command to run.
+Labels resolve against `language/en/commands.json`, not `interface.json`.
+
+The six keyboard charts under `luaui/images/keybinds/` were deleted in the same change, and
+`data/keybinds/*.webp` — what the visual reference shows — is generated from them. A refresh
+past that commit will not find them.
+
 ## Data files
 
 `data/buildmenus.json` and `data/water-equivalents.json` are **generated**. Never edit
@@ -88,6 +115,39 @@ them by hand — change `extract-data.js` (or `fetch-bar-data.js`) and re-run, s
 refresh does not silently undo the fix.
 
 `data/shortcuts.json` is hand-maintained and may be edited directly.
+
+Each entry also names the BAR action it teaches, so the two sides can be compared by
+meaning rather than by key — the layout double-binds constantly (`A` is `attack` *and*
+`gridmenu_key 2 1`, `W` is `capture` on one unit and `resurrect` on another, and those
+never collide because no unit does both). Three shapes:
+
+- `action` — one bind command, e.g. `"settarget"`. Several entries may share one on
+  purpose: Attack, Attack Circle and Attack Line are all `attack`, the trainer splits by
+  gesture where BAR has a single row.
+- `actionPrefix` — on a `0–9` / `F1–F4` row, e.g. `"group set "`. The row stands for the
+  whole family; its `learnHidden` siblings carry the exact member.
+- `action` on a **state** — BAR makes each tap count its own action, so `firestate 0/1/2`
+  belong on the states, never on the row.
+
+A mouse-only entry has none: right-click orders and box-drag gestures are engine defaults
+with no bindable action behind them. Labels follow the keybind editor's terminology —
+control group, camera anchor, factory preset, auto-group — so a player can find the same
+command in both. Where BAR's own label is wrong (`factoryqueuemode` is queue ↔ quota, not
+repeat), cannot tell two entries apart (one label for `attack_range_inc` *and* `_dec`), or
+would collapse several trainable gestures onto one name (Attack / Attack Circle / Attack
+Line are all `attack`), the trainer keeps its own and the action id carries the link.
+
+A `select` action spells out its own meaning and outranks any label: `AllMap+_Builder_Idle+
+_ClearSelection_SelectOne+` is source, filters, conclusion — every idle builder on the map,
+one at a time. BAR's catalog calls that "Select all constructors", which is wrong twice
+over, and `Visible+` means on screen wherever it appears. Decode the string before trusting
+a name on either side.
+
+**Group names live in two places.** `data/shortcuts.json` drives the reference sidebar, and
+the setup screen's checkboxes are hand-written in `index.html`. Both key off the group *id*,
+so a rename is safe for saved settings, but rename in both or the two screens disagree. `npm run check:bindings` validates every id against
+BAR's own data and reports any the game does not know, or binds to a different key.
+
 
 Anything taken from the BAR repository has to arrive through the fetch/extract pipeline
 rather than being copied into the code, so it can be refreshed when upstream changes.

@@ -20,9 +20,11 @@ import { execFileSync } from 'node:child_process'
 import { mkdirSync, writeFileSync, readFileSync, existsSync, unlinkSync, statSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { barSource } from './bar-source.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const BAR_DATA = join(__dirname, 'bar-data')
+// bar-data/ by default, or a full game checkout when BAR_REPO names one — see bar-source.js.
+const BAR_DATA = barSource().root
 
 // The in-game keyboard charts: source name in bar-data → output name in data/keybinds.
 // Only the grid variants; the legacy layout is not what this trainer teaches.

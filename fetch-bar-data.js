@@ -8,6 +8,7 @@
  *
  * bar-data/ mirrors the repo layout:
  *   bar-data/language/en/units.json
+ *   bar-data/common/configs/keybind_defaults.json
  *   bar-data/luaui/configs/buildmenu_sorting.lua
  *   bar-data/luaui/configs/gridmenu_layouts.lua
  *   bar-data/units/<subdir>/<unit>.lua
@@ -23,9 +24,12 @@
  *   git clone --filter=blob:none --sparse \
  *       https://github.com/beyond-all-reason/Beyond-All-Reason.git bar-data
  *   cd bar-data
- *   git sparse-checkout set language/en luaui/configs units
+ *   git sparse-checkout set common/configs language/en luaui/configs units
  *   cd ..
  * Then all scripts will use the local files automatically.
+ *
+ * If you already have a full checkout somewhere else, skip all of this and point at it:
+ *   BAR_REPO=~/Projects/bar/Beyond-All-Reason npm run check:bindings
  * Run  git -C bar-data pull  to refresh.
  */
 
@@ -134,16 +138,17 @@ async function main() {
     }
   }
 
-  // Every hotkey file the game ships, not just the grid one. `gridmenu_keys.txt` holds
-  // the build-menu keys themselves — including `sc_.` for cycling builders, which we
-  // wrongly took for unbound while mirroring only two of the eight files.
-  const HOTKEY_FILES = [
-    'grid_keys.txt', 'grid_keys_60pct.txt', 'gridmenu_keys.txt',
-    'chat_and_ui_keys.txt', 'num_keys.txt', 'dev_keys.txt',
-    'legacy_keys.txt', 'legacy_keys_60pct.txt',
+  // Where the keybindings live. The in-game keybind editor replaced the eight
+  // `luaui/configs/hotkeys/*.txt` presets — since deleted upstream — with two files under
+  // common/configs/: every shipped profile as {keyset, action} pairs, plus a catalog of
+  // categories and i18n label keys. check-bindings.js reads both, and the labels resolve
+  // against commands.json, so all three belong together.
+  const KEYBIND_FILES = [
+    'common/configs/keybind_defaults.json',
+    'common/configs/keybind_catalog.json',
+    'language/en/commands.json',
   ]
-  for (const name of HOTKEY_FILES) {
-    const relPath = `luaui/configs/hotkeys/${name}`
+  for (const relPath of KEYBIND_FILES) {
     if (existsSync(join(BAR_DATA, relPath)) && !refresh) continue
     process.stdout.write(`Downloading ${relPath} … `)
     try {
@@ -195,31 +200,7 @@ async function main() {
     }
   }
 
-  // Always ensure chat_and_ui_keys.txt is present regardless of --refresh
-  const chatKeysPath = join(BAR_DATA, 'luaui/configs/hotkeys/chat_and_ui_keys.txt')
-  if (!existsSync(chatKeysPath)) {
-    process.stdout.write('Downloading luaui/configs/hotkeys/chat_and_ui_keys.txt … ')
-    try {
-      const content = await rawGet(`${RAW}/luaui/configs/hotkeys/chat_and_ui_keys.txt`)
-      saveFile('luaui/configs/hotkeys/chat_and_ui_keys.txt', content)
-      console.log('done')
-    } catch (err) {
-      console.log(`skipped (${err.message})`)
-    }
-  }
 
-  // Always ensure grid_keys.txt is present regardless of --refresh
-  const gridKeysPath = join(BAR_DATA, 'luaui/configs/hotkeys/grid_keys.txt')
-  if (!existsSync(gridKeysPath)) {
-    process.stdout.write('Downloading luaui/configs/hotkeys/grid_keys.txt … ')
-    try {
-      const content = await rawGet(`${RAW}/luaui/configs/hotkeys/grid_keys.txt`)
-      saveFile('luaui/configs/hotkeys/grid_keys.txt', content)
-      console.log('done')
-    } catch (err) {
-      console.log(`skipped (${err.message})`)
-    }
-  }
 
   if (!refresh && existsSync(manifestPath)) {
     const mf = JSON.parse(readFileSync(manifestPath, 'utf8'))

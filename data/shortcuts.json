@@ -614,7 +614,7 @@
   "groups": [
     {
       "id": "general",
-      "name": "Select",
+      "name": "Selecting Units",
       "context": "none",
       "shortcuts": [
         {
@@ -627,7 +627,8 @@
         },
         {
           "id": "deselect",
-          "label": "Deselect",
+          "label": "Deselect All",
+          "action": "select AllMap++_ClearSelection_SelectNum_0+",
           "level": 0,
           "displayOnly": true,
           "key": "Escape",
@@ -644,6 +645,7 @@
         {
           "id": "select-box-append",
           "label": "Box Select: Add",
+          "action": "selectbox_append",
           "level": 0,
           "displayOnly": true,
           "description": "Hold Shift while dragging the box — the units join the current selection instead of replacing it, and everything inside counts rather than just the useful units",
@@ -652,6 +654,7 @@
         {
           "id": "select-box-deselect",
           "label": "Box Select: Remove",
+          "action": "selectbox_deselect",
           "level": 1,
           "displayOnly": true,
           "description": "Hold Ctrl while dragging the box — the units inside are taken out of the current selection",
@@ -660,6 +663,7 @@
         {
           "id": "select-box-mobile",
           "label": "Box Select: Mobile Only",
+          "action": "selectbox_mobile",
           "level": 1,
           "displayOnly": true,
           "description": "Hold Alt while dragging the box — buildings are left out, so you pick up only what can move",
@@ -667,7 +671,8 @@
         },
         {
           "id": "select-box-same",
-          "label": "Box Select: Same Type",
+          "label": "Box Select: Matching Unit Types",
+          "action": "selectbox_same",
           "level": 1,
           "displayOnly": true,
           "key": "Z",
@@ -676,7 +681,8 @@
         },
         {
           "id": "select-box-idle",
-          "label": "Box Select: Idle Only",
+          "label": "Box Select: Idle Units Only",
+          "action": "selectbox_idle",
           "level": 2,
           "displayOnly": true,
           "description": "Hold Space while dragging the box — only units with nothing to do are picked up",
@@ -684,7 +690,8 @@
         },
         {
           "id": "select-commander",
-          "label": "Select Commander",
+          "label": "Select and Go to Commander",
+          "action": "selectcomm focus",
           "level": 0,
           "key": "Tab",
           "description": "Jump to and select your commander"
@@ -692,6 +699,7 @@
         {
           "id": "select-all",
           "label": "Select All Units",
+          "action": "select AllMap++_ClearSelection_SelectAll+",
           "level": 2,
           "key": "E",
           "modifiers": [
@@ -701,7 +709,8 @@
         },
         {
           "id": "select-idle-builders",
-          "label": "Select Idle Builders",
+          "label": "Cycle Idle Constructors",
+          "action": "select AllMap+_Builder_Idle+_ClearSelection_SelectOne+",
           "level": 1,
           "key": "Tab",
           "modifiers": [
@@ -711,7 +720,8 @@
         },
         {
           "id": "select-all-same-type",
-          "label": "Select All Same Type",
+          "label": "Select All of Same Type",
+          "action": "select AllMap+_InPrevSel+_ClearSelection_SelectAll+",
           "level": 1,
           "key": "W",
           "modifiers": [
@@ -721,14 +731,16 @@
         },
         {
           "id": "select-all-same-type-screen",
-          "label": "Select All Same Type on Screen",
+          "label": "Select Same Type on Screen",
+          "action": "select Visible+_InPrevSel+_ClearSelection_SelectAll+",
           "level": 1,
           "key": "Q",
           "description": "Select all units of the same type visible on screen"
         },
         {
           "id": "select-damaged",
-          "label": "Select Damaged",
+          "label": "Select Damaged Units",
+          "action": "select PrevSelection+_Not_Building_Not_RelativeHealth_60+_ClearSelection_SelectAll+",
           "level": 1,
           "key": "Q",
           "modifiers": [
@@ -745,7 +757,8 @@
         },
         {
           "id": "split-army",
-          "label": "Split Army",
+          "label": "Select Half of Selection",
+          "action": "select PrevSelection++_ClearSelection_SelectPart_50+",
           "level": 1,
           "key": "Q",
           "modifiers": [
@@ -755,18 +768,20 @@
         },
         {
           "id": "select-waiting-units",
-          "label": "Select Waiting Units",
+          "label": "Select Waiting Units on Screen",
+          "action": "select Visible+_Waiting+_ClearSelection_SelectAll+",
           "level": 2,
           "key": "Y",
           "modifiers": [
             "Ctrl"
           ],
           "note": "QWERTY: Ctrl+Y, QWERTZ: Ctrl+Z (same physical key, Y/Z positions swapped)",
-          "description": "Select units that are waiting (hold fire etc.)"
+          "description": "Select units with a Wait order"
         },
         {
           "id": "select-idle-transports",
-          "label": "Select Idle Transports",
+          "label": "Select All Idle Transports",
+          "action": "select AllMap+_Transport_Idle+_ClearSelection_SelectAll+",
           "level": 2,
           "key": "R",
           "modifiers": [
@@ -871,6 +886,7 @@
         {
           "id": "attack",
           "label": "Attack",
+          "action": "attack",
           "level": 0,
           "key": "A",
           "description": "Press the key, then click an enemy to attack it",
@@ -879,6 +895,7 @@
         {
           "id": "attack-circle",
           "label": "Attack Circle",
+          "action": "attack",
           "level": 1,
           "key": "A",
           "description": "Left-drag a circle to attack all units inside, in priority order (e.g. low health first)",
@@ -887,6 +904,7 @@
         {
           "id": "attack-line",
           "label": "Attack Line",
+          "action": "attack",
           "level": 2,
           "key": "A",
           "description": "Right-drag to issue attack orders along points on the line, regardless of unit presence",
@@ -894,7 +912,8 @@
         },
         {
           "id": "attack-area",
-          "label": "Attack Area",
+          "label": "Area Attack",
+          "action": "areaattack",
           "level": 2,
           "key": "A",
           "modifiers": [
@@ -906,6 +925,7 @@
         {
           "id": "attack-area-remove",
           "label": "Remove Attack Orders in Area",
+          "action": "attack",
           "level": 2,
           "key": "A",
           "description": "Press the key, then hold Ctrl while dragging a circle to strip the queued attack orders inside it — holding Ctrl while pressing the key instead is the area attack, so let go of it before dragging",
@@ -913,7 +933,8 @@
         },
         {
           "id": "target-set",
-          "label": "Target Set",
+          "label": "Set Target",
+          "action": "settarget",
           "level": 1,
           "key": "S",
           "description": "Press the key, then click an enemy to set it as the priority attack target",
@@ -921,7 +942,8 @@
         },
         {
           "id": "target-set-area",
-          "label": "Target Set Area",
+          "label": "Set Target Area",
+          "action": "settarget",
           "level": 1,
           "key": "S",
           "description": "Drag a circle to set a priority attack target from all enemies in the area",
@@ -929,7 +951,8 @@
         },
         {
           "id": "target-set-area-type",
-          "label": "Target Set Area by Type",
+          "label": "Set Target Area by Type",
+          "action": "settarget",
           "level": 2,
           "key": "S",
           "description": "Hold Alt while dragging the target circle to set a priority target restricted to the same unit type as the one at the center",
@@ -937,7 +960,8 @@
         },
         {
           "id": "target-set-sticky",
-          "label": "Target Set (Sticky)",
+          "label": "Set Target (Sticky)",
+          "action": "settarget",
           "level": 2,
           "key": "S",
           "description": "Hold Ctrl while clicking the enemy to make the target stick — a Stop order clears an ordinary set target, this one survives it",
@@ -945,7 +969,8 @@
         },
         {
           "id": "target-set-area-sticky",
-          "label": "Target Set Area (Sticky)",
+          "label": "Set Target Area (Sticky)",
+          "action": "settarget",
           "level": 2,
           "key": "S",
           "description": "Hold Ctrl while dragging the target circle to make the targets stick — a Stop order clears ordinary set targets, these survive it",
@@ -953,7 +978,8 @@
         },
         {
           "id": "target-cancel",
-          "label": "Target Cancel",
+          "label": "Clear Target",
+          "action": "canceltarget",
           "level": 1,
           "key": "S",
           "modifiers": [
@@ -963,7 +989,8 @@
         },
         {
           "id": "target-noground",
-          "label": "Target: No Ground",
+          "label": "Set Target: No Ground",
+          "action": "settargetnoground",
           "level": 2,
           "key": "S",
           "modifiers": [
@@ -974,7 +1001,8 @@
         },
         {
           "id": "fight",
-          "label": "Fight Move",
+          "label": "Fight",
+          "action": "fight",
           "level": 0,
           "key": "F",
           "description": "Attack-move: units advance while stopping to engage enemies in range",
@@ -983,6 +1011,7 @@
         {
           "id": "fight-line",
           "label": "Fight Line",
+          "action": "fight",
           "level": 1,
           "key": "F",
           "description": "Drag to deploy units along a line that fight-moves",
@@ -991,6 +1020,7 @@
         {
           "id": "patrol",
           "label": "Patrol",
+          "action": "patrol",
           "level": 0,
           "key": "H",
           "description": "Make a looping patrol route for selected units",
@@ -999,6 +1029,7 @@
         {
           "id": "guard",
           "label": "Guard",
+          "action": "guard",
           "level": 0,
           "key": "O",
           "description": "Guard a friendly unit or building to help fight, repair, or construct",
@@ -1014,12 +1045,14 @@
             {
               "id": "repeat-on",
               "label": "On",
+              "action": "repeat 1",
               "taps": 1,
               "level": 1
             },
             {
               "id": "repeat-off",
               "label": "Off",
+              "action": "repeat 0",
               "taps": 2,
               "level": 1
             }
@@ -1028,6 +1061,7 @@
         {
           "id": "stop",
           "label": "Stop",
+          "action": "stop",
           "level": 1,
           "key": "G",
           "description": "Clear all orders and stop the unit"
@@ -1035,6 +1069,7 @@
         {
           "id": "gather-wait",
           "label": "Gather Wait",
+          "action": "gatherwait",
           "level": 2,
           "key": "P",
           "description": "Wait at current position until a certain number of units gather"
@@ -1049,12 +1084,14 @@
             {
               "id": "on-off-on",
               "label": "On",
+              "action": "onoff 1",
               "taps": 1,
               "level": 1
             },
             {
               "id": "on-off-off",
               "label": "Off",
+              "action": "onoff 0",
               "taps": 2,
               "level": 1
             }
@@ -1069,18 +1106,21 @@
             {
               "id": "trajectory-auto",
               "label": "Auto",
+              "action": "trajectory_toggle 2",
               "taps": 1,
               "level": 2
             },
             {
               "id": "trajectory-low",
               "label": "Low",
+              "action": "trajectory_toggle 0",
               "taps": 2,
               "level": 2
             },
             {
               "id": "trajectory-high",
               "label": "High",
+              "action": "trajectory_toggle 1",
               "taps": 3,
               "level": 2
             }
@@ -1097,18 +1137,21 @@
             {
               "id": "fire-at-will",
               "label": "Fire at Will",
+              "action": "firestate 2",
               "taps": 1,
               "level": 1
             },
             {
               "id": "hold-fire",
               "label": "Hold Fire",
+              "action": "firestate 0",
               "taps": 2,
               "level": 1
             },
             {
               "id": "return-fire",
               "label": "Return Fire",
+              "action": "firestate 1",
               "taps": 3,
               "level": 2,
               "displayOnly": true
@@ -1126,18 +1169,21 @@
             {
               "id": "move-roam",
               "label": "Roam",
+              "action": "movestate 2",
               "taps": 1,
               "level": 1
             },
             {
               "id": "move-hold-position",
               "label": "Hold Position",
+              "action": "movestate 0",
               "taps": 2,
               "level": 1
             },
             {
               "id": "move-maneuver",
               "label": "Maneuver",
+              "action": "movestate 1",
               "taps": 3,
               "level": 1
             }
@@ -1146,6 +1192,7 @@
         {
           "id": "cloak",
           "label": "Cloak",
+          "action": "wantcloak",
           "level": 0,
           "key": "K",
           "description": "Toggle cloaking on units that support it — one press either way"
@@ -1153,6 +1200,7 @@
         {
           "id": "dgun",
           "label": "D-Gun",
+          "action": "manualfire",
           "level": 0,
           "key": "D",
           "description": "Fire the commander's disintegrator gun",
@@ -1161,6 +1209,7 @@
         {
           "id": "capture",
           "label": "Capture",
+          "action": "capture",
           "level": 1,
           "key": "W",
           "description": "Capture an enemy unit or structure",
@@ -1186,6 +1235,7 @@
         {
           "id": "reclaim",
           "label": "Reclaim",
+          "action": "reclaim",
           "level": 0,
           "key": "E",
           "description": "Reclaim a wreck or feature for metal",
@@ -1194,6 +1244,7 @@
         {
           "id": "reclaim-area",
           "label": "Reclaim Area",
+          "action": "reclaim",
           "level": 1,
           "key": "E",
           "description": "Drag a circle to reclaim all wrecks and features in the area",
@@ -1202,6 +1253,7 @@
         {
           "id": "reclaim-area-type",
           "label": "Reclaim Area by Type",
+          "action": "reclaim",
           "level": 2,
           "key": "E",
           "description": "Hold Alt while dragging the reclaim circle: centered on a unit wreck it takes only wrecks of that type, centered on metal only metal, centered on energy only energy",
@@ -1210,6 +1262,7 @@
         {
           "id": "reclaim-area-tech",
           "label": "Reclaim Area by Tech Level",
+          "action": "reclaim",
           "level": 2,
           "key": "E",
           "description": "Hold Ctrl while dragging the reclaim circle: centered on a unit wreck it takes only wrecks of the same tech level, centered on metal only metal, centered on energy only energy",
@@ -1218,6 +1271,7 @@
         {
           "id": "repair",
           "label": "Repair",
+          "action": "repair",
           "level": 0,
           "key": "R",
           "description": "Repair a friendly unit or structure",
@@ -1226,6 +1280,7 @@
         {
           "id": "repair-area",
           "label": "Repair Area",
+          "action": "repair",
           "level": 1,
           "key": "R",
           "description": "Drag a circle to repair all friendly units and structures in the area",
@@ -1234,6 +1289,7 @@
         {
           "id": "resurrect",
           "label": "Resurrect",
+          "action": "resurrect",
           "level": 0,
           "key": "W",
           "description": "Click a wreck to resurrect it as a friendly unit",
@@ -1242,6 +1298,7 @@
         {
           "id": "resurrect-area",
           "label": "Resurrect Area",
+          "action": "resurrect",
           "level": 1,
           "key": "W",
           "description": "Drag a circle to resurrect all wrecks within the area",
@@ -1250,6 +1307,7 @@
         {
           "id": "resurrect-area-type",
           "label": "Resurrect Area by Type",
+          "action": "resurrect",
           "level": 2,
           "key": "W",
           "description": "Hold Alt while dragging the resurrect circle to resurrect only wrecks of the same unit type as the one at the center",
@@ -1258,6 +1316,7 @@
         {
           "id": "resurrect-area-tech",
           "label": "Resurrect Area by Tech Level",
+          "action": "resurrect",
           "level": 2,
           "key": "W",
           "description": "Hold Ctrl while dragging the resurrect circle to raise only wrecks of the same tech level as the one at the center",
@@ -1266,6 +1325,7 @@
         {
           "id": "repair-reclaim-area-rezbot",
           "label": "Repair & Reclaim Area",
+          "action": "fight",
           "level": 1,
           "key": "F",
           "displayOnly": true,
@@ -1275,6 +1335,7 @@
         {
           "id": "fight-rez-area",
           "label": "Repair & Resurrect Area",
+          "action": "fight",
           "level": 2,
           "key": "F",
           "mouseAction": "alt-drag",
@@ -1289,7 +1350,8 @@
       "shortcuts": [
         {
           "id": "rotate-ccw",
-          "label": "Rotate Building Left",
+          "label": "Rotate Building Placement",
+          "action": "buildfacing inc",
           "level": 0,
           "key": "[",
           "note": "QWERTY: [   QWERTZ: ü (same physical key position)",
@@ -1297,7 +1359,8 @@
         },
         {
           "id": "rotate-cw",
-          "label": "Rotate Building Right",
+          "label": "Rotate Building Placement (Reverse)",
+          "action": "buildfacing dec",
           "level": 0,
           "key": "]",
           "note": "QWERTY: ]   QWERTZ: + (same physical key position)",
@@ -1305,7 +1368,8 @@
         },
         {
           "id": "build-spacing-increase",
-          "label": "Build Spacing +",
+          "label": "Increase Build Spacing",
+          "action": "buildspacing inc",
           "level": 1,
           "key": "Z",
           "modifiers": [
@@ -1320,7 +1384,8 @@
         },
         {
           "id": "build-spacing-decrease",
-          "label": "Build Spacing −",
+          "label": "Decrease Build Spacing",
+          "action": "buildspacing dec",
           "level": 1,
           "key": "X",
           "modifiers": [
@@ -1334,14 +1399,16 @@
         },
         {
           "id": "queue-next",
-          "label": "Skip to Next Order",
+          "label": "Skip Current Command",
+          "action": "command_skip_current",
           "level": 0,
           "key": "N",
           "description": "Move on to the next order — a build already started is left standing, one not yet begun is dropped"
         },
         {
           "id": "queue-drop-last",
-          "label": "Drop Last Order",
+          "label": "Cancel Last Command",
+          "action": "command_cancel_last",
           "level": 2,
           "key": "N",
           "modifiers": [
@@ -1352,6 +1419,7 @@
         {
           "id": "wait",
           "label": "Wait",
+          "action": "wait",
           "level": 1,
           "key": "Y",
           "note": "QWERTY: Y (top row), QWERTZ: Z (same physical position, Y/Z swapped)",
@@ -1359,7 +1427,8 @@
         },
         {
           "id": "self-destruct",
-          "label": "Self Destruct",
+          "label": "Self-Destruct",
+          "action": "selfd",
           "level": 0,
           "key": "B",
           "modifiers": [
@@ -1369,7 +1438,8 @@
         },
         {
           "id": "restore-ground",
-          "label": "Restore Ground",
+          "label": "Restore",
+          "action": "restore",
           "level": 2,
           "key": "M",
           "description": "Drag an area to have builders flatten the terrain back to its original shape",
@@ -1378,6 +1448,7 @@
         {
           "id": "repair-reclaim-area",
           "label": "Repair & Reclaim Area",
+          "action": "fight",
           "level": 1,
           "key": "F",
           "description": "Drag a circle to order builders to repair all friendlies and reclaim all wrecks in the area",
@@ -1385,7 +1456,8 @@
         },
         {
           "id": "area-mex",
-          "label": "Area MEX",
+          "label": "Area Mex",
+          "action": "areamex",
           "level": 0,
           "keys": [
             "Z",
@@ -1397,7 +1469,8 @@
         },
         {
           "id": "upgrade-area-mex",
-          "label": "Area Upgrade Own MEX",
+          "label": "Area Mex: Upgrade Own",
+          "action": "areamex",
           "level": 1,
           "keys": [
             "Z",
@@ -1411,13 +1484,15 @@
         {
           "id": "cycle-builder",
           "label": "Cycle Builder",
+          "action": "gridmenu_cycle_builder",
           "level": 2,
           "key": ".",
           "description": "With several builders or factories selected, step the build menu to the next one"
         },
         {
           "id": "build-split",
-          "label": "Build Split",
+          "label": "Split Build Orders",
+          "action": "buildsplit",
           "level": 2,
           "key": "Space",
           "displayOnly": true,
@@ -1427,12 +1502,13 @@
     },
     {
       "id": "blueprint",
-      "name": "Blueprint",
+      "name": "Blueprints",
       "context": "builder",
       "shortcuts": [
         {
           "id": "place-blueprint",
           "label": "Place Blueprint",
+          "action": "blueprint_place",
           "level": 1,
           "key": "B",
           "modifiers": [
@@ -1444,6 +1520,7 @@
         {
           "id": "next-blueprint",
           "label": "Next Blueprint",
+          "action": "blueprint_next",
           "level": 1,
           "key": "]",
           "modifiers": [
@@ -1455,6 +1532,7 @@
         {
           "id": "prev-blueprint",
           "label": "Previous Blueprint",
+          "action": "blueprint_prev",
           "level": 1,
           "key": "[",
           "modifiers": [
@@ -1466,6 +1544,7 @@
         {
           "id": "delete-blueprint",
           "label": "Delete Blueprint",
+          "action": "blueprint_delete",
           "level": 2,
           "displayOnly": true,
           "key": "Y",
@@ -1494,12 +1573,14 @@
             {
               "id": "factory-guard-on",
               "label": "On",
+              "action": "factoryguard 1",
               "taps": 1,
               "level": 1
             },
             {
               "id": "factory-guard-off",
               "label": "Off",
+              "action": "factoryguard 0",
               "taps": 2,
               "level": 1
             }
@@ -1518,6 +1599,7 @@
         {
           "id": "factory-queue-mode",
           "label": "Factory Queue Mode",
+          "action": "factoryqueuemode",
           "level": 2,
           "key": "G",
           "modifiers": [
@@ -1527,7 +1609,8 @@
         },
         {
           "id": "factory-preset-show",
-          "label": "Show Queue Presets",
+          "label": "Show Factory Presets",
+          "action": "factory_preset_show",
           "level": 1,
           "key": "Space",
           "displayOnly": true,
@@ -1535,7 +1618,8 @@
         },
         {
           "id": "factory-preset-load-1",
-          "label": "Load Queue Preset 1",
+          "label": "Load Factory Preset 1",
+          "action": "factory_preset load 1",
           "level": 2,
           "key": "1",
           "modifiers": [
@@ -1546,7 +1630,8 @@
         },
         {
           "id": "factory-preset-load-2",
-          "label": "Load Queue Preset 2",
+          "label": "Load Factory Preset 2",
+          "action": "factory_preset load 2",
           "level": 2,
           "key": "2",
           "modifiers": [
@@ -1557,7 +1642,8 @@
         },
         {
           "id": "factory-preset-load-3",
-          "label": "Load Queue Preset 3",
+          "label": "Load Factory Preset 3",
+          "action": "factory_preset load 3",
           "level": 2,
           "key": "3",
           "modifiers": [
@@ -1568,7 +1654,8 @@
         },
         {
           "id": "factory-preset-load-range",
-          "label": "Load Queue Preset",
+          "label": "Load Factory Preset",
+          "actionPrefix": "factory_preset load ",
           "level": 2,
           "key": "0–9",
           "modifiers": [
@@ -1579,7 +1666,8 @@
         },
         {
           "id": "factory-preset-save-1",
-          "label": "Save Queue Preset 1",
+          "label": "Save Factory Preset 1",
+          "action": "factory_preset save 1",
           "level": 2,
           "key": "1",
           "modifiers": [
@@ -1591,7 +1679,8 @@
         },
         {
           "id": "factory-preset-save-2",
-          "label": "Save Queue Preset 2",
+          "label": "Save Factory Preset 2",
+          "action": "factory_preset save 2",
           "level": 2,
           "key": "2",
           "modifiers": [
@@ -1603,7 +1692,8 @@
         },
         {
           "id": "factory-preset-save-3",
-          "label": "Save Queue Preset 3",
+          "label": "Save Factory Preset 3",
+          "action": "factory_preset save 3",
           "level": 2,
           "key": "3",
           "modifiers": [
@@ -1615,7 +1705,8 @@
         },
         {
           "id": "factory-preset-save-range",
-          "label": "Save Queue Preset",
+          "label": "Save Factory Preset",
+          "actionPrefix": "factory_preset save ",
           "level": 2,
           "key": "0–9",
           "modifiers": [
@@ -1634,7 +1725,8 @@
       "shortcuts": [
         {
           "id": "load",
-          "label": "Load",
+          "label": "Load Units",
+          "action": "loadunits",
           "level": 1,
           "key": "J",
           "description": "Order the transport to load a specific unit",
@@ -1642,7 +1734,8 @@
         },
         {
           "id": "load-area",
-          "label": "Load Area",
+          "label": "Load Units (Area)",
+          "action": "loadunits",
           "level": 1,
           "key": "J",
           "description": "Drag a circle to load all nearby units into the transport",
@@ -1650,7 +1743,8 @@
         },
         {
           "id": "unload",
-          "label": "Unload",
+          "label": "Unload Units",
+          "action": "unloadunits",
           "level": 1,
           "key": "U",
           "description": "Drop transported units at a target location",
@@ -1658,7 +1752,8 @@
         },
         {
           "id": "unload-area",
-          "label": "Unload Area",
+          "label": "Unload Units (Area)",
+          "action": "unloadunits",
           "level": 1,
           "key": "U",
           "description": "Drag a circle to spread unloaded units across an area",
@@ -1668,12 +1763,13 @@
     },
     {
       "id": "groups",
-      "name": "Groups",
+      "name": "Control Groups",
       "context": "none",
       "shortcuts": [
         {
           "id": "group-1",
-          "label": "Select Group 1",
+          "label": "Select Control Group 1",
+          "action": "group select 1",
           "level": 0,
           "key": "1",
           "learnHidden": true,
@@ -1681,7 +1777,8 @@
         },
         {
           "id": "group-2",
-          "label": "Select Group 2",
+          "label": "Select Control Group 2",
+          "action": "group select 2",
           "level": 0,
           "key": "2",
           "learnHidden": true,
@@ -1689,7 +1786,8 @@
         },
         {
           "id": "group-3",
-          "label": "Select Group 3",
+          "label": "Select Control Group 3",
+          "action": "group select 3",
           "level": 0,
           "key": "3",
           "learnHidden": true,
@@ -1697,7 +1795,8 @@
         },
         {
           "id": "group-range",
-          "label": "Select Group",
+          "label": "Select Control Group",
+          "actionPrefix": "group select ",
           "level": 0,
           "key": "0–9",
           "displayOnly": true,
@@ -1705,7 +1804,8 @@
         },
         {
           "id": "group-set-1",
-          "label": "Assign Group 1",
+          "label": "Assign to Control Group 1",
+          "action": "group set 1",
           "level": 0,
           "key": "1",
           "modifiers": [
@@ -1716,7 +1816,8 @@
         },
         {
           "id": "group-set-2",
-          "label": "Assign Group 2",
+          "label": "Assign to Control Group 2",
+          "action": "group set 2",
           "level": 0,
           "key": "2",
           "modifiers": [
@@ -1727,7 +1828,8 @@
         },
         {
           "id": "group-set-3",
-          "label": "Assign Group 3",
+          "label": "Assign to Control Group 3",
+          "action": "group set 3",
           "level": 0,
           "key": "3",
           "modifiers": [
@@ -1738,7 +1840,8 @@
         },
         {
           "id": "group-set-range",
-          "label": "Assign Group",
+          "label": "Assign to Control Group",
+          "actionPrefix": "group set ",
           "level": 0,
           "key": "0–9",
           "modifiers": [
@@ -1749,7 +1852,8 @@
         },
         {
           "id": "group-add-1",
-          "label": "Add to Group 1",
+          "label": "Add to Control Group 1",
+          "action": "group add 1",
           "level": 1,
           "key": "1",
           "modifiers": [
@@ -1761,7 +1865,8 @@
         },
         {
           "id": "group-add-2",
-          "label": "Add to Group 2",
+          "label": "Add to Control Group 2",
+          "action": "group add 2",
           "level": 1,
           "key": "2",
           "modifiers": [
@@ -1773,7 +1878,8 @@
         },
         {
           "id": "group-add-3",
-          "label": "Add to Group 3",
+          "label": "Add to Control Group 3",
+          "action": "group add 3",
           "level": 1,
           "key": "3",
           "modifiers": [
@@ -1785,7 +1891,8 @@
         },
         {
           "id": "group-add-range",
-          "label": "Add to Group",
+          "label": "Add to Control Group",
+          "actionPrefix": "group add ",
           "level": 1,
           "key": "0–9",
           "modifiers": [
@@ -1797,7 +1904,8 @@
         },
         {
           "id": "group-unset",
-          "label": "Remove from Group",
+          "label": "Remove from Control Groups",
+          "action": "group unset",
           "level": 1,
           "key": "`",
           "modifiers": [
@@ -1815,7 +1923,8 @@
         },
         {
           "id": "auto-group-set-1",
-          "label": "Auto Group 1",
+          "label": "Add to Auto-Group 1",
+          "action": "add_to_autogroup 1",
           "level": 0,
           "key": "1",
           "modifiers": [
@@ -1826,7 +1935,8 @@
         },
         {
           "id": "auto-group-set-2",
-          "label": "Auto Group 2",
+          "label": "Add to Auto-Group 2",
+          "action": "add_to_autogroup 2",
           "level": 0,
           "key": "2",
           "modifiers": [
@@ -1837,7 +1947,8 @@
         },
         {
           "id": "auto-group-set-3",
-          "label": "Auto Group 3",
+          "label": "Add to Auto-Group 3",
+          "action": "add_to_autogroup 3",
           "level": 0,
           "key": "3",
           "modifiers": [
@@ -1848,7 +1959,8 @@
         },
         {
           "id": "auto-group-set-range",
-          "label": "Auto Group",
+          "label": "Add to Auto-Group",
+          "actionPrefix": "add_to_autogroup ",
           "level": 0,
           "key": "0–9",
           "modifiers": [
@@ -1859,7 +1971,8 @@
         },
         {
           "id": "remove-from-autogroup",
-          "label": "Remove from Auto Group",
+          "label": "Remove from Auto-Group",
+          "action": "remove_from_autogroup",
           "level": 1,
           "key": "`",
           "modifiers": [
@@ -1876,7 +1989,8 @@
         },
         {
           "id": "load-autogroup-preset-1",
-          "label": "Load Auto Group Preset 1",
+          "label": "Load Auto-Group Preset 1",
+          "action": "load_autogroup_preset 1",
           "level": 1,
           "key": "1",
           "modifiers": [
@@ -1888,7 +2002,8 @@
         },
         {
           "id": "load-autogroup-preset-2",
-          "label": "Load Auto Group Preset 2",
+          "label": "Load Auto-Group Preset 2",
+          "action": "load_autogroup_preset 2",
           "level": 1,
           "key": "2",
           "modifiers": [
@@ -1900,7 +2015,8 @@
         },
         {
           "id": "load-autogroup-preset-3",
-          "label": "Load Auto Group Preset 3",
+          "label": "Load Auto-Group Preset 3",
+          "action": "load_autogroup_preset 3",
           "level": 1,
           "key": "3",
           "modifiers": [
@@ -1912,7 +2028,8 @@
         },
         {
           "id": "load-autogroup-preset-range",
-          "label": "Load Auto Group Preset",
+          "label": "Load Auto-Group Preset",
+          "actionPrefix": "load_autogroup_preset ",
           "level": 1,
           "key": "0–9",
           "modifiers": [
@@ -1924,7 +2041,8 @@
         },
         {
           "id": "group-selectadd-1",
-          "label": "Add Group 1 to Selection",
+          "label": "Add Control Group 1 to Selection",
+          "action": "group selectadd 1",
           "level": 1,
           "key": "1",
           "modifiers": [
@@ -1935,7 +2053,8 @@
         },
         {
           "id": "group-selectadd-2",
-          "label": "Add Group 2 to Selection",
+          "label": "Add Control Group 2 to Selection",
+          "action": "group selectadd 2",
           "level": 1,
           "key": "2",
           "modifiers": [
@@ -1946,7 +2065,8 @@
         },
         {
           "id": "group-selectadd-3",
-          "label": "Add Group 3 to Selection",
+          "label": "Add Control Group 3 to Selection",
+          "action": "group selectadd 3",
           "level": 1,
           "key": "3",
           "modifiers": [
@@ -1957,7 +2077,8 @@
         },
         {
           "id": "group-selectadd-range",
-          "label": "Add Group to Selection",
+          "label": "Add Control Group to Selection",
+          "actionPrefix": "group selectadd ",
           "level": 1,
           "key": "0–9",
           "modifiers": [
@@ -1968,7 +2089,8 @@
         },
         {
           "id": "group-selecttoggle-1",
-          "label": "Toggle Group 1 in Selection",
+          "label": "Toggle Control Group 1 in Selection",
+          "action": "group selecttoggle 1",
           "level": 2,
           "key": "1",
           "modifiers": [
@@ -1980,7 +2102,8 @@
         },
         {
           "id": "group-selecttoggle-2",
-          "label": "Toggle Group 2 in Selection",
+          "label": "Toggle Control Group 2 in Selection",
+          "action": "group selecttoggle 2",
           "level": 2,
           "key": "2",
           "modifiers": [
@@ -1992,7 +2115,8 @@
         },
         {
           "id": "group-selecttoggle-3",
-          "label": "Toggle Group 3 in Selection",
+          "label": "Toggle Control Group 3 in Selection",
+          "action": "group selecttoggle 3",
           "level": 2,
           "key": "3",
           "modifiers": [
@@ -2004,7 +2128,8 @@
         },
         {
           "id": "group-selecttoggle-range",
-          "label": "Toggle Group in Selection",
+          "label": "Toggle Control Group in Selection",
+          "actionPrefix": "group selecttoggle ",
           "level": 2,
           "key": "0–9",
           "modifiers": [
@@ -2023,7 +2148,8 @@
       "shortcuts": [
         {
           "id": "camera-recall-1",
-          "label": "Select Camera 1",
+          "label": "Jump to Camera Anchor 1",
+          "action": "focus_camera_anchor 1",
           "level": 1,
           "key": "F1",
           "description": "Jump to stored camera position 1",
@@ -2037,7 +2163,8 @@
         },
         {
           "id": "camera-recall-2",
-          "label": "Select Camera 2",
+          "label": "Jump to Camera Anchor 2",
+          "action": "focus_camera_anchor 2",
           "level": 1,
           "key": "F2",
           "description": "Jump to stored camera position 2",
@@ -2051,7 +2178,8 @@
         },
         {
           "id": "camera-store-1",
-          "label": "Store Camera 1",
+          "label": "Set Camera Anchor 1",
+          "action": "set_camera_anchor 1",
           "level": 1,
           "key": "F1",
           "modifiers": [
@@ -2069,7 +2197,8 @@
         },
         {
           "id": "camera-store-2",
-          "label": "Store Camera 2",
+          "label": "Set Camera Anchor 2",
+          "action": "set_camera_anchor 2",
           "level": 1,
           "key": "F2",
           "modifiers": [
@@ -2087,7 +2216,8 @@
         },
         {
           "id": "camera-recall-range",
-          "label": "Select Camera",
+          "label": "Jump to Camera Anchor",
+          "actionPrefix": "focus_camera_anchor ",
           "level": 1,
           "key": "F1–F4",
           "displayOnly": true,
@@ -2101,7 +2231,8 @@
         },
         {
           "id": "camera-store-range",
-          "label": "Store Camera",
+          "label": "Set Camera Anchor",
+          "actionPrefix": "set_camera_anchor ",
           "level": 1,
           "key": "F1–F4",
           "modifiers": [
@@ -2120,6 +2251,7 @@
         {
           "id": "camera-toggle-overview",
           "label": "Map Overview",
+          "action": "toggleoverview",
           "level": 1,
           "displayOnly": true,
           "key": "T",
@@ -2131,6 +2263,7 @@
         {
           "id": "camera-flip",
           "label": "Flip Camera",
+          "action": "cameraflip",
           "level": 1,
           "key": "O",
           "modifiers": [
@@ -2141,7 +2274,8 @@
         },
         {
           "id": "show-pathing",
-          "label": "Show Pathing",
+          "label": "Show Passability",
+          "action": "showpathtraversability",
           "level": 1,
           "displayOnly": true,
           "key": "F6",
@@ -2156,20 +2290,23 @@
         {
           "id": "goto-ping",
           "label": "Jump to Last Ping",
+          "action": "lastmsgpos",
           "level": 1,
           "key": "F5",
           "description": "Move the camera to the most recent map marker or message position"
         },
         {
           "id": "metal-view",
-          "label": "Metal View",
+          "label": "Show Metal Map",
+          "action": "showmetalmap",
           "level": 2,
           "key": "F7",
           "description": "Toggle the metal map — shows every extractor spot and how rich it is"
         },
         {
           "id": "map-elevation",
-          "label": "Map Elevation",
+          "label": "Show Height Map",
+          "action": "showelevation",
           "level": 2,
           "key": "F8",
           "description": "Toggle the height map, so you can read ridges and valleys at a glance"
@@ -2177,6 +2314,7 @@
         {
           "id": "camera-overhead",
           "label": "Overhead Camera",
+          "action": "viewta",
           "level": 2,
           "displayOnly": true,
           "key": "F5",
@@ -2188,6 +2326,7 @@
         {
           "id": "camera-spring",
           "label": "Spring Camera",
+          "action": "viewspring",
           "level": 2,
           "displayOnly": true,
           "key": "F6",
@@ -2199,6 +2338,7 @@
         {
           "id": "toggle-los",
           "label": "LOS View",
+          "action": "losradar",
           "level": 1,
           "displayOnly": true,
           "key": "'",
@@ -2208,6 +2348,7 @@
         {
           "id": "toggle-hud",
           "label": "Show / Hide HUD",
+          "action": "hideinterface",
           "level": 2,
           "key": "F7",
           "modifiers": [
@@ -2226,6 +2367,7 @@
         {
           "id": "attack-range-next",
           "label": "Attack Range: Next",
+          "action": "attack_range_inc",
           "level": 2,
           "key": ".",
           "modifiers": [
@@ -2237,6 +2379,7 @@
         {
           "id": "attack-range-prev",
           "label": "Attack Range: Previous",
+          "action": "attack_range_dec",
           "level": 2,
           "key": ",",
           "modifiers": [
@@ -2248,6 +2391,7 @@
         {
           "id": "fov-increase",
           "label": "Field of View +",
+          "action": "fov_inc 5",
           "level": 2,
           "key": "P",
           "modifiers": [
@@ -2259,6 +2403,7 @@
         {
           "id": "fov-decrease",
           "label": "Field of View −",
+          "action": "fov_dec 5",
           "level": 2,
           "key": "O",
           "modifiers": [
@@ -2277,6 +2422,7 @@
         {
           "id": "pip-track",
           "label": "Track Selection in PiP",
+          "action": "pip1_track",
           "level": 2,
           "key": "T",
           "modifiers": [
@@ -2288,6 +2434,7 @@
         {
           "id": "pip-swap",
           "label": "Swap Camera and PiP",
+          "action": "pip1_switch",
           "level": 2,
           "key": "Tab",
           "modifiers": [
@@ -2299,6 +2446,7 @@
         {
           "id": "pip-copy",
           "label": "Copy Camera to PiP",
+          "action": "pip1_copy",
           "level": 2,
           "key": "Tab",
           "modifiers": [
@@ -2318,6 +2466,7 @@
         {
           "id": "chat",
           "label": "Chat",
+          "action": "chat",
           "level": 0,
           "key": "Enter",
           "description": "Open the chat input — Enter again sends the message"
@@ -2325,6 +2474,7 @@
         {
           "id": "chat-allies",
           "label": "Chat: Allies ↔ Everyone",
+          "action": "chat",
           "level": 1,
           "key": "Enter",
           "modifiers": [
@@ -2335,6 +2485,7 @@
         {
           "id": "chat-spec",
           "label": "Chat: Spectators ↔ Everyone",
+          "action": "chat",
           "level": 1,
           "key": "Enter",
           "modifiers": [
@@ -2345,6 +2496,7 @@
         {
           "id": "chat-everyone",
           "label": "Chat to Everyone",
+          "action": "chat",
           "level": 1,
           "key": "Enter",
           "modifiers": [
@@ -2354,14 +2506,16 @@
         },
         {
           "id": "mute",
-          "label": "Mute / Unmute",
+          "label": "Toggle Mute",
+          "action": "mutesound",
           "level": 0,
           "key": "Backspace",
           "description": "Toggle the game sound — press again to undo an accidental mute"
         },
         {
           "id": "volume-down",
-          "label": "Volume Down",
+          "label": "Decrease Volume",
+          "action": "snd_volume_decrease",
           "level": 0,
           "displayOnly": true,
           "key": "-",
@@ -2369,7 +2523,8 @@
         },
         {
           "id": "volume-up",
-          "label": "Volume Up",
+          "label": "Increase Volume",
+          "action": "snd_volume_increase",
           "level": 0,
           "displayOnly": true,
           "key": "=",
@@ -2378,7 +2533,8 @@
         },
         {
           "id": "gamespeed-down",
-          "label": "Game Speed Down",
+          "label": "Decrease Game Speed",
+          "action": "decreasespeed",
           "level": 1,
           "displayOnly": true,
           "key": "-",
@@ -2389,7 +2545,8 @@
         },
         {
           "id": "gamespeed-up",
-          "label": "Game Speed Up",
+          "label": "Increase Game Speed",
+          "action": "increasespeed",
           "level": 1,
           "displayOnly": true,
           "key": "=",
@@ -2400,7 +2557,8 @@
         },
         {
           "id": "unit-info",
-          "label": "Unit Info",
+          "label": "Unit Stats",
+          "action": "unit_stats",
           "level": 1,
           "displayOnly": true,
           "key": "I",
@@ -2420,6 +2578,7 @@
         {
           "id": "draw-ping",
           "label": "Ping the Map",
+          "action": "drawinmap",
           "level": 0,
           "displayOnly": true,
           "key": "`",
@@ -2428,7 +2587,8 @@
         },
         {
           "id": "draw-label",
-          "label": "Place a Label",
+          "label": "Place Label",
+          "action": "drawlabel",
           "level": 1,
           "displayOnly": true,
           "key": "`",
@@ -2438,6 +2598,7 @@
         {
           "id": "draw-line",
           "label": "Draw on the Map",
+          "action": "drawinmap",
           "level": 1,
           "displayOnly": true,
           "key": "`",
@@ -2447,6 +2608,7 @@
         {
           "id": "widget-selector",
           "label": "Widget Selector",
+          "action": "luaui selector",
           "level": 2,
           "displayOnly": true,
           "key": "F11",
@@ -2454,7 +2616,8 @@
         },
         {
           "id": "options-menu",
-          "label": "Options Menu",
+          "label": "Settings",
+          "action": "options",
           "level": 1,
           "displayOnly": true,
           "key": "F10",
@@ -2462,7 +2625,8 @@
         },
         {
           "id": "screenshot",
-          "label": "Screenshot",
+          "label": "Take Screenshot",
+          "action": "screenshot png",
           "level": 1,
           "displayOnly": true,
           "key": "F12",
@@ -2470,7 +2634,8 @@
         },
         {
           "id": "forcestart-vote",
-          "label": "Force Start Vote",
+          "label": "Vote Forcestart",
+          "action": "chain force forcestart | say !cv forcestart",
           "level": 2,
           "displayOnly": true,
           "key": "F",
@@ -2482,6 +2647,7 @@
         {
           "id": "draw-erase",
           "label": "Erase Drawings",
+          "action": "drawinmap",
           "level": 1,
           "displayOnly": true,
           "key": "`",
