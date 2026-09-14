@@ -3,7 +3,7 @@ import {
   slotPicksUnit,
   // Version query kept in step with the one on this file in index.html — a module import
   // is cached on its own, so a stale logic.js would otherwise outlive an app.js update.
-} from './logic.js?v=113'
+} from './logic.js?v=120'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -2648,6 +2648,8 @@ const MOUSE_ACTION_LABELS = {
   'drag':                    'Drag to set area',
   'alt-drag':                'Hold Alt · Drag area',
   'ctrl-drag':               'Hold Ctrl · Drag area',
+  'shift-drag':              'Hold Shift · Drag area',
+  'space-drag':              'Hold Space · Drag area',
   'ctrl-click':              'Ctrl + Click',
   'click-or-drag':           'Click or drag',
   'click-unit-or-drag':      'Click unit or drag',
@@ -3896,6 +3898,37 @@ function mouseActionMods(mouseAction) {
   return Object.values(MOUSE_MOD_NAMES).filter(mod => wanted.has(mod))
 }
 
+/** The keys a `0–9` or `F1–F4` range stands for; anything else is just itself. */
+function scExpandRange(key) {
+  const range = String(key ?? '').match(/^(F?)(\d)–F?(\d)$/)
+  if (!range) return [String(key ?? '')]
+  const [, prefix, from, to] = range
+  const out = []
+  for (let n = +from; n <= +to; n++) out.push(prefix + n)
+  return out
+}
+
+/**
+ * Does this row stand for something the training run can actually ask?
+ *
+ * The difficulty badge names the level a question is drawn at, so on a `displayOnly` row
+ * it claims a tier that does not exist — those never enter the pool. The exception is a
+ * range row like `0–9`: it is the visible face of the `learnHidden` siblings that *are*
+ * drilled, so its badge describes them. Everything else earns no badge at all.
+ */
+function scIsDrilled(shortcut, group) {
+  if (!shortcut.displayOnly) return true
+  const bind = binding(shortcut)
+  const keys = scExpandRange(bind.key)
+  const mods = [...(bind.modifiers ?? [])].sort().join('+')
+  return group.shortcuts.some(other => {
+    if (!other.learnHidden) return false
+    const theirs = binding(other)
+    return keys.includes(String(theirs.key))
+      && [...(theirs.modifiers ?? [])].sort().join('+') === mods
+  })
+}
+
 function formatMouseAction(mouseAction) {
   if (!mouseAction) return ''
 
@@ -4264,7 +4297,11 @@ function initShortcutsScreen() {
     if (['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) return
 
     if (e.altKey || e.metaKey) scSawAlt = true   // this browser does report Alt
-    if (e.key === ' ') scSpaceHeld = true
+    // Space is held half the time and is the key BAR overloads the most, so a tap on it
+    // must never drag the view somewhere else — see the scFlash call below, which refuses
+    // the category switch for it. Prevent the default here rather than further down, so
+    // the page does not scroll away under the tap even when nothing matches.
+    if (e.key === ' ') { scSpaceHeld = true; e.preventDefault() }
     const combo = scComboFromEvent(e, e.key === ' ' ? false : scSpaceHeld)
 
     // Try extending the buffered sequence (Z then Z = Area MEX); if that leads
@@ -4295,7 +4332,10 @@ function initShortcutsScreen() {
     const done       = complete.filter(m => !m.sc.mouseAction)
 
     scLight([...partial, ...needsMouse])
-    if (done.length) scFlash(done)
+    // A Space tap ticks off what is already on screen (Build Split in Builder, Show Queue
+    // Presets in Factory) but never pulls the view to another category — reaching for a
+    // modifier should not move you. Every other key may still switch, as before.
+    if (done.length) scFlash(done, combo.key !== 'SPACE')
 
     if (needsMouse.length) {
       scArmPad(needsMouse, formatShortcutKey(needsMouse[0].sc, settings.keyboard === 'qwertz'))
@@ -4440,7 +4480,11 @@ function selectShortcutsGroup(id) {
   const content = $('shortcuts-content')
   content.classList.remove('hidden')
 
-  const rows = group.shortcuts.filter(sc => !sc.learnHidden).map(sc => {
+  // A group made only of reference rows has nothing to put in the Level column, so the
+  // column goes too — a lone "Level" heading over nothing but blanks reads like a bug.
+  const visible  = group.shortcuts.filter(sc => !sc.learnHidden)
+  const anyLevel = visible.some(sc => scIsDrilled(sc, group))
+  const rows = visible.map(sc => {
     // Only flag what this browser/OS actually swallows — a "Windows/Linux" warning on a
     // Mac is noise, and worse, it contradicts the key visibly working when you press it.
     const bind     = binding(sc)
@@ -4450,11 +4494,13 @@ function selectShortcutsGroup(id) {
       : ''
     const desc = sc.description
       ? `<div class="sc-desc">${sc.description}</div>` : ''
-    const lvlBadge = sc.level === 0
-      ? '<span class="sc-lvl sc-lvl-0">Noob</span>'
-      : sc.level === 1
-        ? '<span class="sc-lvl sc-lvl-1">Mid</span>'
-        : '<span class="sc-lvl sc-lvl-cmd">Commander</span>'
+    // Commander is the honest fallback, not a guess: `buildShortcutQueue` skips the level
+    // check entirely once the threshold is Infinity, so a shortcut with no level — or one
+    // above 1 — is reachable on Commander and nowhere else. Do not "fix" this to blank.
+    const lvlBadge = !scIsDrilled(sc, group) ? ''
+      : sc.level === 0 ? '<span class="sc-lvl sc-lvl-0">Noob</span>'
+      : sc.level === 1 ? '<span class="sc-lvl sc-lvl-1">Mid</span>'
+      : '<span class="sc-lvl sc-lvl-cmd">Commander</span>'
     // A toggle's row only counts as done once every one of its states has been tried
     const checked = (sc.states?.length
       ? sc.states.every(state => scCheckedIds.has(state.id))
@@ -4464,7 +4510,7 @@ function selectShortcutsGroup(id) {
         <td class="sc-check-col"><span class="sc-check">✓</span></td>
         <td class="sc-action"><span class="sc-label">${sc.label}</span>${desc}</td>
         <td class="sc-key">${formatShortcutKey(sc, isQwertz)}${formatMouseAction(sc.mouseAction)}${reserved}</td>
-        <td class="sc-level">${lvlBadge}</td>
+        ${anyLevel ? `<td class="sc-level">${lvlBadge}</td>` : ''}
       </tr>`
   }).join('')
 
@@ -4476,7 +4522,7 @@ function selectShortcutsGroup(id) {
           <th class="sc-check-col"></th>
           <th>Action</th>
           <th>Key</th>
-          <th>Level</th>
+          ${anyLevel ? '<th>Level</th>' : ''}
         </tr>
       </thead>
       <tbody>${rows}</tbody>

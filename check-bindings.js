@@ -25,7 +25,9 @@ const HOTKEYS = join(dir, 'bar-data', 'luaui', 'configs', 'hotkeys')
 // chat line editing, camera nudging, the quit menu, widget-internal modifiers.
 const IGNORED_ACTIONS = [
   /^edit_/, /^move(forward|back|left|right|up|down|fast|reset|rotate|tilt)$/,
-  /^selectbox_/, /^selectloop/, /^quit/, /^pause$/, /^buildsplit/, /^commandinsert/,
+  // selectbox_* are modifiers *held during a box drag*, so they have no key combo to
+  // compare — the trainer carries them as mouse gestures in the Select group instead.
+  /^selectbox_/, /^selectloop/, /^quit/, /^reloadforce/, /^pause$/, /^commandinsert/,
   /^pastetext$/, /^luaui /, /^teamstatus_close$/, /^customgameinfo_close$/,
   /^buildmenu_pregame_deselect$/, /^fullscreen$/, /^toggle_allied_upgrade$/,
   /^chat$/, /^chatswitch/,          // chat is covered as its own group already
@@ -146,6 +148,18 @@ for (const group of SC.groups) {
       const id = comboId({ mods, keys: [key] })
       if (!listed.has(id)) listed.set(id, { label: `${sc.label} (${group.name})`, key })
     }
+  }
+}
+
+// The grid menu's own category keys (Z/X/C/V) are the trainer's whole build drill, so
+// they live in buildmenus.json rather than shortcuts.json. Without this they would be
+// reported as missing forever, and permanent noise hides the gaps that are real.
+const MENUS = JSON.parse(readFileSync(join(dir, 'data', 'buildmenus.json'), 'utf8'))
+for (const builder of Object.values(MENUS.builders)) {
+  for (const cat of Object.values(builder.categories ?? {})) {
+    if (!cat.key) continue
+    const id = comboId({ mods: [], keys: [canonKey(cat.key)] })
+    if (!listed.has(id)) listed.set(id, { label: `${cat.name ?? 'category'} (build menu)`, key: canonKey(cat.key) })
   }
 }
 

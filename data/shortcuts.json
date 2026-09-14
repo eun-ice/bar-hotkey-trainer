@@ -642,6 +642,47 @@
           "mouseAction": "drag"
         },
         {
+          "id": "select-box-append",
+          "label": "Box Select: Add",
+          "level": 0,
+          "displayOnly": true,
+          "description": "Hold Shift while dragging the box — the units join the current selection instead of replacing it, and everything inside counts rather than just the useful units",
+          "mouseAction": "shift-drag"
+        },
+        {
+          "id": "select-box-deselect",
+          "label": "Box Select: Remove",
+          "level": 1,
+          "displayOnly": true,
+          "description": "Hold Ctrl while dragging the box — the units inside are taken out of the current selection",
+          "mouseAction": "ctrl-drag"
+        },
+        {
+          "id": "select-box-mobile",
+          "label": "Box Select: Mobile Only",
+          "level": 1,
+          "displayOnly": true,
+          "description": "Hold Alt while dragging the box — buildings are left out, so you pick up only what can move",
+          "mouseAction": "alt-drag"
+        },
+        {
+          "id": "select-box-same",
+          "label": "Box Select: Same Type",
+          "level": 1,
+          "displayOnly": true,
+          "key": "Z",
+          "description": "Hold Z while dragging the box — only units of the type already selected are picked up",
+          "mouseAction": "drag"
+        },
+        {
+          "id": "select-box-idle",
+          "label": "Box Select: Idle Only",
+          "level": 2,
+          "displayOnly": true,
+          "description": "Hold Space while dragging the box — only units with nothing to do are picked up",
+          "mouseAction": "space-drag"
+        },
+        {
           "id": "select-commander",
           "label": "Select Commander",
           "level": 0,
@@ -651,6 +692,7 @@
         {
           "id": "select-all",
           "label": "Select All Units",
+          "level": 2,
           "key": "E",
           "modifiers": [
             "Ctrl"
@@ -714,6 +756,7 @@
         {
           "id": "select-waiting-units",
           "label": "Select Waiting Units",
+          "level": 2,
           "key": "Y",
           "modifiers": [
             "Ctrl"
@@ -724,6 +767,7 @@
         {
           "id": "select-idle-transports",
           "label": "Select Idle Transports",
+          "level": 2,
           "key": "R",
           "modifiers": [
             "Ctrl"
@@ -991,6 +1035,7 @@
         {
           "id": "gather-wait",
           "label": "Gather Wait",
+          "level": 2,
           "key": "P",
           "description": "Wait at current position until a certain number of units gather"
         },
@@ -1369,6 +1414,14 @@
           "level": 2,
           "key": ".",
           "description": "With several builders or factories selected, step the build menu to the next one"
+        },
+        {
+          "id": "build-split",
+          "label": "Build Split",
+          "level": 2,
+          "key": "Space",
+          "displayOnly": true,
+          "description": "Hold Space while giving build orders to several selected builders — the queue is split between them instead of every builder taking the whole thing"
         }
       ]
     },
@@ -1473,6 +1526,14 @@
           "description": "Switch the factory between queue mode and quota mode — one press flips it"
         },
         {
+          "id": "factory-preset-show",
+          "label": "Show Queue Presets",
+          "level": 1,
+          "key": "Space",
+          "displayOnly": true,
+          "description": "Hold Space with a factory selected to show its ten preset boxes — then a number loads that queue, or left-click the box"
+        },
+        {
           "id": "factory-preset-load-1",
           "label": "Load Queue Preset 1",
           "level": 2,
@@ -1514,7 +1575,7 @@
             "Space"
           ],
           "displayOnly": true,
-          "description": "Hold Space to show the factory's ten preset boxes, then press that number to load the queue back in — or simply left-click the box"
+          "description": "Press the number of a preset box to load that build queue back into the factory"
         },
         {
           "id": "factory-preset-save-1",
@@ -2161,6 +2222,50 @@
               "Space"
             ]
           }
+        },
+        {
+          "id": "attack-range-next",
+          "label": "Attack Range: Next",
+          "level": 2,
+          "key": ".",
+          "modifiers": [
+            "Alt"
+          ],
+          "displayOnly": true,
+          "description": "Step to the next attack-range display preset for the selected unit type"
+        },
+        {
+          "id": "attack-range-prev",
+          "label": "Attack Range: Previous",
+          "level": 2,
+          "key": ",",
+          "modifiers": [
+            "Alt"
+          ],
+          "displayOnly": true,
+          "description": "Step back to the previous attack-range display preset for the selected unit type"
+        },
+        {
+          "id": "fov-increase",
+          "label": "Field of View +",
+          "level": 2,
+          "key": "P",
+          "modifiers": [
+            "Ctrl"
+          ],
+          "displayOnly": true,
+          "description": "Widen the camera's field of view by 5° — 40° is the default"
+        },
+        {
+          "id": "fov-decrease",
+          "label": "Field of View −",
+          "level": 2,
+          "key": "O",
+          "modifiers": [
+            "Ctrl"
+          ],
+          "displayOnly": true,
+          "description": "Narrow the camera's field of view by 5° — 40° is the default"
         }
       ]
     },

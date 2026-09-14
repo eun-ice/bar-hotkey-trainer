@@ -154,7 +154,28 @@ rather than being copied into the code, so it can be refreshed when upstream cha
   is a bare gesture — `scFlash`'s `allowSwitch = false` deliberately refuses to yank the
   view back to Right-click, so nothing matches. Passing `gesture.mods.length > 0` as
   `allowSwitch` would fix it, at the cost of letting every modified keyless gesture change
-  category.
+  category. `select-box-idle` is now stuck the same way — Space completes `build-split`,
+  which pulls the view to Builder before the drag lands — so that one line would free two
+  entries. Note also that `select-box` itself has never been tickable: a plain unmodified
+  left drag is deliberately left to the browser as text selection (`capturable()`), and
+  the mouseup returns early for it.
+- **A shortcut with no `level` is Commander-only, not level-less.** `buildShortcutQueue`
+  skips the level check whole once the threshold is `Infinity`, which is exactly the
+  Commander setting — so an entry without a `level`, or with one above 1, is drawn there
+  and nowhere else. The reference badge therefore falls back to Commander on purpose; that
+  fallback is the truth, not a guess. Blanking it once hid four genuinely trainable
+  shortcuts (`select-all`, `select-waiting-units`, `select-idle-transports`, `gather-wait`),
+  which now carry `level: 2` explicitly so the rule never has to be inferred again.
+- **A Space tap on the reference screen ticks in place and never switches category.**
+  BAR overloads Space harder than any other key — Build Split, Show Queue Presets, Show
+  Build Queue, the preset numbers, Space+X — so a tap used to flash whichever of them
+  sorted first and drag the view to that command's category, every time you reached for
+  the modifier. The keydown handler still resolves the combo, but passes
+  `allowSwitch = combo.key !== 'SPACE'` to `scFlash`: the row ticks off when it is already
+  on screen, and nothing happens when it is not. `preventDefault` moved up into the Space
+  branch so the page cannot scroll under the tap even when nothing matches. Space *held*
+  is untouched — `Space+X`, `Space+<num>` and the preset rows resolve and may switch
+  category like any other key, and the training screen has always treated Space this way.
 - **Factory queue presets are `meta`, and `meta` is Space.** `num_keys.txt` binds
   `meta+<n>` to `factory_preset load <n>`, `meta+alt+<n>` to `factory_preset save <n>` and
   `any+sc_space` to `factory_preset_show`, so holding Space is what draws the ten preset
