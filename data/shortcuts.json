@@ -4,6 +4,8 @@
   "note_zy": "Z and Y are always treated as equivalent — handles QWERTY/QWERTZ confusion.",
   "note_colon": "Position uses ':' — on QWERTY: Shift+; — on QWERTZ: Shift+. — both produce event.key ':' so no special handling needed.",
   "note_reclaim_space": "Space + drag reclaim (engine META_KEY) is handled by the Area Reclaim Enemy widget (layer 0) when an enemy unit is inside the circle and the center is ground or a unit; confirmed in game 2026-09-15 and listed as reclaim-area-enemy. With no enemy inside, the command insert widget (layer 5) turns it into a plain queue-front insert. Space with Fight (engine: also reclaim enemy units) is untested and not listed.",
+  "note_repair_space": "Space + drag repair (engine META_KEY) would repair finished units only and skip constructions, but no widget handles it before the command insert widget (layer 5) strips the meta option, so in game it is only a queue-front insert. Untested, not listed.",
+  "note_resurrect_space": "Space + drag resurrect (engine META_KEY) would raise only untouched wrecks and skip partly reclaimed ones, but no widget handles it before the command insert widget (layer 5) strips the meta option, so in game it is only a queue-front insert. Untested, not listed.",
   "unitLevels": {
     "0": [
       "armaap",
@@ -1312,7 +1314,7 @@
           "action": "reclaim",
           "level": 2,
           "key": "E",
-          "description": "Hold Alt while dragging the reclaim circle: centered on a unit or wreck it takes only that type, over bare ground it keeps reclaiming metal and energy as a repeat order",
+          "description": "Hold Alt while dragging the reclaim circle. Centered on a unit or wreck the builders reclaim only targets of exactly that type inside the circle. Over bare ground the order never finishes: they keep reclaiming metal and energy in the circle until you stop them",
           "mouseAction": "alt-drag"
         },
         {
@@ -1321,7 +1323,7 @@
           "action": "reclaim",
           "level": 2,
           "key": "E",
-          "description": "Hold Ctrl while dragging the reclaim circle: over bare ground metal first and energy last, centered on a unit every unit of that side in the area, centered on a wreck only its tech level",
+          "description": "Hold Ctrl while dragging the reclaim circle. Over bare ground the builders take every metal source in the circle first and only then start on the energy sources. Centered on a metal rock they take only metal, centered on a tree only energy, just like a plain drag. Centered on a unit they reclaim every unit of that team inside the circle, whether it is yours or the enemy’s. Centered on a wreck they reclaim only wrecks whose unit has the same tech level as the one in the center",
           "mouseAction": "ctrl-drag"
         },
         {
@@ -1348,8 +1350,26 @@
           "action": "repair",
           "level": 1,
           "key": "R",
-          "description": "Drag a circle to repair all friendly units and structures in the area",
+          "description": "Drag a circle to repair the nearest damaged or unfinished friendly, standing targets first; on hold position it will not help factories build",
           "mouseAction": "drag"
+        },
+        {
+          "id": "repair-area-type",
+          "label": "Repair Area by Type",
+          "action": "repair",
+          "level": 2,
+          "key": "R",
+          "description": "Hold Alt while dragging the repair circle. Centered on a unit the builders repair only units of exactly that type inside the circle. Over bare ground the order never finishes: they keep repairing anything damaged in the circle until you stop them",
+          "mouseAction": "alt-drag"
+        },
+        {
+          "id": "repair-area-all",
+          "label": "Repair Area, All Units",
+          "action": "repair",
+          "level": 2,
+          "key": "R",
+          "description": "Hold Ctrl while dragging the repair circle. Centered on a unit the builders repair every unit of that team inside the circle. Over bare ground they repair as usual but also take on units that are currently being reclaimed, which a plain repair skips",
+          "mouseAction": "ctrl-drag"
         },
         {
           "id": "resurrect",
@@ -1366,7 +1386,7 @@
           "action": "resurrect",
           "level": 1,
           "key": "W",
-          "description": "Drag a circle to resurrect all wrecks within the area",
+          "description": "Drag a circle to resurrect the wrecks inside it, nearest first, skipping any wreck that is currently being reclaimed; each raised unit is repaired before the next wreck",
           "mouseAction": "drag"
         },
         {
@@ -1375,7 +1395,7 @@
           "action": "resurrect",
           "level": 2,
           "key": "W",
-          "description": "Hold Alt while dragging the resurrect circle to resurrect only wrecks of the same unit type as the one at the center",
+          "description": "Hold Alt while dragging the resurrect circle. Centered on a wreck the rezbots raise only wrecks of exactly that unit type inside the circle. Over bare ground the order never finishes: they keep resurrecting whatever appears in the circle until you stop them",
           "mouseAction": "alt-drag"
         },
         {
@@ -1384,7 +1404,7 @@
           "action": "resurrect",
           "level": 2,
           "key": "W",
-          "description": "Hold Ctrl while dragging the resurrect circle to raise only wrecks of the same tech level as the one at the center",
+          "description": "Hold Ctrl while dragging the resurrect circle. Centered on a wreck the rezbots raise only wrecks whose unit has the same tech level as the one in the center. Over bare ground they resurrect as usual but also take on wrecks that are currently being reclaimed, which a plain resurrect skips",
           "mouseAction": "ctrl-drag"
         },
         {
