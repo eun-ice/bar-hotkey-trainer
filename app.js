@@ -3,7 +3,7 @@ import {
   slotPicksUnit,
   // Version query kept in step with the one on this file in index.html — a module import
   // is cached on its own, so a stale logic.js would otherwise outlive an app.js update.
-} from './logic.js?v=110'
+} from './logic.js?v=113'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -2641,22 +2641,24 @@ const MOUSE_TARGET_POSITIONS = [
 ]
 
 const MOUSE_ACTION_LABELS = {
-  'click':              'Click to place',
-  'shift-click':        'Shift + Click (queue)',
-  'space-click':        'Space + Click (instant)',
-  'click-unit':         'Click the unit',
-  'drag':               'Drag to set area',
-  'alt-drag':           'Hold Alt · Drag area',
-  'ctrl-drag':          'Hold Ctrl · Drag area',
-  'click-or-drag':      'Click or drag',
-  'click-unit-or-drag': 'Click unit or drag',
-  'click-right':        'Right-click',
-  'drag-line':          'Drag a line',
-  'right-drag-line':    'Right-drag a line',
-  'shift-click-right':  'Shift + Right-click (queue)',
-  'space-click-right':  'Space + Right-click (instant)',
-  'alt-click-right':    'Alt + Right-click',
-  'ctrl-click-right':   'Ctrl + Right-click',
+  'click':                   'Click to place',
+  'shift-click':             'Shift + Click (queue)',
+  'space-click':             'Space + Click (instant)',
+  'click-unit':              'Click the unit',
+  'drag':                    'Drag to set area',
+  'alt-drag':                'Hold Alt · Drag area',
+  'ctrl-drag':               'Hold Ctrl · Drag area',
+  'ctrl-click':              'Ctrl + Click',
+  'click-or-drag':           'Click or drag',
+  'click-unit-or-drag':      'Click unit or drag',
+  'click-right':             'Right-click',
+  'drag-line':               'Drag a line',
+  'right-drag-line':         'Right-drag a line',
+  'shift-click-right':       'Shift + Right-click (queue)',
+  'space-click-right':       'Space + Right-click (instant)',
+  'alt-click-right':         'Alt + Right-click',
+  'ctrl-click-right':        'Ctrl + Right-click',
+  'shift-space-click-right': 'Shift + Space + Right-click',
 }
 
 let mouseZoneSpaceHeld = false
@@ -2856,8 +2858,8 @@ function initMouseZone() {
     // placing it, Alt+drag reclaims by type instead of everything. The branches below
     // already insist on a modifier the action asks for; this insists on its absence when
     // it asks for none, so the two directions are judged alike.
-    const wantMod = /^(alt|ctrl|shift|space)-/.exec(action)?.[1] ?? null
-    if (!wantMod && (isClick || isDrag)) {
+    const wantMods = mouseActionMods(action)
+    if (!wantMods.length && (isClick || isDrag)) {
       // Only insist on modifiers this question actually teaches. Shift and Space are the
       // queue modifiers of a *build* order — on a shortcut, or with build modifiers
       // switched off, they change nothing we ask about, so holding them is no mistake.
@@ -2896,6 +2898,14 @@ function initMouseZone() {
         return
       }
       handleMouseComplete(false)
+    } else if (action === 'ctrl-click') {
+      if (!isClick) return
+      if (!e?.ctrlKey) {
+        questionHadWrong = true
+        setInstruction('Hold <kbd>Ctrl</kbd> while clicking!', 'state-wrong')
+        return
+      }
+      handleMouseComplete(true)
     } else if (action === 'shift-click') {
       if (!isClick) return
       if (!e.shiftKey) {
@@ -3872,6 +3882,20 @@ const SC_PAD_IDLE = 'Press any shortcut to check it — then click or drag anywh
 // override it with their own, much shorter window.
 const SC_SEQ_TIMEOUT_MS = 2000
 
+// Which modifiers a mouseAction asks to be held. One prefix per modifier, stacked in
+// front of the gesture: `space-click-right` wants Space, `shift-space-click-right` wants
+// both Shift and Space. Returned in the same order the pad pushes the keys it sees held,
+// so the two lists compare as they are.
+const MOUSE_MOD_NAMES = { ctrl: 'Ctrl', shift: 'Shift', alt: 'Alt', space: 'Space' }
+
+function mouseActionMods(mouseAction) {
+  const wanted = new Set()
+  let rest = mouseAction ?? ''
+  for (let match; (match = /^(ctrl|shift|alt|space)-/.exec(rest)); rest = rest.slice(match[0].length))
+    wanted.add(MOUSE_MOD_NAMES[match[1]])
+  return Object.values(MOUSE_MOD_NAMES).filter(mod => wanted.has(mod))
+}
+
 function formatMouseAction(mouseAction) {
   if (!mouseAction) return ''
 
@@ -3880,10 +3904,7 @@ function formatMouseAction(mouseAction) {
   const isDouble = mouseAction.includes('double')
   const isLine   = mouseAction.includes('line')
   const isDrag   = mouseAction.includes('drag')
-  const modifier = mouseAction.startsWith('alt-')   ? 'Alt'
-    : mouseAction.startsWith('ctrl-')  ? 'Ctrl'
-    : mouseAction.startsWith('shift-') ? 'Shift'
-    : mouseAction.startsWith('space-') ? 'Space' : null
+  const mods     = mouseActionMods(mouseAction)
 
   const leftBtn  = `<path d="M.75 6.5Q.75.75 7 .75L7 9.5H.75Z" fill="rgba(220,155,30,.7)"/>`
   const rightBtn = `<path d="M13.25 6.5Q13.25.75 7 .75L7 9.5H13.25Z" fill="rgba(220,155,30,.7)"/>`
@@ -3926,7 +3947,7 @@ function formatMouseAction(mouseAction) {
     </svg>`
   }
 
-  const modKbd = modifier ? `<kbd>${modifier}</kbd><span class="sc-mouse-plus">+</span>` : ''
+  const modKbd = mods.map(mod => `<kbd>${mod}</kbd><span class="sc-mouse-plus">+</span>`).join('')
   return `<span class="sc-mouse-action">${modKbd}${svg}</span>`
 }
 
@@ -4007,16 +4028,14 @@ function scGestureMatches(mouseAction, gesture) {
   const wantRight = mouseAction === 'click-right'
     || mouseAction.startsWith('right-') || mouseAction.endsWith('-click-right')
   const wantDrag = mouseAction.includes('drag')
-  const wantMod  = mouseAction.startsWith('alt-')   ? 'Alt'
-    : mouseAction.startsWith('ctrl-')  ? 'Ctrl'
-    : mouseAction.startsWith('shift-') ? 'Shift'
-    : mouseAction.startsWith('space-') ? 'Space' : null
+  const wantMods = mouseActionMods(mouseAction)
   if (wantRight !== (gesture.button === 'right')) return false
   if (mouseAction.includes('or-drag')) {
     // Either a click or a drag is acceptable
   } else if (wantDrag !== (gesture.kind === 'drag')) return false
-  const gestureMod = gesture.mods.length === 1 ? gesture.mods[0] : null
-  if (wantMod !== gestureMod) return false
+  // Every modifier the command asks for, and no others: Shift+Space+right-click is its
+  // own order, so it must not also pass for the Shift+right-click one.
+  if (wantMods.join('+') !== gesture.mods.join('+')) return false
   return true
 }
 

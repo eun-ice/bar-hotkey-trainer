@@ -123,6 +123,62 @@ rather than being copied into the code, so it can be refreshed when upstream cha
   the filter carries `layer = -1` so it runs first. Reading only the second one once led
   to "correcting" the Alt+drag reclaim text to metal/energy, which is the no-modifier
   behaviour — verified in game as unit id.
+- **Ctrl on a set target means sticky, and the area filter can eat it.**
+  `unit_target_on_the_move.lua` reads `cmdOptions.ctrl` as `ignoreStop` — "Target survives
+  a Stop command" — for `SET_TARGET`, `SET_TARGET_NO_GROUND` and `SET_TARGET_RECTANGLE`
+  alike, which is where `target-set-sticky` / `target-set-area-sticky` come from. But
+  `cmd_area_commands_filter.lua` also claims `UNIT_SET_TARGET`, and it re-issues the
+  filtered orders with only `shift` in `cmdOpts` — the Ctrl is dropped. It only fires on a
+  4-param area command whose centre traces to a unit or feature, so `S` Ctrl+click and a
+  Ctrl+drag centred on empty ground stay sticky, while a Ctrl+drag centred *on an enemy*
+  loses the stickiness (and filters nothing either — `filterUnits` returns every unit in
+  the area when Ctrl is held). Read from source, not yet confirmed in game.
+- **Space is one binding with two behaviours, and Shift picks which.** `chat_and_ui_keys.txt`
+  binds `Any+space` to `commandinsert prepend_between` — one line, so the trainer will
+  never learn the split from the binding files. `cmd_commandinsert.lua` is where it lives:
+  with Space alone it is `CMD.INSERT` at position 0, the order runs next
+  (`queue-order-front`); with Space *and* Shift it walks the queue per unit and inserts at
+  the slot with the smallest detour, `dist(prev→new) + dist(new→next) − dist(prev→next)`,
+  appending instead when the end of the queue is the shorter walk (`queue-order-cheapest`).
+  Read from source, not yet confirmed in game.
+- **A `mouseAction` may stack modifier prefixes, but only the reference can train them.**
+  `mouseActionMods()` is the one parser — `shift-space-click-right` wants both Shift and
+  Space — and `formatMouseAction()` and `scGestureMatches()` go through it, so a stacked
+  entry renders and ticks off on the reference pad. The training pad's `mouseup` still
+  dispatches on exact action names (`'shift-click'`, `'ctrl-drag'`, …), so a *trainable*
+  entry with two modifiers would reach no branch and silently do nothing. Keep such
+  entries `displayOnly`, or generalise that chain first.
+  `queue-order-cheapest` also cannot be ticked off on the reference pad, for an unrelated
+  reason: `Shift+Space` is itself a complete shortcut (`show-build-queue`), so the key
+  press flashes that one and pulls the view to Factory, and the right-click that follows
+  is a bare gesture — `scFlash`'s `allowSwitch = false` deliberately refuses to yank the
+  view back to Right-click, so nothing matches. Passing `gesture.mods.length > 0` as
+  `allowSwitch` would fix it, at the cost of letting every modified keyless gesture change
+  category.
+- **Factory queue presets are `meta`, and `meta` is Space.** `num_keys.txt` binds
+  `meta+<n>` to `factory_preset load <n>`, `meta+alt+<n>` to `factory_preset save <n>` and
+  `any+sc_space` to `factory_preset_show`, so holding Space is what draws the ten preset
+  boxes the numbers address. `cmd_factoryqmanager.lua` holds the rest: presets are kept
+  per *factory type* and persist between matches, repeat state and quota mode travel with
+  the queue, saving while the queue is empty deletes that preset, only a single selected
+  factory counts, and `MousePress` loads a preset on left-click while right-click saving
+  is explicitly disabled. Read from source, not yet confirmed in game.
+- **60% boards have no factory presets at all, and the data model cannot say so.**
+  `grid_keys_60pct.txt` opens with `unbindaction factory_preset` / `factory_preset_show`
+  because Space+number is the F-row there. A `sixty` block can only *remap* a binding —
+  `resolveBinding()` falls back to the normal key for anything it omits — so the preset
+  entries are shown and drilled even with the 60% box ticked, which is wrong for those
+  users. Needs a genuine "unbound on 60%" flag, honoured by both the question pool and the
+  reference, before it can be fixed.
+- **`Any+` means with *or without* modifiers, and it hides whole combos from the checker.**
+  `bind any+sc_space factory_preset_show` binds Space, Shift+Space, Ctrl+Space and the
+  rest, which is why `show-build-queue` on Shift+Space works in game — verified in game —
+  even though no file spells that combo out. `check-bindings.js` used to drop the `any`
+  and emit only the bare combo, so every trainer entry that adds a modifier to an `Any+`
+  key was reported as "not found in the binding files"; it now tracks `anyModKeys` and
+  treats those keys as bound on any combination. That false alarm once led to questioning
+  a correct entry, so do not delete a shortcut on the strength of that list — check
+  whether its key is bound with `Any+` first.
 - **`grid_keys.txt` is the authority, not the in-game chart.** The keyboard images under
   `luaui/images/keybinds/` — the ones the visual reference shows — lag behind. Verified:
   they display `F9 Hide HP Bars`, which is in no binding file and does nothing in game,

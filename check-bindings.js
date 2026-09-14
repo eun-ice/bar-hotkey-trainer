@@ -43,25 +43,30 @@ function canonKey(raw) {
   return named[key.toLowerCase()] ?? key
 }
 
-/** "Ctrl+Shift+sc_a" → { mods: ['Ctrl','Shift'], keys: ['A'] }; commas are key sequences. */
+/**
+ * "Ctrl+Shift+sc_a" → { mods: ['Ctrl','Shift'], keys: ['A'] }; commas are key sequences.
+ * `any` reports itself in `anyMods`: `Any+space` fires with *or without* modifiers, so
+ * Shift+Space really is bound even though the file never spells that combo out.
+ */
 function parseCombo(spec) {
   const steps = spec.split(',')
   const mods = []
   const keys = []
+  let anyMods = false
   for (const step of steps) {
     const parts = step.split('+')
     // A trailing empty part means the key itself was '+', e.g. "numpad+"
     const key = parts.pop() || '+'
     for (const part of parts) {
       const name = part.toLowerCase()
-      if (name === 'any') continue          // "Any" = with or without modifiers
+      if (name === 'any') { anyMods = true; continue }
       if (name === 'meta') { mods.push('Space'); continue }   // BAR's Meta is the Space chord
       const proper = { ctrl: 'Ctrl', shift: 'Shift', alt: 'Alt' }[name]
       if (proper && !mods.includes(proper)) mods.push(proper)
     }
     keys.push(canonKey(key))
   }
-  return { mods, keys }
+  return { mods, keys, anyMods }
 }
 
 const ORDER = { Ctrl: 0, Shift: 1, Alt: 2, Space: 3 }
@@ -94,6 +99,7 @@ function keyloadChain(root) {
 }
 
 const bound = new Map()   // comboId → Set of actions
+const anyModKeys = new Set()  // keys bound with `Any+`, i.e. on any modifier combination
 for (const file of keyloadChain('grid_keys.txt')) {
   for (const line of readFileSync(join(HOTKEYS, file), 'utf8').split('\n')) {
     const match = line.match(/^bind\s+(\S+)\s+(.+?)\s*(?:\/\/.*)?$/)
@@ -105,6 +111,7 @@ for (const file of keyloadChain('grid_keys.txt')) {
     const combo = parseCombo(spec)
     // BAR spells toggles as tap counts on one key — "sc_b,sc_b,sc_b" is still just B
     if (combo.keys.length > 1 && new Set(combo.keys).size === 1) combo.keys = [combo.keys[0]]
+    if (combo.anyMods) for (const key of combo.keys) anyModKeys.add(key)
     const id = comboId(combo)
     if (!bound.has(id)) bound.set(id, new Set())
     bound.get(id).add(action.replace(/\s+/g, ' ').slice(0, 46))
@@ -120,7 +127,7 @@ for (const id of [...bound.keys()]) {
 
 // ── What the trainer lists ────────────────────────────────────────────────────
 const SC = JSON.parse(readFileSync(join(dir, 'data', 'shortcuts.json'), 'utf8'))
-const listed = new Map()  // comboId → label
+const listed = new Map()  // comboId → { label, key }
 for (const group of SC.groups) {
   for (const sc of group.shortcuts) {
     if (!sc.key && !sc.keys) continue
@@ -137,7 +144,7 @@ for (const group of SC.groups) {
     const mods = (sc.modifiers ?? []).filter(m => m !== 'Shift' || (sc.modifiers ?? []).length === 1)
     for (const key of expanded) {
       const id = comboId({ mods, keys: [key] })
-      if (!listed.has(id)) listed.set(id, `${sc.label} (${group.name})`)
+      if (!listed.has(id)) listed.set(id, { label: `${sc.label} (${group.name})`, key })
     }
   }
 }
@@ -154,11 +161,14 @@ for (const [id, actions] of missing.sort())
 if (all) {
   console.log(`\n── Covered (${covered.length})`)
   for (const [id, actions] of covered.sort())
-    console.log(`   ${id.padEnd(16)} ${listed.get(id).padEnd(38)} ← ${[...actions].join(', ')}`)
+    console.log(`   ${id.padEnd(16)} ${listed.get(id).label.padEnd(38)} ← ${[...actions].join(', ')}`)
 
-  const unbound = [...listed.entries()].filter(([id]) => !bound.has(id))
+  // An `Any+` key counts as bound on every modifier combination, so Shift+Space does not
+  // belong here just because the file only ever writes `Any+space`.
+  const unbound = [...listed.entries()]
+    .filter(([id, { key }]) => !bound.has(id) && !anyModKeys.has(key))
   console.log(`\n── Listed by the trainer, not found in the binding files (${unbound.length})`)
   console.log('   (mouse-only entries and engine defaults legitimately land here)')
-  for (const [id, label] of unbound.sort()) console.log(`   ${id.padEnd(16)} ${label}`)
+  for (const [id, { label }] of unbound.sort()) console.log(`   ${id.padEnd(16)} ${label}`)
 }
 console.log()

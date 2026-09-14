@@ -794,6 +794,14 @@
           "mouseAction": "space-click-right"
         },
         {
+          "id": "queue-order-cheapest",
+          "label": "Insert Into Route",
+          "level": 2,
+          "displayOnly": true,
+          "description": "Shift + Space + right-click — the order is slotted into the queue wherever it costs the least extra walking, rather than at the front like Space alone or the end like Shift alone",
+          "mouseAction": "shift-space-click-right"
+        },
+        {
           "id": "move-formation",
           "label": "Move & Assume Formation",
           "level": 1,
@@ -852,6 +860,14 @@
           "mouseAction": "drag"
         },
         {
+          "id": "attack-area-remove",
+          "label": "Remove Attack Orders in Area",
+          "level": 2,
+          "key": "A",
+          "description": "Press A, then hold Ctrl while dragging a circle to strip the queued attack orders inside it — Ctrl on the key instead (Ctrl+A) is the area attack, so let go of it before dragging",
+          "mouseAction": "ctrl-drag"
+        },
+        {
           "id": "target-set",
           "label": "Target Set",
           "level": 1,
@@ -874,6 +890,22 @@
           "key": "S",
           "description": "Hold Alt while dragging the target circle to set a priority target restricted to the same unit type as the one at the center",
           "mouseAction": "alt-drag"
+        },
+        {
+          "id": "target-set-sticky",
+          "label": "Target Set (Sticky)",
+          "level": 2,
+          "key": "S",
+          "description": "Hold Ctrl while clicking the enemy to make the target stick — a Stop order clears an ordinary set target, this one survives it",
+          "mouseAction": "ctrl-click"
+        },
+        {
+          "id": "target-set-area-sticky",
+          "label": "Target Set Area (Sticky)",
+          "level": 2,
+          "key": "S",
+          "description": "Hold Ctrl while dragging the target circle to make the targets stick — a Stop order clears ordinary set targets, these survive it",
+          "mouseAction": "ctrl-drag"
         },
         {
           "id": "target-cancel",
@@ -1439,6 +1471,98 @@
             "Alt"
           ],
           "description": "Switch the factory between queue mode and quota mode — one press flips it"
+        },
+        {
+          "id": "factory-preset-load-1",
+          "label": "Load Queue Preset 1",
+          "level": 2,
+          "key": "1",
+          "modifiers": [
+            "Space"
+          ],
+          "learnHidden": true,
+          "description": "Load the factory's saved build queue 1"
+        },
+        {
+          "id": "factory-preset-load-2",
+          "label": "Load Queue Preset 2",
+          "level": 2,
+          "key": "2",
+          "modifiers": [
+            "Space"
+          ],
+          "learnHidden": true,
+          "description": "Load the factory's saved build queue 2"
+        },
+        {
+          "id": "factory-preset-load-3",
+          "label": "Load Queue Preset 3",
+          "level": 2,
+          "key": "3",
+          "modifiers": [
+            "Space"
+          ],
+          "learnHidden": true,
+          "description": "Load the factory's saved build queue 3"
+        },
+        {
+          "id": "factory-preset-load-range",
+          "label": "Load Queue Preset",
+          "level": 2,
+          "key": "0–9",
+          "modifiers": [
+            "Space"
+          ],
+          "displayOnly": true,
+          "description": "Hold Space to show the factory's ten preset boxes, then press that number to load the queue back in — or simply left-click the box"
+        },
+        {
+          "id": "factory-preset-save-1",
+          "label": "Save Queue Preset 1",
+          "level": 2,
+          "key": "1",
+          "modifiers": [
+            "Space",
+            "Alt"
+          ],
+          "learnHidden": true,
+          "description": "Save the selected factory's current build queue as preset 1"
+        },
+        {
+          "id": "factory-preset-save-2",
+          "label": "Save Queue Preset 2",
+          "level": 2,
+          "key": "2",
+          "modifiers": [
+            "Space",
+            "Alt"
+          ],
+          "learnHidden": true,
+          "description": "Save the selected factory's current build queue as preset 2"
+        },
+        {
+          "id": "factory-preset-save-3",
+          "label": "Save Queue Preset 3",
+          "level": 2,
+          "key": "3",
+          "modifiers": [
+            "Space",
+            "Alt"
+          ],
+          "learnHidden": true,
+          "description": "Save the selected factory's current build queue as preset 3"
+        },
+        {
+          "id": "factory-preset-save-range",
+          "label": "Save Queue Preset",
+          "level": 2,
+          "key": "0–9",
+          "modifiers": [
+            "Space",
+            "Alt"
+          ],
+          "displayOnly": true,
+          "description": "Store the factory's build queue in that box, repeat state and quota mode included — presets are kept per factory type and survive the match. Saving while the queue is empty clears the box instead"
         }
       ]
     },
