@@ -136,6 +136,10 @@ command in both. Where BAR's own label is wrong (`factoryqueuemode` is queue ↔
 repeat), cannot tell two entries apart (one label for `attack_range_inc` *and* `_dec`), or
 would collapse several trainable gestures onto one name (Attack / Attack Circle / Attack
 Line are all `attack`), the trainer keeps its own and the action id carries the link.
+Two more the rename pass got wrong and must not be "corrected" back: `buildfacing inc/dec`
+stay **Rotate Building Left / Right** — the editor's "(reverse)" never says which way it
+turns — and the 50% select stays **Split Army**, the thing players call it; the editor's
+"Select half of current selection" describes the mechanism and lands in the description.
 
 A `select` action spells out its own meaning and outranks any label: `AllMap+_Builder_Idle+
 _ClearSelection_SelectOne+` is source, filters, conclusion — every idle builder on the map,
@@ -145,7 +149,12 @@ a name on either side.
 
 **Group names live in two places.** `data/shortcuts.json` drives the reference sidebar, and
 the setup screen's checkboxes are hand-written in `index.html`. Both key off the group *id*,
-so a rename is safe for saved settings, but rename in both or the two screens disagree. `npm run check:bindings` validates every id against
+so a rename is safe for saved settings, but rename in both or the two screens disagree.
+A *new* group needs a third edit — `defaultSettings().shortcuts` in `app.js` — and one
+thought about saved settings: a stored list replaces the default whole, so the group stays
+off for everyone who has played before. That is fine for new material, but a group carved
+out of existing ones makes entries a player already had vanish; `migrateSettings()` folds
+those in, as it does for Queue / Order Modifiers out of Right-click and Builder. `npm run check:bindings` validates every id against
 BAR's own data and reports any the game does not know, or binds to a different key.
 
 

@@ -639,7 +639,7 @@
           "label": "Box Select",
           "level": 0,
           "displayOnly": true,
-          "description": "Left-drag a box — selects every unit inside it",
+          "description": "Left-drag a box — selects the units inside, though buildings are skipped when mobile units are in the box as well",
           "mouseAction": "drag"
         },
         {
@@ -648,7 +648,7 @@
           "action": "selectbox_append",
           "level": 0,
           "displayOnly": true,
-          "description": "Hold Shift while dragging the box — the units join the current selection instead of replacing it, and everything inside counts rather than just the useful units",
+          "description": "Hold Shift while dragging the box — the units join the current selection instead of replacing it, and buildings inside come along too",
           "mouseAction": "shift-drag"
         },
         {
@@ -757,14 +757,14 @@
         },
         {
           "id": "split-army",
-          "label": "Select Half of Selection",
+          "label": "Split Army",
           "action": "select PrevSelection++_ClearSelection_SelectPart_50+",
           "level": 1,
           "key": "Q",
           "modifiers": [
             "Ctrl"
           ],
-          "description": "Split the selected group into two halves"
+          "description": "Select half of the current selection — the other half is dropped, so one big group can be split in two and sent two ways"
         },
         {
           "id": "select-waiting-units",
@@ -837,30 +837,6 @@
           "mouseAction": "click-right"
         },
         {
-          "id": "queue-order",
-          "label": "Queue",
-          "level": 0,
-          "displayOnly": true,
-          "description": "Shift + right-click — appends the order instead of replacing the queue; keep Shift held to chain several",
-          "mouseAction": "shift-click-right"
-        },
-        {
-          "id": "queue-order-front",
-          "label": "Insert Next",
-          "level": 1,
-          "displayOnly": true,
-          "description": "Space + right-click — the order jumps to the front of the queue and runs next",
-          "mouseAction": "space-click-right"
-        },
-        {
-          "id": "queue-order-cheapest",
-          "label": "Insert Into Route",
-          "level": 2,
-          "displayOnly": true,
-          "description": "Shift + Space + right-click — the order is slotted into the queue wherever it costs the least extra walking, rather than at the front like Space alone or the end like Shift alone",
-          "mouseAction": "shift-space-click-right"
-        },
-        {
           "id": "move-formation",
           "label": "Move & Assume Formation",
           "level": 1,
@@ -875,6 +851,56 @@
           "displayOnly": true,
           "description": "Ctrl + right-click a point — units move there while keeping formation, travelling at the speed of the slowest unit in the selection",
           "mouseAction": "ctrl-click-right"
+        }
+      ]
+    },
+    {
+      "id": "queue",
+      "name": "Queue / Order Modifiers",
+      "context": "battle",
+      "shortcuts": [
+        {
+          "id": "queue-order",
+          "label": "Queue",
+          "level": 0,
+          "displayOnly": true,
+          "description": "Hold Shift while giving any order appends it to the queue",
+          "mouseAction": "shift-click-right"
+        },
+        {
+          "id": "queue-order-front",
+          "label": "Insert Next",
+          "level": 1,
+          "displayOnly": true,
+          "description": "Hold Space while giving any order puts it at the front of the queue",
+          "mouseAction": "space-click-right"
+        },
+        {
+          "id": "queue-order-cheapest",
+          "label": "Insert Into Route",
+          "level": 2,
+          "displayOnly": true,
+          "description": "Hold Shift and Space to slot the order into the queue where it costs the least extra walking",
+          "mouseAction": "shift-space-click-right"
+        },
+        {
+          "id": "queue-next",
+          "label": "Skip Current Command",
+          "action": "command_skip_current",
+          "level": 0,
+          "key": "N",
+          "description": "Move on to the next order — a build already started is left standing, one not yet begun is dropped"
+        },
+        {
+          "id": "queue-drop-last",
+          "label": "Cancel Last Command",
+          "action": "command_cancel_last",
+          "level": 2,
+          "key": "N",
+          "modifiers": [
+            "Ctrl"
+          ],
+          "description": "Remove the last order in the queue — the current one carries on"
         }
       ]
     },
@@ -1067,6 +1093,15 @@
           "description": "Clear all orders and stop the unit"
         },
         {
+          "id": "wait",
+          "label": "Wait",
+          "action": "wait",
+          "level": 1,
+          "key": "Y",
+          "note": "QWERTY: Y (top row), QWERTZ: Z (same physical position, Y/Z swapped)",
+          "description": "Pause the unit until further orders — one press flips it back on"
+        },
+        {
           "id": "gather-wait",
           "label": "Gather Wait",
           "action": "gatherwait",
@@ -1216,6 +1251,17 @@
           "mouseAction": "click-unit"
         },
         {
+          "id": "self-destruct",
+          "label": "Self-Destruct",
+          "action": "selfd",
+          "level": 0,
+          "key": "B",
+          "modifiers": [
+            "Ctrl"
+          ],
+          "description": "Order the unit to self-destruct"
+        },
+        {
           "id": "show-explosion-radius",
           "label": "Show Explosion Radius",
           "level": 1,
@@ -1350,7 +1396,7 @@
       "shortcuts": [
         {
           "id": "rotate-ccw",
-          "label": "Rotate Building Placement",
+          "label": "Rotate Building Left",
           "action": "buildfacing inc",
           "level": 0,
           "key": "[",
@@ -1359,7 +1405,7 @@
         },
         {
           "id": "rotate-cw",
-          "label": "Rotate Building Placement (Reverse)",
+          "label": "Rotate Building Right",
           "action": "buildfacing dec",
           "level": 0,
           "key": "]",
@@ -1396,45 +1442,6 @@
           "optionalModifiers": [
             "Shift"
           ]
-        },
-        {
-          "id": "queue-next",
-          "label": "Skip Current Command",
-          "action": "command_skip_current",
-          "level": 0,
-          "key": "N",
-          "description": "Move on to the next order — a build already started is left standing, one not yet begun is dropped"
-        },
-        {
-          "id": "queue-drop-last",
-          "label": "Cancel Last Command",
-          "action": "command_cancel_last",
-          "level": 2,
-          "key": "N",
-          "modifiers": [
-            "Ctrl"
-          ],
-          "description": "Remove the last order in the queue — the current one carries on"
-        },
-        {
-          "id": "wait",
-          "label": "Wait",
-          "action": "wait",
-          "level": 1,
-          "key": "Y",
-          "note": "QWERTY: Y (top row), QWERTZ: Z (same physical position, Y/Z swapped)",
-          "description": "Pause the unit until further orders — one press flips it back on"
-        },
-        {
-          "id": "self-destruct",
-          "label": "Self-Destruct",
-          "action": "selfd",
-          "level": 0,
-          "key": "B",
-          "modifiers": [
-            "Ctrl"
-          ],
-          "description": "Order the unit to self-destruct"
         },
         {
           "id": "restore-ground",
@@ -1505,6 +1512,17 @@
       "name": "Blueprints",
       "context": "builder",
       "shortcuts": [
+        {
+          "id": "save-blueprint",
+          "label": "Save Blueprint",
+          "action": "blueprint_create",
+          "level": 1,
+          "key": "T",
+          "modifiers": [
+            "Alt"
+          ],
+          "description": "Save the selected buildings as a blueprint — it becomes the active one, ready to place"
+        },
         {
           "id": "place-blueprint",
           "label": "Place Blueprint",

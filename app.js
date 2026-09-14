@@ -396,7 +396,7 @@ function defaultSettings() {
     keyHintTimeout: 3, // seconds before a shortcut's keys are shown
     timeLimit:    8,   // seconds per required key press
     runLength:    20,  // questions per run (0 = unlimited)
-    shortcuts:    ['general', 'move', 'groups', 'battle', 'factory', 'builder', 'blueprint', 'rezbot', 'transport', 'camera', 'pip', 'game'],
+    shortcuts:    ['general', 'move', 'queue', 'groups', 'battle', 'factory', 'builder', 'blueprint', 'rezbot', 'transport', 'camera', 'pip', 'game'],
     difficulty:      'noob',
     soundEnabled:    true,
     mouseEnabled:    true,
@@ -409,9 +409,20 @@ function defaultSettings() {
 function loadSettings() {
   try {
     const raw = localStorage.getItem(SETTINGS_KEY)
-    if (raw) return { ...defaultSettings(), ...JSON.parse(raw) }
+    if (raw) return migrateSettings({ ...defaultSettings(), ...JSON.parse(raw) })
   } catch {}
   return defaultSettings()
+}
+
+// A stored `shortcuts` list replaces the default wholesale, so a group that did not exist
+// when it was saved stays off. That is harmless for a brand new group, but Order Modifiers
+// was carved out of Right-click and Builder — leaving it out would make five entries a
+// returning player already had disappear. Enable it for anyone who had either source on.
+function migrateSettings(s) {
+  const groups = s.shortcuts ?? []
+  if (!groups.includes('queue') && (groups.includes('move') || groups.includes('builder')))
+    s.shortcuts = [...groups, 'queue']
+  return s
 }
 
 function saveSettings(s) {
