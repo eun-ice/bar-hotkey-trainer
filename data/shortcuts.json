@@ -671,7 +671,7 @@
           "level": 1,
           "displayOnly": true,
           "key": "Z",
-          "description": "Hold Z while dragging the box — only units of the type already selected are picked up",
+          "description": "Hold the key while dragging the box — only units of the type already selected are picked up",
           "mouseAction": "drag"
         },
         {
@@ -873,7 +873,7 @@
           "label": "Attack",
           "level": 0,
           "key": "A",
-          "description": "Press A, then click an enemy to attack it",
+          "description": "Press the key, then click an enemy to attack it",
           "mouseAction": "click"
         },
         {
@@ -908,7 +908,7 @@
           "label": "Remove Attack Orders in Area",
           "level": 2,
           "key": "A",
-          "description": "Press A, then hold Ctrl while dragging a circle to strip the queued attack orders inside it — Ctrl on the key instead (Ctrl+A) is the area attack, so let go of it before dragging",
+          "description": "Press the key, then hold Ctrl while dragging a circle to strip the queued attack orders inside it — holding Ctrl while pressing the key instead is the area attack, so let go of it before dragging",
           "mouseAction": "ctrl-drag"
         },
         {
@@ -916,7 +916,7 @@
           "label": "Target Set",
           "level": 1,
           "key": "S",
-          "description": "Press S, then click an enemy to set it as the priority attack target",
+          "description": "Press the key, then click an enemy to set it as the priority attack target",
           "mouseAction": "click"
         },
         {
@@ -1174,7 +1174,7 @@
           "modifiers": [
             "Space"
           ],
-          "description": "Hold Space and press X to preview a unit's explosion radius"
+          "description": "Hold Space and press the key to preview a unit's explosion radius"
         }
       ]
     },
