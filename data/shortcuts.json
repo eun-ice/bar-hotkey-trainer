@@ -3,6 +3,7 @@
   "note": "Key values match browser event.key (uppercase letters, special keys by name).",
   "note_zy": "Z and Y are always treated as equivalent — handles QWERTY/QWERTZ confusion.",
   "note_colon": "Position uses ':' — on QWERTY: Shift+; — on QWERTZ: Shift+. — both produce event.key ':' so no special handling needed.",
+  "note_reclaim_space": "Space + drag reclaim (engine META_KEY) is meant to reclaim enemy units in the area: the Area Reclaim Enemy widget (layer 0) handles it when enemies are in the radius and the center is ground or a unit, and only otherwise does the command insert widget (layer 5) turn it into a plain queue-front insert. Reported as not working in game on 2026-09-15, cause unconfirmed, so it is deliberately not listed as a shortcut.",
   "unitLevels": {
     "0": [
       "armaap",
@@ -1040,8 +1041,17 @@
           "action": "fight",
           "level": 1,
           "key": "F",
-          "description": "Drag to deploy units along a line that fight-moves",
+          "description": "Left-drag a line to spread the selection along it, sorted into a battle line with artillery and unarmed units at the back",
           "mouseAction": "drag-line"
+        },
+        {
+          "id": "fight-path",
+          "label": "Fight Path",
+          "action": "fight",
+          "level": 1,
+          "key": "F",
+          "description": "Right-drag a freehand line to fight-move the selection along it exactly as drawn, without the sorting a left-drag does",
+          "mouseAction": "right-drag-line"
         },
         {
           "id": "patrol",
@@ -1293,7 +1303,7 @@
           "action": "reclaim",
           "level": 1,
           "key": "E",
-          "description": "Drag a circle to reclaim all wrecks and features in the area",
+          "description": "Drag a circle to reclaim the area: centered on a wreck or rock it takes only metal, on a tree only energy, on bare ground everything",
           "mouseAction": "drag"
         },
         {
@@ -1302,16 +1312,16 @@
           "action": "reclaim",
           "level": 2,
           "key": "E",
-          "description": "Hold Alt while dragging the reclaim circle: centered on a unit wreck it takes only wrecks of that type, centered on metal only metal, centered on energy only energy",
+          "description": "Hold Alt while dragging the reclaim circle: centered on a unit or wreck it takes only that type, over bare ground it keeps reclaiming metal and energy as a repeat order",
           "mouseAction": "alt-drag"
         },
         {
           "id": "reclaim-area-tech",
-          "label": "Reclaim Area by Tech Level",
+          "label": "Reclaim Area, Metal First",
           "action": "reclaim",
           "level": 2,
           "key": "E",
-          "description": "Hold Ctrl while dragging the reclaim circle: centered on a unit wreck it takes only wrecks of the same tech level, centered on metal only metal, centered on energy only energy",
+          "description": "Hold Ctrl while dragging the reclaim circle: over bare ground metal first and energy last, centered on a unit every unit of that side in the area, centered on a wreck only its tech level",
           "mouseAction": "ctrl-drag"
         },
         {
@@ -1370,22 +1380,22 @@
         },
         {
           "id": "repair-reclaim-area-rezbot",
-          "label": "Repair & Reclaim Area",
+          "label": "Repair & Reclaim Line",
           "action": "fight",
           "level": 1,
           "key": "F",
           "displayOnly": true,
-          "description": "Drag a circle to order builders to repair all friendlies and reclaim all wrecks in the area",
-          "mouseAction": "drag"
+          "description": "Right-drag a line for builders to follow, repairing friendlies and reclaiming wrecks along the way",
+          "mouseAction": "right-drag-line"
         },
         {
           "id": "fight-rez-area",
-          "label": "Repair & Resurrect Area",
+          "label": "Repair & Resurrect Line",
           "action": "fight",
           "level": 2,
           "key": "F",
-          "mouseAction": "alt-drag",
-          "description": "Hold Alt while dragging the Fight area to repair friendly units and resurrect wrecks within the circle"
+          "mouseAction": "alt-right-drag-line",
+          "description": "Hold Alt while right-dragging the line: builders repair friendlies and resurrect wrecks along it, reclaiming only what cannot be resurrected"
         }
       ]
     },
@@ -1454,12 +1464,12 @@
         },
         {
           "id": "repair-reclaim-area",
-          "label": "Repair & Reclaim Area",
+          "label": "Repair & Reclaim Line",
           "action": "fight",
           "level": 1,
           "key": "F",
-          "description": "Drag a circle to order builders to repair all friendlies and reclaim all wrecks in the area",
-          "mouseAction": "drag"
+          "description": "Right-drag a line for builders to follow, repairing friendlies and reclaiming wrecks along the way",
+          "mouseAction": "right-drag-line"
         },
         {
           "id": "area-mex",

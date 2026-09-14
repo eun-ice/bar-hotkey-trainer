@@ -3,7 +3,7 @@ import {
   slotPicksUnit,
   // Version query kept in step with the one on this file in index.html — a module import
   // is cached on its own, so a stale logic.js would otherwise outlive an app.js update.
-} from './logic.js?v=120'
+} from './logic.js?v=121'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -2667,6 +2667,7 @@ const MOUSE_ACTION_LABELS = {
   'click-right':             'Right-click',
   'drag-line':               'Drag a line',
   'right-drag-line':         'Right-drag a line',
+  'alt-right-drag-line':     'Hold Alt · Right-drag a line',
   'shift-click-right':       'Shift + Right-click (queue)',
   'space-click-right':       'Space + Right-click (instant)',
   'alt-click-right':         'Alt + Right-click',
@@ -2844,10 +2845,10 @@ function initMouseZone() {
     const isDrag    = dist >= DRAG_MIN_PX
     const isClick   = !isDrag
 
-    // Which button the gesture wants. Fight Line and Attack Line are right-drags, and a
-    // left-button gesture must not pass for one — that difference is the whole point.
-    const wantRight = rawAction === 'click-right'
-      || rawAction.startsWith('right-') || rawAction.endsWith('-click-right')
+    // Which button the gesture wants. Attack Line and Fight Path are right-drags, Fight
+    // Line a left-drag, and one button must not pass for the other — that difference is
+    // the whole point.
+    const wantRight = mouseActionWantsRight(rawAction)
     if (wantRight !== (dragButton === 'right')) {
       if (isClick || isDrag) {
         questionHadWrong = true
@@ -2858,8 +2859,25 @@ function initMouseZone() {
 
     // Line orders are drawn along a line rather than over an area, but as a gesture they
     // are simply a drag — direction and length carry meaning in game, not on this pad.
+    // A modifier still turns one line order into another (Alt on a builder's Fight line
+    // resurrects instead of reclaiming), so the ones the order asks for must be held.
     if (isLineDrag(rawAction)) {
-      if (isDrag) handleMouseComplete(false)
+      if (!isDrag) return
+      const held = [
+        effectiveAlt(e)    ? 'Alt'   : null,
+        e?.ctrlKey         ? 'Ctrl'  : null,
+        e?.shiftKey        ? 'Shift' : null,
+        mouseZoneSpaceHeld ? 'Space' : null,
+      ].filter(Boolean)
+      const missing = mouseActionMods(rawAction).filter(mod => !held.includes(mod))
+      if (missing.length) {
+        questionHadWrong = true
+        setInstruction(
+          `Hold <kbd>${missing.join('</kbd>+<kbd>')}</kbd>${macSwapNote(missing)} while dragging!`,
+          'state-wrong')
+        return
+      }
+      handleMouseComplete(false)
       return
     }
 
@@ -3909,6 +3927,12 @@ function mouseActionMods(mouseAction) {
   return Object.values(MOUSE_MOD_NAMES).filter(mod => wanted.has(mod))
 }
 
+// Which button a mouseAction wants. The right button sits at either end — `right-drag-line`,
+// `click-right` — or behind a modifier, as in `alt-right-drag-line`; anything else is left.
+function mouseActionWantsRight(mouseAction) {
+  return /(^|-)right(-|$)/.test(mouseAction ?? '')
+}
+
 /** The keys a `0–9` or `F1–F4` range stands for; anything else is just itself. */
 function scExpandRange(key) {
   const range = String(key ?? '').match(/^(F?)(\d)–F?(\d)$/)
@@ -3943,7 +3967,7 @@ function scIsDrilled(shortcut, group) {
 function formatMouseAction(mouseAction) {
   if (!mouseAction) return ''
 
-  const isRight  = mouseAction === 'click-right' || mouseAction.startsWith('right-') || mouseAction.endsWith('-click-right')
+  const isRight  = mouseActionWantsRight(mouseAction)
   const isMiddle = mouseAction.includes('middle')
   const isDouble = mouseAction.includes('double')
   const isLine   = mouseAction.includes('line')
@@ -4069,8 +4093,7 @@ function scComboFromEvent(e, spaceHeld) {
 // Does a shortcut's declared mouseAction match the gesture the user performed on the pad?
 // Line-vs-circle drags are indistinguishable by gesture, so both satisfy a drag.
 function scGestureMatches(mouseAction, gesture) {
-  const wantRight = mouseAction === 'click-right'
-    || mouseAction.startsWith('right-') || mouseAction.endsWith('-click-right')
+  const wantRight = mouseActionWantsRight(mouseAction)
   const wantDrag = mouseAction.includes('drag')
   const wantMods = mouseActionMods(mouseAction)
   if (wantRight !== (gesture.button === 'right')) return false
