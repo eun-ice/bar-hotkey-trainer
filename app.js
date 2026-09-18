@@ -3,7 +3,7 @@ import {
   slotPicksUnit,
   // Version query kept in step with the one on this file in index.html — a module import
   // is cached on its own, so a stale logic.js would otherwise outlive an app.js update.
-} from './logic.js?v=122'
+} from './logic.js?v=129'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -696,6 +696,7 @@ function shortcutQueueItem(group, shortcut) {
     type:            'shortcut',
     id:              shortcut.id,
     label:           shortcut.label,
+    action:          shortcut.action,   // for the command's cursor icon on the card and the pad
     description:     shortcut.description ?? '',
     context:         shortcut.contextOverride ?? group.context,
     seqKeys,
@@ -1212,7 +1213,7 @@ function renderShortcutQuestion(entry) {
   // Target card — show shortcut info, hide costs/icon via inline style (reliable)
   document.querySelector('#screen-training .target-card').classList.add('shortcut-target')
   $('build-action-label').textContent = 'Command:'
-  $('target-name').textContent = entry.label
+  $('target-name').innerHTML = commandIconHtml(entry.action, 'cmd-icon-large') + entry.label
   const descEl = $('target-description')
   descEl.textContent = entry.description || ''
   descEl.classList.remove('hidden')
@@ -2698,7 +2699,17 @@ function updateMouseZonePendingLabel() {
   const labelEl = $('mouse-zone-label')
   if (!labelEl) return
   const verdeckt = currentEntry?.type === 'shortcut' && !shortcutKeyVisible
-  labelEl.textContent = verdeckt ? '?' : (MOUSE_ACTION_LABELS[currentMouseAction] || '')
+  labelEl.textContent = verdeckt ? '?' : mouseActionLabel(currentMouseAction)
+  setMouseZoneCommandIcon(currentEntry?.action)
+}
+
+/** The command's cursor icon next to the pad label; hidden for builds and unknown commands. */
+function setMouseZoneCommandIcon(action) {
+  const cmdEl = $('mouse-zone-cmd')
+  if (!cmdEl) return
+  const icon = COMMAND_ICONS[action]
+  cmdEl.src = icon ? `data/commands/${icon}.webp` : ''
+  cmdEl.style.display = icon ? '' : 'none'
 }
 
 function activateMouseZone(action) {
@@ -2710,28 +2721,46 @@ function activateMouseZone(action) {
   zone.classList.add('mouse-zone-active')
 
   const needsUnitTarget = action === 'click-unit' || action === 'click-unit-or-drag'
+  const origins  = mouseActionOrigins(action)
+  // Either of two origins is right; the pad shows one of them and asks for that one
+  const origin   = origins.length ? origins[Math.floor(Math.random() * origins.length)] : null
   const targetEl = $('mouse-zone-target')
 
-  if (needsUnitTarget && targetEl) {
+  if ((needsUnitTarget || origin) && targetEl) {
     const pos = MOUSE_TARGET_POSITIONS[Math.floor(Math.random() * MOUSE_TARGET_POSITIONS.length)]
     targetEl.style.left    = `${pos.x}px`
     targetEl.style.top     = `${pos.y}px`
     targetEl.style.display = 'flex'
+    // A bare-ground drag still gets something on the pad — a wreck to start *away* from —
+    // or the question would be indistinguishable from a plain drag. Drawn dimmer as a decoy.
+    const isDecoy  = origin === 'ground'
+    const tileKind = isDecoy ? 'wreck' : origin
+    targetEl.classList.toggle('mouse-zone-target-decoy', isDecoy)
     const iconEl = $('mouse-zone-target-icon')
-    if (iconEl) iconEl.src = currentEntry?.contextIcon || unitIconSrc(currentEntry?.contextUnitId) || ''
+    const capEl  = $('mouse-zone-target-cap')
+    if (iconEl) {
+      iconEl.src = needsUnitTarget
+        ? currentEntry?.contextIcon || unitIconSrc(currentEntry?.contextUnitId) || ''
+        : tileKind === 'unit'
+          ? unitIconSrc(MOUSE_ORIGIN_UNIT_POOL[Math.floor(Math.random() * MOUSE_ORIGIN_UNIT_POOL.length)])
+          : MOUSE_ORIGIN_TILES[tileKind].src
+    }
+    if (capEl) capEl.textContent = !origin ? '' : isDecoy ? 'not here' : 'start here'
   } else if (targetEl) {
     targetEl.style.display = 'none'
   }
 
   const labelEl = $('mouse-zone-label')
-  const labelText = MOUSE_ACTION_LABELS[action] || ''
+  const labelText = mouseActionLabel(action)
   if (labelEl) labelEl.textContent = labelText
+  setMouseZoneCommandIcon(currentEntry?.action)
 
-  const instrHtml = action === 'alt-drag'
-    ? `Hold <kbd>Alt</kbd>${macSwapNote(['alt'])} · Drag area`
-    : action === 'ctrl-drag'
-      ? 'Hold <kbd>Ctrl</kbd> · Drag area'
-      : (labelText || 'Click to place')
+  // A modifier drag names its keys on the pad — one or several, `ctrl-shift-space-drag`
+  // reads "Hold Ctrl+Shift+Space · Drag area" — with the Cmd note when Alt is among them
+  const padMods   = mouseActionMods(action)
+  const instrHtml = padMods.length && /-drag$/.test(mouseActionBase(action))
+    ? `Hold <kbd>${padMods.join('</kbd>+<kbd>')}</kbd>${macSwapNote(padMods)} · Drag area`
+    : (labelText || 'Click to place')
   setInstruction(instrHtml, 'state-correct')
 
   // Give a fresh timer window for the mouse phase so leftover keyboard time doesn't cut it short
@@ -2785,7 +2814,8 @@ function initMouseZone() {
   let dragOrigin  = null    // { x, y } zone-local px, set on mousedown
   let dragButton  = 'left'  // Attack Line is a *right* drag — the button is part of the answer
 
-  const AREA_DRAGS = ['drag', 'alt-drag', 'ctrl-drag', 'space-drag', 'click-or-drag', 'click-unit-or-drag']
+  const AREA_DRAGS = ['drag', 'click-or-drag', 'click-unit-or-drag']
+  const isAreaDrag = action => AREA_DRAGS.includes(action) || MOUSE_MOD_DRAG_RE.test(action ?? '')
   const isLineDrag = action => (action ?? '').includes('line')
 
   // Without this the browser menu swallows every right-button gesture, so Attack Line
@@ -2802,8 +2832,8 @@ function initMouseZone() {
 
   zone.addEventListener('mousemove', e => {
     if (!dragOrigin || trainingState !== State.WAITING_MOUSE) return
-    const action = currentMouseAction
-    if (!AREA_DRAGS.includes(action) && !isLineDrag(action)) return
+    const action = mouseActionBase(currentMouseAction)
+    if (!isAreaDrag(action) && !isLineDrag(action)) return
 
     const rect = zone.getBoundingClientRect()
     const mx   = e.clientX - rect.left
@@ -2857,19 +2887,34 @@ function initMouseZone() {
       return
     }
 
+    // Where the circle was begun. The game decides the order by what sits under the cursor
+    // at that moment, so a drag that starts on the wrong thing is a different command.
+    const startOn = mouseActionOrigins(rawAction)
+    if (startOn.length && isDrag) {
+      const targetEl = $('mouse-zone-target')
+      const shown    = targetEl && targetEl.style.display !== 'none'
+      const onTarget = shown && Math.hypot(
+        origin.x - parseFloat(targetEl.style.left), origin.y - parseFloat(targetEl.style.top)) <= 32
+      const wantsGround = startOn.includes('ground')
+      if (!wantsGround && !onTarget) {
+        questionHadWrong = true
+        setInstruction(`Start the drag on <strong>${mouseOriginPhrase(startOn)}</strong>!`, 'state-wrong')
+        return
+      }
+      if (wantsGround && onTarget) {
+        questionHadWrong = true
+        setInstruction('Start the drag on <strong>bare ground</strong>, not on the wreck!', 'state-wrong')
+        return
+      }
+    }
+
     // Line orders are drawn along a line rather than over an area, but as a gesture they
     // are simply a drag — direction and length carry meaning in game, not on this pad.
     // A modifier still turns one line order into another (Alt on a builder's Fight line
     // resurrects instead of reclaiming), so the ones the order asks for must be held.
     if (isLineDrag(rawAction)) {
       if (!isDrag) return
-      const held = [
-        effectiveAlt(e)    ? 'Alt'   : null,
-        e?.ctrlKey         ? 'Ctrl'  : null,
-        e?.shiftKey        ? 'Shift' : null,
-        mouseZoneSpaceHeld ? 'Space' : null,
-      ].filter(Boolean)
-      const missing = mouseActionMods(rawAction).filter(mod => !held.includes(mod))
+      const missing = mouseActionMods(rawAction).filter(mod => !heldMouseMods(e).includes(mod))
       if (missing.length) {
         questionHadWrong = true
         setInstruction(
@@ -2883,7 +2928,7 @@ function initMouseZone() {
 
     // The button is settled, so a right-button order judges like its left-button twin:
     // shift-click-right asks the same of the gesture as shift-click does.
-    const action = rawAction.replace(/^right-/, '').replace(/-right$/, '')
+    const action = mouseActionBase(rawAction).replace(/^right-/, '').replace(/-right$/, '')
 
     // A modifier turns one command into another: Shift+click queues the build instead of
     // placing it, Alt+drag reclaims by type instead of everything. The branches below
@@ -2913,54 +2958,22 @@ function initMouseZone() {
 
     if (action === 'drag') {
       if (isDrag) handleMouseComplete(false)
-    } else if (action === 'alt-drag') {
-      if (!isDrag) return
-      if (!effectiveAlt(e)) {
+    } else if (MOUSE_MOD_GESTURE_RE.test(action)) {
+      // Every modifier gesture — `ctrl-drag`, `shift-click`, `ctrl-shift-space-drag` — is
+      // judged alike: the right kind of gesture, with each modifier the action names held
+      // down. Extra modifiers pass, as they always have.
+      const wantsDrag = action.endsWith('drag')
+      if (wantsDrag ? !isDrag : !isClick) return
+      const held    = heldMouseMods(e)
+      const missing = mouseActionMods(action).filter(mod => !held.includes(mod))
+      if (missing.length) {
         questionHadWrong = true
-        setInstruction(`Hold <kbd>Alt</kbd>${macSwapNote(['alt'])} while dragging!`, 'state-wrong')
+        setInstruction(
+          `Hold <kbd>${missing.join('</kbd>+<kbd>')}</kbd>${macSwapNote(missing)} while ${wantsDrag ? 'dragging' : 'clicking'}!`,
+          'state-wrong')
         return
       }
-      handleMouseComplete(false)
-    } else if (action === 'ctrl-drag') {
-      if (!isDrag) return
-      if (!e?.ctrlKey) {
-        questionHadWrong = true
-        setInstruction('Hold <kbd>Ctrl</kbd> while dragging!', 'state-wrong')
-        return
-      }
-      handleMouseComplete(false)
-    } else if (action === 'space-drag') {
-      if (!isDrag) return
-      if (!mouseZoneSpaceHeld) {
-        questionHadWrong = true
-        setInstruction('Hold <kbd>Space</kbd> while dragging!', 'state-wrong')
-        return
-      }
-      handleMouseComplete(false)
-    } else if (action === 'ctrl-click') {
-      if (!isClick) return
-      if (!e?.ctrlKey) {
-        questionHadWrong = true
-        setInstruction('Hold <kbd>Ctrl</kbd> while clicking!', 'state-wrong')
-        return
-      }
-      handleMouseComplete(true)
-    } else if (action === 'shift-click') {
-      if (!isClick) return
-      if (!e.shiftKey) {
-        questionHadWrong = true
-        setInstruction('Hold <kbd>Shift</kbd> while clicking!', 'state-wrong')
-        return
-      }
-      handleMouseComplete(true)
-    } else if (action === 'space-click') {
-      if (!isClick) return
-      if (!mouseZoneSpaceHeld) {
-        questionHadWrong = true
-        setInstruction('Hold <kbd>Space</kbd> while clicking!', 'state-wrong')
-        return
-      }
-      handleMouseComplete(true)
+      handleMouseComplete(!wantsDrag)
     } else if (action === 'click') {
       if (isClick) handleMouseComplete(true)
     } else if (action === 'click-unit') {
@@ -3926,6 +3939,11 @@ const SC_SEQ_TIMEOUT_MS = 2000
 // both Shift and Space. Returned in the same order the pad pushes the keys it sees held,
 // so the two lists compare as they are.
 const MOUSE_MOD_NAMES = { ctrl: 'Ctrl', shift: 'Shift', alt: 'Alt', space: 'Space' }
+// A gesture with at least one modifier in front, once the button and origin are stripped:
+// `ctrl-drag`, `shift-click`, `ctrl-shift-space-drag`. The drag-only form is what the pad
+// draws a circle for.
+const MOUSE_MOD_GESTURE_RE = /^((ctrl|shift|alt|space)-)+(drag|click)$/
+const MOUSE_MOD_DRAG_RE    = /^((ctrl|shift|alt|space)-)+drag$/
 
 function mouseActionMods(mouseAction) {
   const wanted = new Set()
@@ -3935,10 +3953,106 @@ function mouseActionMods(mouseAction) {
   return Object.values(MOUSE_MOD_NAMES).filter(mod => wanted.has(mod))
 }
 
+/** The modifiers down at a mouse event, in the same order `mouseActionMods` uses. */
+function heldMouseMods(event) {
+  return [
+    event?.ctrlKey       ? 'Ctrl'  : null,
+    event?.shiftKey      ? 'Shift' : null,
+    effectiveAlt(event)  ? 'Alt'   : null,
+    mouseZoneSpaceHeld   ? 'Space' : null,
+  ].filter(Boolean)
+}
+
+/**
+ * A label for a modifier gesture the table does not spell out: `ctrl-shift-space-drag`
+ * reads "Hold Ctrl+Shift+Space · Drag area" rather than nothing at all.
+ */
+function modGestureLabel(baseAction) {
+  if (!MOUSE_MOD_GESTURE_RE.test(baseAction ?? '')) return ''
+  const mods = mouseActionMods(baseAction).join('+')
+  return baseAction.endsWith('drag') ? `Hold ${mods} · Drag area` : `${mods} + Click`
+}
+
 // Which button a mouseAction wants. The right button sits at either end — `right-drag-line`,
 // `click-right` — or behind a modifier, as in `alt-right-drag-line`; anything else is left.
 function mouseActionWantsRight(mouseAction) {
   return /(^|-)right(-|$)/.test(mouseAction ?? '')
+}
+
+// Where an area drag has to *start*. The game reads what sits under the cursor when the
+// circle is begun — a wreck, a rock, a unit, bare ground — and hands out a different order
+// for each, so the start point is part of the answer. Encoded as a trailing `-on-<origin>`:
+// `ctrl-drag-on-wreck`. Without a suffix the origin is not judged. Two origins the game
+// treats alike join with `+`: `drag-on-wreck+metal` — the pad asks for either one.
+const MOUSE_ORIGIN_RE = /-on-((?:ground|unit|wreck|metal|energy)(?:\+(?:ground|unit|wreck|metal|energy))*)$/
+const MOUSE_ORIGIN_NAMES = {
+  ground: 'bare ground', unit: 'a unit', wreck: 'a wreck', metal: 'a metal rock', energy: 'a tree',
+}
+// One picture per origin — the thing the drag has to start on, as it looks in game: a
+// unit buildpic, or a photo of the feature (data/origins, hand-made). The reference row
+// shows it as a small tile tucked half under the mouse icon's area circle, the same way
+// the official command infographics do; the pad shows it large as the target.
+const MOUSE_ORIGIN_TILES = {
+  unit:   { src: 'data/icons/corraid.webp',  label: 'Unit'   },
+  wreck:  { src: 'data/origins/wreck.webp',  label: 'Wreck'  },
+  metal:  { src: 'data/origins/metal.webp',  label: 'Metal'  },
+  energy: { src: 'data/origins/energy.webp', label: 'Energy' },
+  ground: { src: 'data/origins/ground.webp', label: 'Ground' },
+}
+// The pad draws one of these as the unit to start on. It used to reuse the selected
+// builder, and a Rezbot told to reclaim a Rezbot reads wrong.
+const MOUSE_ORIGIN_UNIT_POOL = ['corraid', 'armstump', 'armpw', 'corak', 'armflash']
+
+// The in-game cursor of a command, first frame only — the symbols the official
+// infographics use, so a row says at a glance which order it is about. Generated from the
+// BAR repo by extract-data.js into data/commands.
+const COMMAND_ICONS = {
+  reclaim: 'reclaim', repair: 'repair', resurrect: 'resurrect',
+  attack: 'attack', areaattack: 'attack', fight: 'fight', capture: 'capture',
+  settarget: 'settarget', settargetnoground: 'settarget', canceltarget: 'settarget',
+  loadunits: 'load', unloadunits: 'unload',
+  move: 'move', patrol: 'patrol', guard: 'guard', wait: 'wait', gatherwait: 'gather',
+  manualfire: 'manualfire', selfd: 'selfd', areamex: 'areamex', restore: 'restore', repeat: 'repeat',
+}
+
+/** A toggle's states carry the action (`repeat 1`); the first word names the command. */
+function commandIconHtml(action, cls = 'sc-cmd-icon') {
+  const icon = COMMAND_ICONS[String(action ?? '').split(' ')[0]]
+  return icon ? `<img class="${cls}" src="data/commands/${icon}.webp" alt="" loading="lazy">` : ''
+}
+
+/** Where the drag may start: `[]` when the origin is not judged, else one or more origins. */
+function mouseActionOrigins(mouseAction) {
+  const match = MOUSE_ORIGIN_RE.exec(mouseAction ?? '')
+  return match ? match[1].split('+') : []
+}
+
+/** The names of the origins as one phrase: "a wreck or a metal rock". */
+function mouseOriginPhrase(origins) {
+  return origins.map(origin => MOUSE_ORIGIN_NAMES[origin]).join(' or ')
+}
+
+/** The gesture without its origin suffix — what the button and modifier checks judge. */
+function mouseActionBase(mouseAction) {
+  return (mouseAction ?? '').replace(MOUSE_ORIGIN_RE, '')
+}
+
+function mouseActionLabel(mouseAction) {
+  const baseAction = mouseActionBase(mouseAction)
+  const base = MOUSE_ACTION_LABELS[baseAction] || modGestureLabel(baseAction)
+  const origins = mouseActionOrigins(mouseAction)
+  return origins.length ? `${base} · start on ${mouseOriginPhrase(origins)}` : base
+}
+
+function originTileHtml(origins) {
+  const tiles = origins.map(origin => MOUSE_ORIGIN_TILES[origin]).filter(Boolean)
+  if (!tiles.length) return ''
+  // Two origins share one tile, split along the diagonal like the infographics' "Ally / Enemy"
+  const pics = tiles.map((tile, index) =>
+    `<img src="${tile.src}" alt="" loading="lazy"${index ? ' class="sc-origin-second"' : ''}>`).join('')
+  const split = tiles.length > 1 ? ' sc-origin-tile-split' : ''
+  return `<span class="sc-origin-tile${split}"><span class="sc-origin-pic">${pics}</span><span class="sc-origin-cap">${
+    tiles.map(tile => tile.label).join(' / ')}</span></span>`
 }
 
 /** The keys a `0–9` or `F1–F4` range stands for; anything else is just itself. */
@@ -4016,11 +4130,15 @@ function formatMouseAction(mouseAction) {
   } else {
     // Area drag: circle on the right side of mouse, sticking out past its right edge.
     // sc-mouse-bg masks the portion of the circle that sits behind the mouse body.
+    // With an origin, the tile of the thing the drag starts on follows, and the circle
+    // reaches half over it — the drag begins on that thing.
+    const origins = mouseActionOrigins(mouseAction)
     svg = `<svg class="sc-mouse-svg" viewBox="0 0 25 20" height="22" aria-hidden="true">
-      <circle cx="17" cy="10" r="7" fill="rgba(220,155,30,.07)" stroke="rgba(220,155,30,.55)" stroke-width="1.3" stroke-dasharray="2.5,2"/>
+      <circle cx="17" cy="10" r="7" fill="rgba(220,155,30,.07)" stroke="rgba(220,155,30,${origins.length ? '.9' : '.55'})" stroke-width="1.3" stroke-dasharray="2.5,2"/>
       <rect class="sc-mouse-bg" x=".75" y=".75" width="12.5" height="18.5" rx="5.5"/>
       ${mouseBody(button)}
     </svg>`
+    if (origins.length) svg = `<span class="sc-drag-origin">${svg}${originTileHtml(origins)}</span>`
   }
 
   const modKbd = mods.map(mod => `<kbd>${mod}</kbd><span class="sc-mouse-plus">+</span>`).join('')
@@ -4343,7 +4461,14 @@ function initShortcutsScreen() {
     // must never drag the view somewhere else — see the scFlash call below, which refuses
     // the category switch for it. Prevent the default here rather than further down, so
     // the page does not scroll away under the tap even when nothing matches.
-    if (e.key === ' ') { scSpaceHeld = true; e.preventDefault() }
+    if (e.key === ' ') {
+      scSpaceHeld = true
+      e.preventDefault()
+      // While a key waits for its gesture, Space is a modifier for that gesture — Split
+      // Attack, Reclaim Enemies in Area — not a tap on the Space commands, so the pad
+      // stays armed instead of ticking off Build Split and disarming.
+      if (scArmed !== null) return
+    }
     const combo = scComboFromEvent(e, e.key === ' ' ? false : scSpaceHeld)
 
     // Try extending the buffered sequence (Z then Z = Area MEX); if that leads
@@ -4471,6 +4596,9 @@ function initKeyLog() {
 // converted by extract-data.js. Three variants of the same board: plain, Ctrl held,
 // Alt held. Loaded only when the panel is opened — together they are ~700 KB.
 const KEYBIND_CHART_SRC = 'https://github.com/beyond-all-reason/Beyond-All-Reason/blob/master/luaui/images/keybinds'
+// The command infographics under data/guides — hand-placed, not from the repo. They show
+// the area-command modifiers with pictures of what the drag has to start on.
+const GUIDE_CHARTS = new Set(['area-filters', 'reclaim'])
 
 function initVisualReference() {
   const item = $('sc-visual-item')
@@ -4479,9 +4607,14 @@ function initVisualReference() {
 
   let geladen = false
   const show = chart => {
-    $('sc-visual-img').src = `data/keybinds/${chart}.webp`
-    $('sc-visual-link').href =
+    const isGuide = GUIDE_CHARTS.has(chart)
+    const src = isGuide ? `data/guides/${chart}.webp` : `data/keybinds/${chart}.webp`
+    $('sc-visual-img').src = src
+    // Keyboard charts link to their source in the repo; a guide opens full size instead
+    $('sc-visual-link').href = isGuide ? src :
       `${KEYBIND_CHART_SRC}/${chart === 'grid' ? 'grid_keys' : 'grid_keys_' + chart.slice(5).toUpperCase()}.png`
+    $('sc-visual-note-keys').classList.toggle('hidden', isGuide)
+    $('sc-visual-note-guides').classList.toggle('hidden', !isGuide)
     for (const tab of $('sc-visual-tabs').querySelectorAll('.sc-visual-tab'))
       tab.classList.toggle('active', tab.dataset.chart === chart)
   }
@@ -4539,7 +4672,7 @@ function selectShortcutsGroup(id) {
     // Commander is the honest fallback, not a guess: `buildShortcutQueue` skips the level
     // check entirely once the threshold is Infinity, so a shortcut with no level — or one
     // above 1 — is reachable on Commander and nowhere else. Do not "fix" this to blank.
-    const lvlBadge = !scIsDrilled(sc, group) ? ''
+    const lvlBadge = !scIsDrilled(sc, group) ? '<span class="sc-lvl sc-lvl-ref">Reference</span>'
       : sc.level === 0 ? '<span class="sc-lvl sc-lvl-0">Noob</span>'
       : sc.level === 1 ? '<span class="sc-lvl sc-lvl-1">Mid</span>'
       : '<span class="sc-lvl sc-lvl-cmd">Commander</span>'
@@ -4550,8 +4683,8 @@ function selectShortcutsGroup(id) {
     return `
       <tr data-sc-id="${sc.id}"${checked ? ` class="${checked.trim()}"` : ''}>
         <td class="sc-check-col"><span class="sc-check">✓</span></td>
-        <td class="sc-action"><span class="sc-label">${sc.label}</span>${desc}</td>
-        <td class="sc-key">${formatShortcutKey(sc, isQwertz)}${formatMouseAction(sc.mouseAction)}${reserved}</td>
+        <td class="sc-action"><span class="sc-label">${commandIconHtml(sc.action ?? sc.states?.[0]?.action)}${sc.label}</span>${desc}</td>
+        <td class="sc-key"><span class="sc-key-row"><span class="sc-key-keys">${formatShortcutKey(sc, isQwertz)}</span>${formatMouseAction(sc.mouseAction)}</span>${reserved}</td>
         ${anyLevel ? `<td class="sc-level">${lvlBadge}</td>` : ''}
       </tr>`
   }).join('')

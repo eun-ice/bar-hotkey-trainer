@@ -21,6 +21,7 @@ import { mkdirSync, writeFileSync, readFileSync, existsSync, unlinkSync, statSyn
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { barSource } from './bar-source.js'
+import { COMMAND_CURSORS, commandIconArgs } from './command-cursors.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 // bar-data/ by default, or a full game checkout when BAR_REPO names one — see bar-source.js.
@@ -33,6 +34,7 @@ const KEYBIND_CHARTS = {
   'grid_keys_CTRL.png': 'grid-ctrl.webp',
   'grid_keys_ALT.png':  'grid-alt.webp',
 }
+
 
 const RAW = 'https://raw.githubusercontent.com/beyond-all-reason/Beyond-All-Reason/master'
 const API = 'https://api.github.com/repos/beyond-all-reason/Beyond-All-Reason'
@@ -684,6 +686,34 @@ function convertKeybindCharts() {
   }
 }
 
+/**
+ * The command icons, 80px cursor PNGs in the repo, as 64px webp under data/commands. Shown
+ * at 18–26px, so 64px covers a 2× display without carrying the frame's padding around.
+ */
+function convertCommandCursors() {
+  const magick = findMagick()
+  if (!magick) return
+  const outDir = join(__dirname, 'data', 'commands')
+  mkdirSync(outDir, { recursive: true })
+
+  for (const [name, { src }] of Object.entries(COMMAND_CURSORS)) {
+    const srcPath = join(BAR_DATA, src)
+    const outPath = join(outDir, `${name}.webp`)
+    if (!existsSync(srcPath)) {
+      console.warn(`  command cursor missing: ${src} — run fetch-bar-data.js`)
+      continue
+    }
+    if (existsSync(outPath)) continue
+    const args = commandIconArgs(srcPath, outPath)
+    try {
+      execFileSync(magick === 'magick' ? 'magick' : 'convert', args, { stdio: 'pipe' })
+      console.log(`  commands/${name}.webp (${Math.round(statSync(outPath).size / 1024)} KB)`)
+    } catch (err) {
+      console.warn(`  could not convert ${src}: ${err.message}`)
+    }
+  }
+}
+
 async function convertIcons(unitIds, buildpicMap = {}) {
   const magick = findMagick()
   if (!magick) {
@@ -994,6 +1024,7 @@ async function main() {
 
   // Three images, not 569 — --skip-icons is about the unit icons, not these
   convertKeybindCharts()
+  convertCommandCursors()
 
   console.log('Done.')
 }

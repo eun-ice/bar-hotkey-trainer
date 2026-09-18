@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=64">
+  <link rel="stylesheet" href="style.css?v=71">
   <script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body>
@@ -335,8 +335,12 @@
         <svg id="mouse-zone-svg" class="mouse-zone-svg" xmlns="http://www.w3.org/2000/svg"></svg>
         <div id="mouse-zone-target" class="mouse-zone-target" style="display:none">
           <img id="mouse-zone-target-icon" src="" alt="">
+          <span id="mouse-zone-target-cap" class="mouse-zone-target-cap"></span>
         </div>
-<div id="mouse-zone-label" class="mouse-zone-label"></div>
+        <div class="mouse-zone-label">
+          <img id="mouse-zone-cmd" class="mouse-zone-cmd" src="" alt="" style="display:none">
+          <span id="mouse-zone-label"></span>
+        </div>
       </div>
 
     </div>
@@ -428,14 +432,24 @@
           <button class="sc-visual-tab active" data-chart="grid">No modifier</button>
           <button class="sc-visual-tab" data-chart="grid-ctrl">Ctrl held</button>
           <button class="sc-visual-tab" data-chart="grid-alt">Alt held</button>
+          <span class="sc-visual-tab-sep"></span>
+          <button class="sc-visual-tab" data-chart="area-filters">Area filters</button>
+          <button class="sc-visual-tab" data-chart="reclaim">Reclaim</button>
         </div>
         <a id="sc-visual-link" href="" target="_blank" rel="noopener">
           <img id="sc-visual-img" class="sc-visual-img" src="" alt="In-game keyboard chart">
         </a>
-        <p class="sc-visual-note">
+        <p id="sc-visual-note-keys" class="sc-visual-note">
           Straight from the game — so it shows a <strong>US keyboard</strong> and can lag
           behind the tables here, which are checked against the binding files.
           Also on the <a href="https://www.beyondallreason.info/commands-2-0-grid"
+          target="_blank" rel="noopener">BAR command reference ↗</a>.
+        </p>
+        <p id="sc-visual-note-guides" class="sc-visual-note hidden">
+          The official command infographics: what an area drag does depending on the
+          modifier held and on what the cursor is over when the circle is started.
+          Click the image to open it full size. Also on the
+          <a href="https://www.beyondallreason.info/commands-2-0-grid"
           target="_blank" rel="noopener">BAR command reference ↗</a>.
         </p>
       </div>
@@ -542,12 +556,12 @@
 
 <footer id="site-footer">
   Non-commercial fan project — not affiliated with the BAR team. <a href="https://github.com/eun-ice/bar-hotkey-trainer/">Open-Source</a>
-  Unit icons &copy; <a href="https://www.beyondallreason.info/" target="_blank" rel="noopener">Beyond All Reason</a>
+  Unit icons and cursors &copy; <a href="https://www.beyondallreason.info/" target="_blank" rel="noopener">Beyond All Reason</a>
   by IceXuick &amp; Floris,
   <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" rel="noopener">CC&nbsp;BY-NC-ND&nbsp;4.0</a>.
   All rights remain with the original authors. If you have suggestions, mention @eunice3x on BAR discord.
 </footer>
 
-<script src="app.js?v=122" type="module"></script>
+<script src="app.js?v=129" type="module"></script>
 </body>
 </html>

@@ -1777,11 +1777,16 @@ body:has(#screen-shortcuts.active) { height: 100vh }
 }
 
 .sc-key    { white-space: nowrap; text-align: right; padding-left: 20px }
+/* Keys on the left, mouse icon to their right — also when a "Practice here" line sits
+   under the keys, which as a block would otherwise push the mouse onto its own line */
+.sc-key-row  { display: inline-flex; align-items: flex-start }
+.sc-key-keys { display: inline-block; text-align: right }
 .sc-level  { white-space: nowrap; text-align: right; padding-left: 12px }
 .sc-lvl    { display: inline-block; padding: 2px 7px; border-radius: 3px; font-size: 11px; font-weight: 700; letter-spacing: .03em }
 .sc-lvl-0  { background: rgba(80,180,80,.18); color: #5db85d }
 .sc-lvl-1  { background: rgba(200,140,40,.18); color: #c8903a }
 .sc-lvl-cmd { background: rgba(160,120,220,.15); color: #a07edc }
+.sc-lvl-ref { background: rgba(120,140,160,.15); color: #8898a8 }
 .sc-desc   { color: var(--text-dim); font-size: 12px; margin-top: 3px }
 
 .sc-seq-arrow { color: var(--text-dim); padding: 0 2px }
@@ -1794,6 +1799,31 @@ body:has(#screen-shortcuts.active) { height: 100vh }
 .sc-mouse-action kbd { font-size: 11px; padding: 1px 4px; line-height: 16px }
 .sc-mouse-plus { font-size: 10px; color: rgba(255,255,255,.3); margin: 0 1px }
 .sc-mouse-svg { display: block }
+/* Where an area drag has to start: the mouse icon first, then the tile of the thing under
+   the cursor, tucked half under the mouse's area circle so both read as one gesture */
+.sc-drag-origin { display: inline-flex; align-items: flex-start }
+.sc-drag-origin .sc-mouse-svg { position: relative; z-index: 1; margin-top: 6px }
+/* With a tile in the row, keys, modifiers and mouse all sit on the tile picture's centre
+   line; only the caption hangs below */
+.sc-key-row:has(.sc-drag-origin) > .sc-key-keys,
+.sc-key-row:has(.sc-drag-origin) .sc-mouse-action > kbd,
+.sc-key-row:has(.sc-drag-origin) .sc-mouse-action > .sc-mouse-plus { margin-top: 6px }
+.sc-mouse-action { align-items: flex-start }
+.sc-drag-origin .sc-origin-tile { margin-left: -9px }
+.sc-origin-tile { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle }
+.sc-origin-pic { position: relative; display: block; width: 34px; height: 34px }
+.sc-origin-tile img { width: 34px; height: 34px; border-radius: 5px; object-fit: cover; border: 1px solid var(--border2); display: block; box-sizing: border-box }
+/* Two origins in one tile: the second picture fills the lower-right half, a slash between */
+.sc-origin-tile img.sc-origin-second { position: absolute; inset: 0; clip-path: polygon(100% 0, 100% 100%, 0 100%) }
+.sc-origin-tile-split .sc-origin-pic { overflow: hidden; border-radius: 5px }
+.sc-origin-tile-split .sc-origin-pic::after {
+  content: ''; position: absolute; left: 50%; top: -7px; width: 2px; height: 48px;
+  margin-left: -1px; background: rgba(255,255,255,.85); transform: rotate(45deg); pointer-events: none;
+}
+.sc-origin-cap { font-size: 9px; letter-spacing: .05em; text-transform: uppercase; color: var(--text-dim); margin-top: 2px; line-height: 1 }
+/* The command's in-game cursor, in front of its name */
+.sc-cmd-icon    { width: 18px; height: 18px; vertical-align: -4px; margin-right: 6px }
+.cmd-icon-large { width: 26px; height: 26px; vertical-align: -5px; margin-right: 8px }
 .mod-swap-note { font-size: 11px; color: var(--text-dim) }
 
 /* ─── Shortcut training mode ─────────────────────────────────────────────────── */
@@ -1951,26 +1981,52 @@ body:has(#screen-shortcuts.active) { height: 100vh }
   pointer-events: none;
 }
 
-/* Unit target icon (for click-unit variants) */
+/* The thing to click or start the drag on: a unit buildpic or an origin photo in a ring.
+   The box is exactly the ring, so style.left/top stay its centre for the hit test; the
+   caption hangs below it */
 .mouse-zone-target {
   position: absolute;
-  width: 44px;
-  height: 44px;
-  border: 2px solid rgba(80, 220, 80, 0.85);
-  border-radius: 50%;
+  width: 64px;
+  height: 64px;
   transform: translate(-50%, -50%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 50, 0, 0.55);
   pointer-events: none;
 }
 
 .mouse-zone-target img {
-  width: 30px;
-  height: 30px;
-  object-fit: contain;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(80, 220, 80, 0.85);
+  box-shadow: 0 0 14px rgba(80, 220, 80, 0.35);
+  background: rgba(0, 50, 0, 0.55);
+  display: block;
+  box-sizing: border-box;
 }
+
+.mouse-zone-target-cap {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 4px;
+  white-space: nowrap;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: rgba(80, 210, 80, 0.9);
+}
+
+/* A bare-ground question shows a wreck the drag must start *away* from — drawn dim so it
+   does not read as the thing to click */
+.mouse-zone-target-decoy img {
+  border-color: rgba(200, 200, 200, 0.35);
+  box-shadow: none;
+  opacity: .45;
+  filter: grayscale(.6);
+}
+.mouse-zone-target-decoy .mouse-zone-target-cap { color: rgba(200, 200, 200, 0.45) }
 
 .mouse-zone-label {
   position: absolute;
@@ -1985,7 +2041,12 @@ body:has(#screen-shortcuts.active) { height: 100vh }
   text-transform: uppercase;
   pointer-events: none;
   text-shadow: 0 0 6px rgba(0, 200, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
 }
+.mouse-zone-cmd { width: 20px; height: 20px; display: block }
 
 /* Unit ghost — shown centered in zone for build actions */
 .slot.is-selected {
@@ -2134,6 +2195,8 @@ body:has(#screen-shortcuts.active) { height: 100vh }
 }
 .sc-visual-tab:hover  { color: var(--text) }
 .sc-visual-tab.active { color: var(--accent); border-color: var(--accent); background: rgba(200,164,64,.10) }
+.sc-visual-tab-sep    { width: 1px; background: var(--border2); margin: 4px 6px }
+.sc-visual-note.hidden { display: none }
 
 /* The chart is read by zooming in, so it keeps its full width and scrolls if it must */
 .sc-visual-img {

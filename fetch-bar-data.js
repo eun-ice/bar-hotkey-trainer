@@ -36,6 +36,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { COMMAND_CURSORS } from './command-cursors.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -125,6 +126,22 @@ async function main() {
   const KEYBIND_CHARTS = ['grid_keys.png', 'grid_keys_CTRL.png', 'grid_keys_ALT.png']
   for (const name of KEYBIND_CHARTS) {
     const relPath = `luaui/images/keybinds/${name}`
+    if (existsSync(join(BAR_DATA, relPath)) && !refresh) continue
+    process.stdout.write(`Downloading ${relPath} … `)
+    try {
+      const bytes = await rawGetBinary(`${RAW}/${relPath}`)
+      const full  = join(BAR_DATA, relPath)
+      mkdirSync(dirname(full), { recursive: true })
+      writeFileSync(full, bytes)
+      console.log(`${Math.round(bytes.length / 1024)} KB`)
+    } catch (err) {
+      console.log(`skipped (${err.message})`)
+    }
+  }
+
+  // The command cursors shown next to each command in the shortcut list. One frame per
+  // animation is enough; extract-data.js turns them into data/commands/*.webp.
+  for (const { src: relPath } of Object.values(COMMAND_CURSORS)) {
     if (existsSync(join(BAR_DATA, relPath)) && !refresh) continue
     process.stdout.write(`Downloading ${relPath} … `)
     try {
