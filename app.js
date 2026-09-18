@@ -3,7 +3,7 @@ import {
   slotPicksUnit,
   // Version query kept in step with the one on this file in index.html — a module import
   // is cached on its own, so a stale logic.js would otherwise outlive an app.js update.
-} from './logic.js?v=129'
+} from './logic.js?v=131'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -4598,7 +4598,7 @@ function initKeyLog() {
 const KEYBIND_CHART_SRC = 'https://github.com/beyond-all-reason/Beyond-All-Reason/blob/master/luaui/images/keybinds'
 // The command infographics under data/guides — hand-placed, not from the repo. They show
 // the area-command modifiers with pictures of what the drag has to start on.
-const GUIDE_CHARTS = new Set(['area-filters', 'reclaim'])
+const GUIDE_CHARTS = new Set(['area-filters', 'reclaim', 'move', 'fight', 'settarget'])
 
 function initVisualReference() {
   const item = $('sc-visual-item')

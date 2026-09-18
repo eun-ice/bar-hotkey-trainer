@@ -986,6 +986,16 @@
           "mouseAction": "ctrl-shift-space-drag-on-unit"
         },
         {
+          "id": "attack-area-split-type",
+          "displayOnly": true,
+          "label": "Split Attack by Type",
+          "action": "attack",
+          "level": 2,
+          "key": "A",
+          "description": "Hold Alt, Shift and Space and start the circle on an enemy to split only enemies of that unit type inside between your units, each attacking its own share",
+          "mouseAction": "alt-shift-space-drag-on-unit"
+        },
+        {
           "id": "target-set",
           "label": "Set Target",
           "action": "settarget",
@@ -1039,6 +1049,16 @@
           "key": "S",
           "description": "Hold Ctrl, Shift and Space and start the circle on an enemy to hand each selected unit its own share of the enemies inside as targets",
           "mouseAction": "ctrl-shift-space-drag-on-unit"
+        },
+        {
+          "id": "target-set-area-split-type",
+          "displayOnly": true,
+          "label": "Split Set Target by Type",
+          "action": "settarget",
+          "level": 2,
+          "key": "S",
+          "description": "Hold Alt, Shift and Space and start the circle on an enemy to hand each selected unit its own share of the enemies of that unit type inside as targets",
+          "mouseAction": "alt-shift-space-drag-on-unit"
         },
         {
           "id": "target-cancel",
@@ -1442,6 +1462,16 @@
           "mouseAction": "ctrl-shift-space-drag-on-wreck"
         },
         {
+          "id": "reclaim-area-split-type",
+          "displayOnly": true,
+          "label": "Split Reclaim by Type",
+          "action": "reclaim",
+          "level": 2,
+          "key": "E",
+          "description": "Hold Alt, Shift and Space and start the circle on a unit or a wreck to split only units or wrecks of exactly that type inside between the selected builders, each reclaiming its own share",
+          "mouseAction": "alt-shift-space-drag-on-unit+wreck"
+        },
+        {
           "id": "reclaim-area-enemy",
           "label": "Reclaim Enemies in Area",
           "action": "reclaim",
@@ -1505,6 +1535,16 @@
           "key": "R",
           "description": "Hold Ctrl, Shift and Space and start the circle on a unit to split the units of that team inside between the selected builders, each repairing its own share",
           "mouseAction": "ctrl-shift-space-drag-on-unit"
+        },
+        {
+          "id": "repair-area-split-type",
+          "displayOnly": true,
+          "label": "Split Repair by Type",
+          "action": "repair",
+          "level": 2,
+          "key": "R",
+          "description": "Hold Alt, Shift and Space and start the circle on a unit to split only units of exactly that type inside between the selected builders, each repairing its own share",
+          "mouseAction": "alt-shift-space-drag-on-unit"
         },
         {
           "id": "repair-area-reclaimed",
@@ -1571,6 +1611,16 @@
           "key": "W",
           "description": "Hold Ctrl, Shift and Space and start the circle on a wreck to split the same-tech wrecks inside between the selected builders, each resurrecting its own share",
           "mouseAction": "ctrl-shift-space-drag-on-wreck"
+        },
+        {
+          "id": "resurrect-area-split-type",
+          "displayOnly": true,
+          "label": "Split Resurrect by Type",
+          "action": "resurrect",
+          "level": 2,
+          "key": "W",
+          "description": "Hold Alt, Shift and Space and start the circle on a wreck to split only wrecks of exactly that unit type inside between the selected builders, each resurrecting its own share",
+          "mouseAction": "alt-shift-space-drag-on-wreck"
         },
         {
           "id": "resurrect-area-reclaimed",
