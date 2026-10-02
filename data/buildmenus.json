@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-09",
-  "generatedAt": "2026-08-09T21:56:04.261Z",
+  "version": "2026-10-02",
+  "generatedAt": "2026-10-02T21:11:30.769Z",
   "builders": {
     "armlab": {
       "id": "armlab",
@@ -2506,7 +2506,7 @@
       "isCommander": false,
       "optional": false,
       "experimental": true,
-      "metalCost": 8400,
+      "metalCost": 8000,
       "energyCost": 62000,
       "icon": "icons/corgant.webp",
       "categories": {
@@ -3652,11 +3652,6 @@
               "page": 0
             },
             {
-              "id": "legmext15",
-              "key": "D",
-              "page": 0
-            },
-            {
               "id": "legestor",
               "key": "Q",
               "page": 0
@@ -4225,11 +4220,6 @@
               "page": 0
             },
             {
-              "id": "legmext15",
-              "key": "D",
-              "page": 0
-            },
-            {
               "id": "legestor",
               "key": "Q",
               "page": 0
@@ -4378,7 +4368,7 @@
       "optional": false,
       "experimental": false,
       "metalCost": 110,
-      "energyCost": 3000,
+      "energyCost": 2100,
       "icon": "icons/armca.webp",
       "categories": {
         "economy": {
@@ -4575,7 +4565,7 @@
       "optional": false,
       "experimental": false,
       "metalCost": 115,
-      "energyCost": 3200,
+      "energyCost": 2200,
       "icon": "icons/corca.webp",
       "categories": {
         "economy": {
@@ -4771,8 +4761,8 @@
       "isCommander": false,
       "optional": false,
       "experimental": false,
-      "metalCost": 105,
-      "energyCost": 3200,
+      "metalCost": 100,
+      "energyCost": 2200,
       "icon": "icons/legca.webp",
       "categories": {
         "economy": {
@@ -4807,11 +4797,6 @@
             {
               "id": "leggeo",
               "key": "S",
-              "page": 0
-            },
-            {
-              "id": "legmext15",
-              "key": "D",
               "page": 0
             },
             {
@@ -5338,11 +5323,6 @@
             {
               "id": "leggeo",
               "key": "S",
-              "page": 0
-            },
-            {
-              "id": "legmext15",
-              "key": "D",
               "page": 0
             },
             {
@@ -6067,11 +6047,6 @@
               "page": 0
             },
             {
-              "id": "legmext15",
-              "key": "D",
-              "page": 0
-            },
-            {
               "id": "legtide",
               "key": "F",
               "page": 0
@@ -6301,7 +6276,7 @@
       "optional": false,
       "experimental": false,
       "metalCost": 150,
-      "energyCost": 7800,
+      "energyCost": 5000,
       "icon": "icons/armcsa.webp",
       "categories": {
         "economy": {
@@ -6563,7 +6538,7 @@
       "optional": false,
       "experimental": false,
       "metalCost": 140,
-      "energyCost": 8200,
+      "energyCost": 5300,
       "icon": "icons/corcsa.webp",
       "categories": {
         "economy": {
@@ -6825,7 +6800,7 @@
       "optional": false,
       "experimental": false,
       "metalCost": 150,
-      "energyCost": 7800,
+      "energyCost": 5100,
       "icon": "icons/legspcon.webp",
       "categories": {
         "economy": {
@@ -6860,11 +6835,6 @@
             {
               "id": "leggeo",
               "key": "S",
-              "page": 0
-            },
-            {
-              "id": "legmext15",
-              "key": "D",
               "page": 0
             },
             {
@@ -7651,11 +7621,6 @@
             {
               "id": "leggeo",
               "key": "S",
-              "page": 0
-            },
-            {
-              "id": "legmext15",
-              "key": "D",
               "page": 0
             },
             {
@@ -11105,7 +11070,7 @@
     },
     "armjeth": {
       "name": "Crossbow",
-      "description": "Amphibious Anti-air Bot",
+      "description": "Amphibious Anti-Air Bot",
       "metalCost": 125,
       "energyCost": 1100,
       "buildTime": 1830,
@@ -11153,7 +11118,7 @@
     },
     "corcrash": {
       "name": "Trasher",
-      "description": "Amphibious Anti-air Bot",
+      "description": "Amphibious Anti-Air Bot",
       "metalCost": 125,
       "energyCost": 1100,
       "buildTime": 1900,
@@ -11178,8 +11143,8 @@
     "leggob": {
       "name": "Goblin",
       "description": "Light Skirmish Bot",
-      "metalCost": 25,
-      "energyCost": 500,
+      "metalCost": 30,
+      "energyCost": 420,
       "buildTime": 900,
       "icon": "icons/leggob.webp"
     },
@@ -11195,8 +11160,8 @@
       "name": "Satyr",
       "description": "Light Plasma Bot",
       "metalCost": 60,
-      "energyCost": 400,
-      "buildTime": 1100,
+      "energyCost": 500,
+      "buildTime": 1200,
       "icon": "icons/leglob.webp"
     },
     "legkark": {
@@ -11251,7 +11216,7 @@
       "name": "Ghost",
       "description": "Radar-Invisible Spy Bot",
       "metalCost": 135,
-      "energyCost": 8800,
+      "energyCost": 9000,
       "buildTime": 12000,
       "icon": "icons/armspy.webp"
     },
@@ -11394,8 +11359,8 @@
     "corspy": {
       "name": "Spectre",
       "description": "Radar-Invisible Spy Bot",
-      "metalCost": 165,
-      "energyCost": 12500,
+      "metalCost": 150,
+      "energyCost": 9000,
       "buildTime": 12000,
       "icon": "icons/corspy.webp"
     },
@@ -11411,7 +11376,7 @@
       "name": "Deceiver",
       "description": "Radar Jammer Bot",
       "metalCost": 75,
-      "energyCost": 1550,
+      "energyCost": 1300,
       "buildTime": 6500,
       "icon": "icons/corspec.webp"
     },
@@ -11427,7 +11392,7 @@
       "name": "Arbiter",
       "description": "Heavy Rocket Bot",
       "metalCost": 600,
-      "energyCost": 5800,
+      "energyCost": 6500,
       "buildTime": 9500,
       "icon": "icons/corhrk.webp"
     },
@@ -11508,7 +11473,7 @@
       "description": "Tech 2 Constructor",
       "metalCost": 410,
       "energyCost": 6900,
-      "buildTime": 9300,
+      "buildTime": 11500,
       "icon": "icons/legack.webp"
     },
     "legaceb": {
@@ -11547,7 +11512,7 @@
       "name": "Tiresias",
       "description": "Mobile Jammer Bot",
       "metalCost": 75,
-      "energyCost": 1550,
+      "energyCost": 1300,
       "buildTime": 6280,
       "icon": "icons/legajamk.webp"
     },
@@ -11865,10 +11830,10 @@
     },
     "legrail": {
       "name": "Lance",
-      "description": "Long-range Skirmisher / Anti-air",
+      "description": "Long-range Skirmisher / Anti-Air",
       "metalCost": 240,
-      "energyCost": 3800,
-      "buildTime": 3800,
+      "energyCost": 3600,
+      "buildTime": 3600,
       "icon": "icons/legrail.webp"
     },
     "armacv": {
@@ -11915,7 +11880,7 @@
       "name": "Umbra",
       "description": "Radar Jammer Vehicle",
       "metalCost": 105,
-      "energyCost": 1700,
+      "energyCost": 2000,
       "buildTime": 7000,
       "icon": "icons/armjam.webp"
     },
@@ -11963,7 +11928,7 @@
       "name": "Ambassador",
       "description": "Stealthy Rocket Launcher - good vs. static defense",
       "metalCost": 920,
-      "energyCost": 6500,
+      "energyCost": 10000,
       "buildTime": 21000,
       "icon": "icons/armmerl.webp"
     },
@@ -12002,7 +11967,7 @@
     "corvrad": {
       "name": "Omen",
       "description": "Radar Vehicle",
-      "metalCost": 92,
+      "metalCost": 100,
       "energyCost": 1300,
       "buildTime": 5000,
       "icon": "icons/corvrad.webp"
@@ -12059,7 +12024,7 @@
       "name": "Negotiator",
       "description": "Stealthy Rocket Launcher - good vs. static defense",
       "metalCost": 880,
-      "energyCost": 6700,
+      "energyCost": 9000,
       "buildTime": 20000,
       "icon": "icons/corvroc.webp"
     },
@@ -12076,7 +12041,7 @@
       "description": "Tech 2 Constructor",
       "metalCost": 530,
       "energyCost": 6600,
-      "buildTime": 11900,
+      "buildTime": 15000,
       "icon": "icons/legacv.webp"
     },
     "legafcv": {
@@ -12122,8 +12087,8 @@
     "legaheattank": {
       "name": "Prometheus",
       "description": "Heavy Assault Heatray Tank",
-      "metalCost": 1250,
-      "energyCost": 19000,
+      "metalCost": 1050,
+      "energyCost": 15000,
       "buildTime": 25600,
       "icon": "icons/legaheattank.webp"
     },
@@ -12138,7 +12103,7 @@
     "legmrv": {
       "name": "Quickshot",
       "description": "Fast Burst-Fire Raiding Vehicle",
-      "metalCost": 250,
+      "metalCost": 210,
       "energyCost": 4100,
       "buildTime": 5900,
       "icon": "icons/legmrv.webp"
@@ -12179,8 +12144,8 @@
       "name": "Boreas",
       "description": "Stealthy Mobile Rocket Launcher",
       "metalCost": 920,
-      "energyCost": 6500,
-      "buildTime": 20130,
+      "energyCost": 10000,
+      "buildTime": 21000,
       "icon": "icons/legavroc.webp"
     },
     "legavantinuke": {
@@ -12195,8 +12160,8 @@
       "name": "Construction Aircraft",
       "description": "Tech 1 Constructor",
       "metalCost": 110,
-      "energyCost": 3000,
-      "buildTime": 7960,
+      "energyCost": 2100,
+      "buildTime": 5000,
       "icon": "icons/armca.webp"
     },
     "armfig": {
@@ -12251,8 +12216,8 @@
       "name": "Construction Aircraft",
       "description": "Tech 1 Constructor",
       "metalCost": 115,
-      "energyCost": 3200,
-      "buildTime": 8360,
+      "energyCost": 2200,
+      "buildTime": 5200,
       "icon": "icons/corca.webp"
     },
     "corveng": {
@@ -12268,7 +12233,7 @@
       "description": "Light Paralyzer Drone",
       "metalCost": 58,
       "energyCost": 1300,
-      "buildTime": 2070,
+      "buildTime": 2100,
       "icon": "icons/corbw.webp"
     },
     "corshad": {
@@ -12306,9 +12271,9 @@
     "legca": {
       "name": "Legion Construction Aircraft",
       "description": "Tech 1 Constructor",
-      "metalCost": 105,
-      "energyCost": 3200,
-      "buildTime": 7560,
+      "metalCost": 100,
+      "energyCost": 2200,
+      "buildTime": 5000,
       "icon": "icons/legca.webp"
     },
     "legfig": {
@@ -12508,7 +12473,7 @@
       "description": "Tech 2 Constructor",
       "metalCost": 330,
       "energyCost": 11000,
-      "buildTime": 17500,
+      "buildTime": 20000,
       "icon": "icons/legaca.webp"
     },
     "legafigdef": {
@@ -12579,8 +12544,8 @@
       "name": "Construction Seaplane",
       "description": "Tech 1 Constructor",
       "metalCost": 150,
-      "energyCost": 7800,
-      "buildTime": 14500,
+      "energyCost": 5000,
+      "buildTime": 9500,
       "icon": "icons/armcsa.webp"
     },
     "armsfig": {
@@ -12627,8 +12592,8 @@
       "name": "Construction Seaplane",
       "description": "Tech 1 Constructor",
       "metalCost": 140,
-      "energyCost": 8200,
-      "buildTime": 14500,
+      "energyCost": 5300,
+      "buildTime": 9500,
       "icon": "icons/corcsa.webp"
     },
     "corsfig": {
@@ -12675,8 +12640,8 @@
       "name": "Construction Seaplane",
       "description": "Tech 1 Constructor",
       "metalCost": 150,
-      "energyCost": 7800,
-      "buildTime": 12000,
+      "energyCost": 5100,
+      "buildTime": 8500,
       "icon": "icons/legspcon.webp"
     },
     "legspfighter": {
@@ -12777,7 +12742,7 @@
     },
     "armpt": {
       "name": "Skater",
-      "description": "Stealthy Patrol Boat / Light Anti Air / Sonar",
+      "description": "Stealthy Patrol Boat / Light Anti-Air / Sonar",
       "metalCost": 150,
       "energyCost": 1000,
       "buildTime": 2700,
@@ -12833,7 +12798,7 @@
     },
     "corpt": {
       "name": "Herring",
-      "description": "Missile Corvette / Light Anti Air / Sonar",
+      "description": "Missile Corvette / Light Anti-Air / Sonar",
       "metalCost": 210,
       "energyCost": 1400,
       "buildTime": 2500,
@@ -13100,7 +13065,7 @@
       "description": "Tech 2 Constructor",
       "metalCost": 700,
       "energyCost": 9000,
-      "buildTime": 18000,
+      "buildTime": 23000,
       "icon": "icons/leganavyconsub.webp"
     },
     "leganavyengineer": {
@@ -13402,7 +13367,7 @@
     "corshiva": {
       "name": "Shiva",
       "description": "Amphibious Siege Mech",
-      "metalCost": 1600,
+      "metalCost": 1700,
       "energyCost": 23000,
       "buildTime": 40000,
       "icon": "icons/corshiva.webp"
@@ -13601,7 +13566,7 @@
     },
     "armrl": {
       "name": "Nettle",
-      "description": "Light Anti-air Tower",
+      "description": "Light Anti-Air Tower",
       "metalCost": 80,
       "energyCost": 900,
       "buildTime": 1800,
@@ -13609,10 +13574,10 @@
     },
     "armfrt": {
       "name": "Naval Nettle",
-      "description": "Floating Anti-air Tower",
-      "metalCost": 90,
-      "energyCost": 1000,
-      "buildTime": 2200,
+      "description": "Floating Anti-Air Tower",
+      "metalCost": 80,
+      "energyCost": 900,
+      "buildTime": 1800,
       "icon": "icons/armfrt.webp"
     },
     "armdl": {
@@ -13809,7 +13774,7 @@
     },
     "corrl": {
       "name": "Thistle",
-      "description": "Light Anti-air Tower",
+      "description": "Light Anti-Air Tower",
       "metalCost": 80,
       "energyCost": 850,
       "buildTime": 1750,
@@ -13817,10 +13782,10 @@
     },
     "corfrt": {
       "name": "Slingshot",
-      "description": "Floating Anti-air Tower",
-      "metalCost": 90,
-      "energyCost": 1000,
-      "buildTime": 2200,
+      "description": "Floating Anti-Air Tower",
+      "metalCost": 80,
+      "energyCost": 850,
+      "buildTime": 1750,
       "icon": "icons/corfrt.webp"
     },
     "cordl": {
@@ -13921,7 +13886,7 @@
     },
     "legmex": {
       "name": "Metal Extractor",
-      "description": "Extracts Slightly Reduced Metal and Produces 7 Energy",
+      "description": "Extracts Metal from Metalspots",
       "metalCost": 50,
       "energyCost": 500,
       "buildTime": 1880,
@@ -13930,7 +13895,7 @@
     "legsolar": {
       "name": "Solar Collector",
       "description": "Produces 20 Energy",
-      "metalCost": 155,
+      "metalCost": 150,
       "energyCost": 0,
       "buildTime": 2800,
       "icon": "icons/legsolar.webp"
@@ -13938,7 +13903,7 @@
     "legwin": {
       "name": "Wind Turbine",
       "description": "Produces Energy. Depends on wind strength.",
-      "metalCost": 45,
+      "metalCost": 43,
       "energyCost": 175,
       "buildTime": 1680,
       "icon": "icons/legwin.webp"
@@ -14026,9 +13991,9 @@
     "legfrl": {
       "name": "Polybolos",
       "description": "Floating Anti-Air Turret",
-      "metalCost": 90,
-      "energyCost": 1000,
-      "buildTime": 2200,
+      "metalCost": 80,
+      "energyCost": 850,
+      "buildTime": 1750,
       "icon": "icons/legfrl.webp"
     },
     "legctl": {
@@ -14350,14 +14315,6 @@
       "energyCost": 13000,
       "buildTime": 12900,
       "icon": "icons/leggeo.webp"
-    },
-    "legmext15": {
-      "name": "Overcharged Metal Extractor",
-      "description": "Extracts Extra Metal at a High Energy Cost",
-      "metalCost": 250,
-      "energyCost": 5000,
-      "buildTime": 5000,
-      "icon": "icons/legmext15.webp"
     },
     "legmg": {
       "name": "Cacophony",
@@ -14825,7 +14782,7 @@
     },
     "armsd": {
       "name": "Tracer",
-      "description": "Intrusion Countermeasure System - tracks down stealthy units",
+      "description": "Intrusion Countermeasure System",
       "metalCost": 710,
       "energyCost": 7100,
       "buildTime": 11900,
@@ -14956,7 +14913,7 @@
       "description": "Anti-Air Flak Gun",
       "metalCost": 850,
       "energyCost": 14000,
-      "buildTime": 20100,
+      "buildTime": 20000,
       "icon": "icons/corflak.webp"
     },
     "corscreamer": {
@@ -15058,7 +15015,7 @@
     "corgant": {
       "name": "Experimental Gantry",
       "description": "Produces Experimental Units",
-      "metalCost": 8400,
+      "metalCost": 8000,
       "energyCost": 62000,
       "buildTime": 68000,
       "icon": "icons/corgant.webp"
@@ -15249,7 +15206,7 @@
     },
     "legsd": {
       "name": "Ichnaea",
-      "description": "Intrusion Countermeasure System - tracks down stealthy units",
+      "description": "Intrusion Countermeasure System",
       "metalCost": 710,
       "energyCost": 7100,
       "buildTime": 11900,
@@ -15338,9 +15295,9 @@
     "armfflak": {
       "name": "Naval Arbalest",
       "description": "Anti-Air Flak Gun - Naval Series",
-      "metalCost": 850,
-      "energyCost": 23000,
-      "buildTime": 21900,
+      "metalCost": 820,
+      "energyCost": 13000,
+      "buildTime": 19000,
       "icon": "icons/armfflak.webp"
     },
     "armason": {
@@ -15410,9 +15367,9 @@
     "corenaa": {
       "name": "Naval Birdshot",
       "description": "Anti-Air Flak Gun - Naval Series",
-      "metalCost": 890,
-      "energyCost": 25000,
-      "buildTime": 23100,
+      "metalCost": 850,
+      "energyCost": 14000,
+      "buildTime": 20000,
       "icon": "icons/corenaa.webp"
     },
     "corason": {
@@ -15482,9 +15439,9 @@
     "leganavalaaturret": {
       "name": "Fulmen",
       "description": "Advanced Anti-Air Floating Gatling Turret",
-      "metalCost": 890,
-      "energyCost": 25000,
-      "buildTime": 23100,
+      "metalCost": 820,
+      "energyCost": 13000,
+      "buildTime": 19000,
       "icon": "icons/leganavalaaturret.webp"
     },
     "leganavalsonarstation": {

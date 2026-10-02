@@ -985,7 +985,13 @@ async function main() {
   const contextBuildPath = join(BAR_DATA, 'luaui/Widgets/cmd_context_build.lua')
   if (existsSync(contextBuildPath)) {
     const cbLua = readFileSync(contextBuildPath, 'utf8')
-    const parsePairs = block => [...block.matchAll(/\{'(\w+)',\s*'(\w+)'\}/g)].map(m => [m[1], m[2]])
+    // Upstream's formatter rewrote `{'a','b'}` as `{ "a", "b" }` in Sept 2026, which
+    // silently shrank this file from 57 pairs to the 8 that sat in `--` comments — the
+    // only lines the formatter left alone. Accept either style, and drop the comments,
+    // which list pairs the widget deliberately does *not* use.
+    const stripComments = block => block.replace(/--[^\n]*/g, '')
+    const parsePairs = block => [...stripComments(block).matchAll(/\{\s*["'](\w+)["'],\s*["'](\w+)["']\s*\}/g)]
+      .map(m => [m[1], m[2]])
     const unitlistBlock  = cbLua.match(/local unitlist\s*=\s*\{([\s\S]*?)\n\}/)?.[1] ?? ''
     const legionBlock    = cbLua.match(/local legionUnitlist\s*=\s*\{([\s\S]*?)\n\}/)?.[1] ?? ''
     const pairs = [...parsePairs(unitlistBlock), ...parsePairs(legionBlock)]

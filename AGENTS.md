@@ -184,6 +184,15 @@ rather than being copied into the code, so it can be refreshed when upstream cha
 
 ## Things that bite
 
+- **`cmd_context_build.lua` is parsed by regex, and upstream's formatter changed its
+  quoting.** The land/water pairs come from the `unitlist` / `legionUnitlist` tables in
+  that widget. In Sept 2026 a Lua formatter rewrote `{'a','b'}` as `{ "a", "b" }`, and a
+  refresh quietly produced 8 pairs instead of 56 — the eight that sat in `--` comments, the
+  only lines the formatter skipped. `extract-data.js` now accepts both styles and strips
+  comments first (a commented pair is one the widget deliberately does not swap:
+  `legmg`/`legfmg` had been included by mistake before). After any refresh, check the
+  "Wrote data/water-equivalents.json (N pairs)" line against the previous run; `npm test`
+  fails loudly when the pairs are gone.
 - **A toggle is one entry with `states`, not one entry per state.** The reference
   shows a single row listing each state next to the taps that reach it; `expandStates()`
   turns them into one trainable question each. Add a state, not a sibling shortcut.
