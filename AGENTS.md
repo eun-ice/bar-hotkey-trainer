@@ -67,6 +67,16 @@ still leaves the page. It is written only while the reference screen is active:
 `initShortcutsScreen` renders the first group while the screen is still hidden, and that
 render must not overwrite a deep link before `applyLocationHash` reads it.
 
+The menu reference does the same under `#menu`:
+
+```
+http://localhost:3737/#menu/legck/leggeo
+```
+
+`#menu/<builder id>` opens a builder, a third part is either a category id (`economy`, …)
+or a unit id, which opens that unit's category and page with its slot pinned. Clicking a
+slot or a tab rewrites it, guarded by `currentScreen` the same way.
+
 ### `?keylog` — raw keyboard events
 
 Shows an overlay with the environment (platform, `IS_MAC`, layout detection) and every

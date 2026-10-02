@@ -2235,3 +2235,5 @@ body:has(#screen-shortcuts.active) { height: 100vh }
   border: 1px solid var(--accent);
   border-radius: 8px;
 }
+/* The build legend's click is the reference's mouse icon, sitting right after the "+" */
+.bml-keys .sc-mouse-action, .bmr-note .sc-mouse-action { margin-left: 0; vertical-align: middle }

@@ -3,7 +3,7 @@ import {
   slotPicksUnit,
   // Version query kept in step with the one on this file in index.html — a module import
   // is cached on its own, so a stale logic.js would otherwise outlive an app.js update.
-} from './logic.js?v=136'
+} from './logic.js?v=138'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -496,6 +496,10 @@ const CONSTRUCTOR_MOD_INFO = {
   'click':       { mods: [],        short: 'Build',   label: 'Build',           desc: 'Place it — runs after the current orders' },
   'shift-click': { mods: ['shift'], short: 'Queue',   label: 'Queue build',     desc: 'Appends to the build queue' },
   'space-click': { mods: ['space'], short: 'Instant', label: 'Build instantly', desc: 'Skips the queue and starts right away' },
+  // Reference only — `cmd_commandinsert.lua` takes build orders too (`id < 0`), but the
+  // training pad cannot read two modifiers on one click, so CONSTRUCTOR_MODS never draws it
+  'shift-space-click': { mods: ['shift','space'], short: 'Into route', label: 'Insert into route',
+                         desc: 'Slots it into the queue where it costs the least extra walking' },
 }
 
 const SHORTCUT_CONTEXT_UNITS = {
@@ -1005,6 +1009,7 @@ function showScreen(name) {
     else if (!$('sc-visual')?.classList.contains('hidden')) showVisualChart?.(null)
     else setShortcutsHash()
   }
+  if (name === 'browse') setBrowseHash()
 }
 
 // ─── Build menu rendering ─────────────────────────────────────────────────────
@@ -3483,7 +3488,10 @@ function setBrowseDifficulty(value) {
 }
 
 function initBrowseScreen() {
-  $('btn-browse-back').addEventListener('click', () => showScreen('setup'))
+  $('btn-browse-back').addEventListener('click', () => {
+    clearReferenceHash()
+    showScreen('setup')
+  })
   $('browse-search').addEventListener('input', e => renderBrowseList(e.target.value))
 
   setBrowseDifficulty('commander')
@@ -3683,6 +3691,7 @@ function renderBrowseMenu() {
       keyLabel.textContent = display(key, isQwertz)
 
       slot.append(img, eBadge, mBadge, keyLabel)
+      slot.dataset.unitId = unit.id
 
       // Water/land equivalent badge
       const equivId   = WATER_EQUIVALENTS[unit.id]
@@ -3707,6 +3716,7 @@ function renderBrowseMenu() {
           slot.classList.add('slot-pinned')
           showSlotHover(unit, 'browse-slot-hover-info')
         }
+        setBrowseHash()
       })
     }
 
@@ -3753,6 +3763,8 @@ function renderBrowseMenu() {
     }
   }
 
+  setBrowseHash()
+
   // Key hint — the category prompt only; B and Shift/Esc live in the shortcuts box below
   const hint = $('browse-key-hint')
   if (hint) {
@@ -3788,8 +3800,14 @@ function browseModInfo() {
   return isFactory(browseBuilder) ? FACTORY_MOD_INFO : CONSTRUCTOR_MOD_INFO
 }
 
+// A plain left click, drawn as the same mouse the shortcut reference uses
+function mouseClickHtml() {
+  return formatMouseAction('click')
+}
+
 function modKeysHtml(mods, lastKey, placeholder = false) {
   const parts = mods.map(m => `<kbd>${displayMod(m)}</kbd>`)
+  if (lastKey === 'Click') return [...parts, mouseClickHtml()].join('<span class="mod-plus">+</span>')
   // The legend's trailing key is a stand-in for "whichever unit key" and is drawn dashed;
   // the result card names a key the user actually pressed, so it gets a normal keycap.
   if (lastKey) parts.push(`<kbd${placeholder ? ' class="mod-anykey"' : ''}>${lastKey}</kbd>`)
@@ -3801,7 +3819,7 @@ function renderBrowseModLegend(totalPages = 1) {
   if (!box || !browseBuilder) return
   const factory = isFactory(browseBuilder)
   const info    = browseModInfo()
-  const anyKey  = factory ? 'key' : 'Click'
+  const anyKey  = factory ? '<kbd class="mod-anykey">key</kbd>' : mouseClickHtml()
 
   const row = (keys, label, desc = '', notes = [], badge = '') => `
     <div class="bml-row">
@@ -3820,7 +3838,7 @@ function renderBrowseModLegend(totalPages = 1) {
   const modRows = Object.entries(info)
     .map(([mod, { mods, label, desc, note }]) => {
       const keys  = mods.map(m => `<kbd>${capitalize(m)}</kbd>`)
-      keys.push(`<kbd class="mod-anykey">${anyKey}</kbd>`)
+      keys.push(anyKey)
       const extra = mods.includes('alt') && swapNote
         ? `Press <kbd>⌘ Cmd</kbd> instead of <kbd>Alt</kbd> here in the trainer — the game uses Alt.`
         : ''
@@ -3943,9 +3961,55 @@ function setShortcutsHash(...parts) {
   history.replaceState(null, '', location.pathname + location.search + hash)
 }
 
-function clearShortcutsHash() {
-  if (!location.hash.startsWith('#shortcuts')) return
+// The menu reference follows the same scheme:
+//   #menu                          the screen
+//   #menu/<builder id>             one builder   (#menu/legck)
+//   #menu/<builder id>/<category>  its open category (#menu/legck/economy)
+//   #menu/<builder id>/<unit id>   a pinned slot, on its category and page (#menu/legck/leggeo)
+// Category and unit ids never collide, so the third part needs no tag of its own.
+function setBrowseHash() {
+  if (currentScreen !== 'browse') return
+  const parts = ['menu']
+  if (browseBuilder) {
+    parts.push(browseBuilder.id)
+    // Factories have the one 'build' category — naming it would say nothing
+    if (browsePinnedUnit) parts.push(browsePinnedUnit.id)
+    else if (browseCatId !== null && !isFactory(browseBuilder)) parts.push(browseCatId)
+  }
+  const hash = '#' + parts.join('/')
+  if (location.hash === hash) return
+  history.replaceState(null, '', location.pathname + location.search + hash)
+}
+
+function clearReferenceHash() {
+  if (!/^#(shortcuts|menu)\b/.test(location.hash)) return
   history.replaceState(null, '', location.pathname + location.search)
+}
+
+/** Opens `#menu/…`: the builder, then a category or a unit pinned on its page. */
+function openBrowseHash(builderId, target) {
+  showScreen('browse')
+  const builder = DATA.builders[builderId]
+  if (!builder) return setBrowseHash()   // unknown id: drop it from the bar
+  selectBrowseBuilder(builderId)
+  if (!target) return
+  if (!isFactory(builder) && builder.categories[target]) {
+    browseCatId = target
+    browsePage  = 0
+    renderBrowseMenu()
+    return
+  }
+  for (const [catId, cat] of Object.entries(builder.categories)) {
+    const unit = cat.units.find(u => u.id === target)
+    if (!unit) continue
+    browseCatId = catId
+    browsePage  = unit.page
+    renderBrowseMenu()
+    // The slot's own click handler pins it and writes the unit into the hash
+    $('browse-menu-grid').querySelector(`.slot[data-unit-id="${unit.id}"]`)?.click()
+    return
+  }
+  setBrowseHash()
 }
 
 /** The group holding shortcut (or toggle state) `id`, and the row id that shows it. */
@@ -3964,6 +4028,10 @@ function findShortcutRow(id) {
 function applyLocationHash() {
   const hash = decodeURIComponent(location.hash.slice(1))
   const [screen, first, second] = hash.split('/')
+  if (screen === 'menu') {
+    withKeyboard(() => openBrowseHash(first, second), true)()
+    return true
+  }
   if (screen !== 'shortcuts') return false
 
   const open = () => {
@@ -4419,7 +4487,7 @@ function initShortcutsScreen() {
     scCheckedIds = new Set()
     scSpaceHeld  = false
     scKeySeq     = []
-    clearShortcutsHash()
+    clearReferenceHash()
     showScreen('setup')
   })
 
