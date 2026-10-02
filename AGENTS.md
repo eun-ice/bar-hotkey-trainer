@@ -345,6 +345,20 @@ rather than being copied into the code, so it can be refreshed when upstream cha
 - **`logic.js` carries its own cache-busting query** in the import at the top of
   `app.js`, because a module import is cached separately from the file importing it.
   `npm run bump` keeps the two in step; do not edit either by hand.
+- **The reference search is a text field on screens that eat keys.** Both reference
+  topbars carry the same `.ref-search` box; `searchReference()` in `logic.js` does the
+  matching (units with every builder's route, builders, shortcuts — a toggle state that
+  matches on its own is the target) and `npm test` covers it. It also takes the names a
+  player reads in their own `uikeys.txt`: every bind action, a prefix row expanded to its
+  members (`group set 3`; an F-key member drops its F, `set_camera_anchor 2`),
+  `buildunit_<unit id>`, and `gridmenu_key <row> <col>` / `gridmenu_category <n>` /
+  `gridmenu_next_page`, which are the grid's own bindings and answer with the key —
+  row 1 is the *bottom* row, `Any+X` is `gridmenu_key 1 2`. An entry without `action`
+  is invisible to that, one more reason to give every bindable entry one. Space, the grid letters and
+  Shift all mean something to `onKey` and the shortcut-screen handler, so both bail out on
+  `isTextField(event.target)` — a new key handler on either screen needs the same guard,
+  or typing "metal storage" pages the menu. A hit navigates through `openReference()`,
+  i.e. the same `applyLocationHash()` path a pasted deep link takes.
 - **Touch detection hides prompts, never wiring.** `isTouchOnly()` cannot tell whether a
   keyboard is attached — an iPad with a keyboard folio and no trackpad looks exactly like
   a bare phone. It skips the layout dialogue and hides the two "press a shortcut" hints,

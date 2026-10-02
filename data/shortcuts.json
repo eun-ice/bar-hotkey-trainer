@@ -2888,6 +2888,7 @@
         {
           "id": "map-details",
           "label": "Map Details",
+          "action": "customgameinfo",
           "level": 2,
           "displayOnly": true,
           "key": "I",

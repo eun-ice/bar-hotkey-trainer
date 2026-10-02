@@ -1346,6 +1346,85 @@ body:has(#screen-shortcuts.active) { height: 100vh }
 }
 .browse-search:focus { border-color: var(--accent) }
 
+/* ── Reference search: one field, units + builders + shortcuts ── */
+.ref-search { position: relative; flex-shrink: 0 }
+.ref-search .browse-search { width: 280px }
+.ref-search-results {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 50;
+  width: min(460px, calc(100vw - 32px));
+  max-height: min(70vh, 560px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 6px 0;
+  background: var(--bg-panel);
+  border: 1px solid var(--border2);
+  border-radius: var(--rad-lg);
+  box-shadow: 0 12px 32px rgba(0,0,0,.5);
+}
+.rs-heading {
+  padding: 8px 12px 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.rs-hit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  color: var(--text-bright);
+  text-decoration: none;
+  font-size: 13px;
+}
+.rs-hit:hover, .rs-hit.rs-active { background: var(--bg-hover) }
+.rs-hit.rs-active { box-shadow: inset 2px 0 0 var(--accent) }
+.rs-icon { width: 26px; height: 26px; border-radius: 3px; flex-shrink: 0; object-fit: cover }
+.rs-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.rs-state { color: var(--accent) }
+.rs-faction {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  color: var(--text-dim);
+  border: 1px solid var(--border2);
+  border-radius: 3px;
+  padding: 0 4px;
+}
+.rs-meta { margin-left: auto; font-size: 11px; color: var(--text-dim); white-space: nowrap }
+.rs-action {
+  margin-left: auto;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.rs-sc-key { display: flex; align-items: center; gap: 6px; flex-shrink: 0 }
+/* The Cmd practice note belongs in the reference table, not in a one-line hit */
+.rs-sc-key .sc-mac-practice { display: none }
+.rs-sc-key kbd, .rs-keys kbd { font-size: 11px; padding: 1px 5px; line-height: 16px }
+.rs-hit .rs-meta + .rs-sc-key, .rs-hit .rs-action + .rs-sc-key { margin-left: 8px }
+.rs-unit { padding-bottom: 4px }
+.rs-route {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 2px 12px 2px 46px;
+  font-size: 11px;
+}
+.rs-keys { display: flex; gap: 3px; flex-shrink: 0 }
+.rs-builders { display: flex; flex-wrap: wrap; gap: 2px 8px; min-width: 0 }
+.rs-builder { color: var(--text); text-decoration: none }
+.rs-builder:hover { color: var(--accent); text-decoration: underline }
+.rs-empty { padding: 10px 12px; font-size: 13px; color: var(--text-dim) }
+
 .browse-diff-switch { display: flex; gap: 3px; flex-shrink: 0 }
 .browse-diff-option { position: relative; cursor: pointer }
 .browse-diff-option input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0 }
@@ -2117,7 +2196,9 @@ body:has(#screen-shortcuts.active) { height: 100vh }
     padding: 10px 12px;
   }
   .browse-title { order: -1; flex: 0 0 100%; font-size: 12px }
-  .browse-search { width: 100%; order: 3 }
+  .ref-search { width: 100%; order: 3 }
+  .ref-search .browse-search { width: 100% }
+  .ref-search-results { width: auto; left: 0; right: 0 }
 
   .browse-main { padding: 14px 10px }
   .browse-content { gap: 14px }

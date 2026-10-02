@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=79">
+  <link rel="stylesheet" href="style.css?v=84">
   <script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body>
@@ -409,6 +409,11 @@
   <div class="browse-topbar">
     <button class="btn-secondary browse-back-btn" id="btn-shortcuts-back">← Back</button>
     <h2 class="browse-title">Shortcut Reference</h2>
+    <div class="ref-search">
+      <input type="search" class="browse-search ref-search-input"
+             placeholder="Search units, builders, shortcuts…" aria-label="Search the references">
+      <div class="ref-search-results hidden"></div>
+    </div>
   </div>
 
   <div class="browse-layout">
@@ -476,7 +481,11 @@
   <div class="browse-topbar">
     <button class="btn-secondary browse-back-btn" id="btn-browse-back">← Back</button>
     <h2 class="browse-title">Build Menu Reference</h2>
-    <input type="search" id="browse-search" class="browse-search" placeholder="Filter builders…">
+    <div class="ref-search">
+      <input type="search" class="browse-search ref-search-input"
+             placeholder="Search units, builders, shortcuts…" aria-label="Search the references">
+      <div class="ref-search-results hidden"></div>
+    </div>
     <div class="browse-diff-switch" id="browse-diff-switch">
       <label class="browse-diff-option"><input type="radio" name="browse-diff" value="noob"><span class="browse-diff-btn">🌱 Noob</span></label>
       <label class="browse-diff-option"><input type="radio" name="browse-diff" value="mid"><span class="browse-diff-btn">⚔️ Mid</span></label>
@@ -565,6 +574,6 @@
   All rights remain with the original authors. If you have suggestions, mention @eunice3x on BAR discord.
 </footer>
 
-<script src="app.js?v=139" type="module"></script>
+<script src="app.js?v=144" type="module"></script>
 </body>
 </html>

@@ -15,7 +15,7 @@ import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import {
   modsSatisfy, scRangeIncludes, scComboMatchesKey, resolveBinding, equivalentKeyOnPage,
-  slotPicksUnit,
+  slotPicksUnit, menuRouteKeys, searchReference, gridActionKey,
 } from './logic.js'
 
 const dir  = dirname(fileURLToPath(import.meta.url))
@@ -251,6 +251,64 @@ for (const g of SC.groups) {
     check(`${sc.id} matches itself`, scComboMatchesKey(
       { key: sc.key.toUpperCase(), mods: b.modifiers }, b.key, b.modifiers, b.optionalModifiers))
   }
+}
+
+// ─── Reference search ────────────────────────────────────────────────────────
+group('searchReference — units, builders, shortcuts')
+{
+  const isFactory = builder => {
+    const cats = Object.keys(builder.categories)
+    return cats.length === 1 && cats[0] === 'build'
+  }
+  const opts = {
+    builders: Object.values(MENUS.builders), units: MENUS.units, groups: SC.groups, isFactory,
+    categoryKeys: { economy: 'Z', combat: 'X', utility: 'C', build: 'V' },
+    gridKeys: ['Q','W','E','R','A','S','D','F','Z','X','C','V'],
+    waterEquivalents: WATER,
+  }
+  const find = query => searchReference(query, opts)
+
+  check('bottom-left of page 1 is the category key alone', menuRouteKeys('Z', 0, 'Z').join() === 'Z')
+  check('later page pages with B first', menuRouteKeys('Z', 1, 'Q').join() === 'Z,B,Q')
+  check('factory has no category key', menuRouteKeys(null, 1, 'Z').join() === 'B,Z')
+  check('empty query finds nothing', !find('  ').units.length && !find('').shortcuts.length)
+
+  const shipyard = find('shipyard').units.find(unit => unit.id === 'armsy')
+  check('Shipyard is found with its builders', shipyard?.routes.some(route => route.builderId === 'armcom'),
+    JSON.stringify(shipyard?.routes.map(route => route.builderId)))
+  check('the commander builds the Shipyard with V V', shipyard?.routes
+    .find(route => route.builderId === 'armcom')?.keys.join(' ') === 'V V')
+  check('Shipyard knows its land counterpart', shipyard?.counterpart === 'armlab')
+  check('an exact name ranks first', find('shipyard').units[0]?.name === 'Shipyard')
+  check('faction narrows a unit', find('cortex shipyard').units.every(unit => unit.faction === 'cortex'))
+
+  check('Construction Seaplane is found as a builder',
+    find('construction seaplane').builders.some(hit => hit.id === 'armcsa'))
+
+  const holdFire = find('hold fire').shortcuts[0]
+  check('a toggle state is targeted on its own', holdFire && holdFire.id !== holdFire.rowId
+    && holdFire.stateLabel === 'Hold Fire', JSON.stringify(holdFire))
+  check('BAR action ids find the shortcut', find('settarget').shortcuts
+    .some(hit => hit.rowId.startsWith('target-set')))
+  // uikeys.txt names — what a player reads in their own binding file
+  const top = query => find(query).shortcuts[0]
+  check('group set 3 finds the prefix row first', top('group set 3')?.rowId === 'group-set-range'
+    && top('group set 3')?.action === 'group set 3', JSON.stringify(top('group set 3')))
+  check('an F-key member is numbered without its F',
+    top('set_camera_anchor 2')?.action === 'set_camera_anchor 2')
+  check('factory_preset load 3 finds the load row',
+    top('factory_preset load 3')?.rowId === 'factory-preset-load-range')
+  check('buildunit_<id> finds the unit', find('buildunit_armsolar').units[0]?.id === 'armsolar')
+  check('gridmenu_key 1 2 is X — row 1 is the bottom row',
+    gridActionKey('gridmenu_key 1 2', opts.gridKeys, opts.categoryKeys)?.key === 'X')
+  check('gridmenu_key 3 1 is Q', find('gridmenu_key 3 1').grid?.key === 'Q')
+  check('gridmenu_category 2 is Combat on X',
+    find('gridmenu_category 2').grid?.categoryId === 'combat' && find('gridmenu_category 2').grid?.key === 'X')
+  check('gridmenu_next_page is B', find('gridmenu_next_page').grid?.key === 'B')
+  check('a plain word is no grid action', find('shipyard').grid === null)
+
+  check('learnHidden rows never come back', find('group').shortcuts.every(hit =>
+    !SC.groups.flatMap(g => g.shortcuts).find(sc => sc.id === hit.rowId)?.learnHidden))
 }
 
 // ─── Report ───────────────────────────────────────────────────────────────────

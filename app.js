@@ -1,9 +1,9 @@
 import {
   modsSatisfy, scRangeIncludes, scComboMatchesKey, resolveBinding, equivalentKeyOnPage,
-  slotPicksUnit,
+  slotPicksUnit, searchReference,
   // Version query kept in step with the one on this file in index.html — a module import
   // is cached on its own, so a stale logic.js would otherwise outlive an app.js update.
-} from './logic.js?v=139'
+} from './logic.js?v=144'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -2215,6 +2215,8 @@ function handleGoBack() {
 function onKey(event) {
   // Block input during the new-run countdown
   if (countingDown) return
+  // Typing into the reference search — Space and the grid letters are text there
+  if (isTextField(event.target)) return
 
   // Handle shortcut state BEFORE the modifier-key bail-out, so Ctrl/Alt+key shortcuts work
   if (trainingState === State.WAITING_SHORTCUT) {
@@ -3348,7 +3350,7 @@ function initSetupScreen() {
     restoreSettingsUI()
     // The reference screen keeps its own filter, so reset that back to "All" too
     setBrowseDifficulty('commander')
-    renderBrowseList($('browse-search').value)
+    renderBrowseList()
     renderBrowseMenu()
   })
 
@@ -3512,18 +3514,17 @@ function initBrowseScreen() {
     clearReferenceHash()
     showScreen('setup')
   })
-  $('browse-search').addEventListener('input', e => renderBrowseList(e.target.value))
 
   setBrowseDifficulty('commander')
   for (const r of document.querySelectorAll('input[name="browse-diff"]')) {
     r.addEventListener('change', e => {
       browseDifficulty = e.target.value
-      renderBrowseList($('browse-search').value)
+      renderBrowseList()
       renderBrowseMenu()
     })
   }
 
-  renderBrowseList('')
+  renderBrowseList()
 }
 
 function makeBrowseItem(builder) {
@@ -3553,8 +3554,12 @@ function makeBrowseItem(builder) {
   return item
 }
 
-function renderBrowseList(filter) {
-  const lc  = filter.toLowerCase()
+/** Builders the menu reference lists — level-up commander variants and unnamed ones are not. */
+function isListedBuilder(builder) {
+  return builder.name !== builder.id && !/com(lvl|lv)\d/i.test(builder.id)
+}
+
+function renderBrowseList() {
   const out = $('browse-list')
   out.innerHTML = ''
 
@@ -3566,9 +3571,7 @@ function renderBrowseList(filter) {
   }
 
   for (const builder of Object.values(DATA.builders)) {
-    if (builder.name === builder.id) continue
-    if (/com(lvl|lv)\d/i.test(builder.id)) continue
-    if (lc && !builder.name.toLowerCase().includes(lc) && !builder.id.includes(lc)) continue
+    if (!isListedBuilder(builder)) continue
     const grp = groups[builder.faction]
     if (!grp) continue
     if (isFactory(builder)) grp.factories.push(builder)
@@ -4435,7 +4438,7 @@ function initShortcutsPad(scFlash, scDisarmPad, padLabel) {
   let captured = false   // did we take this gesture over from the browser?
 
   // Sidebar entries, the Back button and links keep their normal click behaviour
-  const isChrome = target => target.closest('button, a, .browse-item, input, label')
+  const isChrome = target => target.closest('button, a, .browse-item, input, label, .ref-search')
 
   // Selecting text is a plain unmodified left drag, so we must not swallow those.
   // Right-button and modifier-held gestures never select text, and once a key press is
@@ -4729,6 +4732,173 @@ function initShortcutsScreen() {
   if (SHORTCUTS.length) selectShortcutsGroup(SHORTCUTS[0].id)
 }
 
+// ─── Reference search ────────────────────────────────────────────────────────
+//
+// One field on each reference screen, and both search everything: units with every
+// builder that builds them and the keys to get there, builders, and shortcuts. Each hit
+// is a reference link like the rest, so it copies and opens in a new tab; a plain click
+// goes there in place, through the same path a pasted deep link takes.
+
+const FACTION_SHORT = { armada: 'ARM', cortex: 'COR', legion: 'LEG' }
+
+function isTextField(target) {
+  return !!target?.matches?.('input[type="search"], input[type="text"], textarea')
+}
+
+function openReference(hash) {
+  history.replaceState(null, '', location.pathname + location.search + hash)
+  applyLocationHash()
+}
+
+function referenceSearch(query) {
+  const builders = Object.values(DATA.builders).filter(isListedBuilder)
+    .sort((a, b) => a.tier - b.tier || a.name.localeCompare(b.name))
+  return searchReference(query, {
+    builders, units: DATA.units, groups: SHORTCUTS, isFactory, gridKeys: GRID_KEYS,
+    categoryKeys: Object.fromEntries(CATEGORIES.map(cat => [cat.id, cat.key])),
+    waterEquivalents: WATER_EQUIVALENTS, limit: 12,
+  })
+}
+
+function renderReferenceSearch(results, query) {
+  const isQwertz = settings.keyboard === 'qwertz'
+  const esc      = text => String(text).replace(/[&<>"]/g, ch => `&#${ch.charCodeAt(0)};`)
+  const faction  = id => id ? `<span class="rs-faction">${FACTION_SHORT[id] ?? esc(id)}</span>` : ''
+  const sections = []
+
+  // gridmenu_* is not a shortcut of its own — it is the build menu's key binding, so the
+  // answer is the key plus the in-game grid chart, which shows all of them at once
+  if (results.grid) {
+    const grid = results.grid
+    const what = grid.categoryId ? `${CATEGORIES.find(cat => cat.id === grid.categoryId).label} category`
+      : grid.page ? 'Next page of the build menu'
+      : `Build menu slot — ${['bottom', 'middle', 'top'][grid.row - 1]} row, column ${grid.col}`
+    sections.push(`<div class="rs-heading">Build menu</div>
+      <a class="rs-hit" href="#shortcuts/visual/grid">
+        <span class="rs-name">${what}</span>
+        <code class="rs-action">${esc(grid.action)}</code>
+        <span class="rs-sc-key"><kbd>${esc(display(grid.key, isQwertz))}</kbd></span>
+      </a>`)
+  }
+
+  if (results.units.length) {
+    const items = results.units.map(unit => {
+      // Ten builders often share one route (V V for the Shipyard), so routes are grouped
+      // by their keys and each builder under it stays its own link
+      const byKeys = new Map()
+      for (const route of unit.routes) {
+        const keys = route.keys.map(key => `<kbd>${esc(display(key, isQwertz))}</kbd>`).join(' ')
+        if (!byKeys.has(keys)) byKeys.set(keys, [])
+        byKeys.get(keys).push(route)
+      }
+      const routes = [...byKeys].map(([keys, list]) => `
+        <div class="rs-route"><span class="rs-keys">${keys}</span><span class="rs-builders">${
+          list.map(route => `<a class="rs-builder" href="#menu/${route.builderId}/${unit.id}">${
+            esc(DATA.builders[route.builderId].name)}</a>`).join('')
+        }</span></div>`).join('')
+      const first = unit.routes[0]
+      return `
+        <div class="rs-unit">
+          <a class="rs-hit" href="#menu/${first.builderId}/${unit.id}">
+            <img class="rs-icon" src="data/${esc(uInfo(unit.id).icon)}" alt="">
+            <span class="rs-name">${esc(unit.name)}</span>${faction(unit.faction)}
+          </a>
+          ${routes}
+        </div>`
+    })
+    sections.push(`<div class="rs-heading">Units</div>${items.join('')}`)
+  }
+
+  if (results.builders.length) {
+    const items = results.builders.map(hit => {
+      const builder = DATA.builders[hit.id]
+      const kind    = builder.isCommander ? 'Commander' : isFactory(builder) ? 'Factory' : 'Constructor'
+      return `
+        <a class="rs-hit" href="#menu/${hit.id}">
+          <img class="rs-icon" src="data/${esc(builder.icon)}" alt="">
+          <span class="rs-name">${esc(hit.name)}</span>${faction(hit.faction)}
+          <span class="rs-meta">${builder.isCommander ? '' : `T${builder.tier} `}${kind}</span>
+        </a>`
+    })
+    sections.push(`<div class="rs-heading">Builders</div>${items.join('')}`)
+  }
+
+  if (results.shortcuts.length) {
+    const items = results.shortcuts.map(hit => {
+      const row = SHORTCUTS.find(group => group.id === hit.groupId)
+        .shortcuts.find(entry => entry.id === hit.rowId)
+      // A state hit shows only its own taps, the way the reference draws one state
+      const stateEntry = hit.stateLabel && row.states.find(entry => entry.id === hit.id)
+      const sc = stateEntry
+        ? { ...row, states: undefined, keys: Array.from({ length: stateEntry.taps }, () => row.key) }
+        : row
+      const state = hit.stateLabel ? ` <span class="rs-state">· ${esc(hit.stateLabel)}</span>` : ''
+      return `
+        <a class="rs-hit" href="#shortcuts/${hit.id}">
+          <span class="rs-name">${esc(hit.name)}${state}</span>
+          ${hit.action ? `<code class="rs-action">${esc(hit.action)}</code>` : `<span class="rs-meta">${esc(hit.groupName)}</span>`}
+          <span class="rs-sc-key">${formatShortcutKey(sc, isQwertz)}${formatMouseAction(sc.mouseAction)}</span>
+        </a>`
+    })
+    sections.push(`<div class="rs-heading">Shortcuts</div>${items.join('')}`)
+  }
+
+  return sections.join('') ||
+    `<div class="rs-empty">Nothing matches “${esc(query)}”</div>`
+}
+
+function initReferenceSearch() {
+  for (const box of document.querySelectorAll('.ref-search')) {
+    const input = box.querySelector('.ref-search-input')
+    const panel = box.querySelector('.ref-search-results')
+    let active  = -1
+
+    const hits  = () => [...panel.querySelectorAll('.rs-hit')]
+    const close = () => { panel.classList.add('hidden'); active = -1 }
+    const mark  = index => {
+      const list = hits()
+      active = list.length ? (index + list.length) % list.length : -1
+      list.forEach((el, i) => el.classList.toggle('rs-active', i === active))
+      list[active]?.scrollIntoView({ block: 'nearest' })
+    }
+    const update = () => {
+      const query = input.value.trim()
+      if (!query) return close()
+      panel.innerHTML = renderReferenceSearch(referenceSearch(query), query)
+      panel.classList.remove('hidden')
+      panel.scrollTop = 0
+      mark(0)
+    }
+
+    input.addEventListener('input', update)
+    input.addEventListener('focus', () => { if (input.value.trim()) update() })
+    input.addEventListener('keydown', event => {
+      if (event.key === 'ArrowDown') { event.preventDefault(); mark(active + 1) }
+      else if (event.key === 'ArrowUp') { event.preventDefault(); mark(active - 1) }
+      else if (event.key === 'Enter') { event.preventDefault(); hits()[active]?.click() }
+      else if (event.key === 'Escape') {
+        event.preventDefault()
+        if (input.value) { input.value = ''; close() } else input.blur()
+      }
+    })
+
+    // Every link in the panel is a deep link; a plain click opens it here
+    panel.addEventListener('click', event => {
+      const link = event.target.closest('a')
+      if (!link || opensElsewhere(event)) return
+      event.preventDefault()
+      close()
+      input.blur()
+      openReference(link.getAttribute('href'))
+    })
+  }
+
+  document.addEventListener('mousedown', event => {
+    for (const box of document.querySelectorAll('.ref-search'))
+      if (!box.contains(event.target)) box.querySelector('.ref-search-results').classList.add('hidden')
+  })
+}
+
 // ─── Key diagnostic (?keylog) ─────────────────────────────────────────────────
 //
 // Some browsers rewrite keyboard events before the page sees them — LibreWolf's
@@ -4954,6 +5124,7 @@ async function init() {
   initSetupScreen()
   initBrowseScreen()
   initShortcutsScreen()
+  initReferenceSearch()
   initKeyLog()
   initMouseZone()
   showScreen('setup')
@@ -4993,7 +5164,7 @@ async function init() {
   // it bubbles (or swallow it entirely for focus-management shortcuts like Shift+Tab).
   // Listening on keyup guarantees we always catch the Shift release.
   document.addEventListener('keyup', (event) => {
-    if (event.key === 'Shift') {
+    if (event.key === 'Shift' && !isTextField(event.target)) {
       if (screens.browse.classList.contains('active')) {
         if (browseShiftSolo) browseExitCategory()
         browseShiftSolo = false
