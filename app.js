@@ -3,7 +3,7 @@ import {
   slotPicksUnit,
   // Version query kept in step with the one on this file in index.html — a module import
   // is cached on its own, so a stale logic.js would otherwise outlive an app.js update.
-} from './logic.js?v=131'
+} from './logic.js?v=132'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -2667,6 +2667,7 @@ const MOUSE_ACTION_LABELS = {
   'click-unit-or-drag':      'Click unit or drag',
   'click-right':             'Right-click',
   'drag-line':               'Drag a line',
+  'drag-box':                'Drag a box',
   'right-drag-line':         'Right-drag a line',
   'alt-right-drag-line':     'Hold Alt · Right-drag a line',
   'shift-click-right':       'Shift + Right-click (queue)',
@@ -4093,6 +4094,8 @@ function formatMouseAction(mouseAction) {
   const isMiddle = mouseAction.includes('middle')
   const isDouble = mouseAction.includes('double')
   const isLine   = mouseAction.includes('line')
+  // A selection box is a rectangle, not the circle an area order covers
+  const isBox    = /(^|-)box$/.test(mouseAction)
   const isDrag   = mouseAction.includes('drag')
   const mods     = mouseActionMods(mouseAction)
 
@@ -4126,6 +4129,14 @@ function formatMouseAction(mouseAction) {
       ${mouseBody(button)}
       <path d="M15 10L22 15" stroke="rgba(255,255,255,.38)" stroke-width="1.2" stroke-dasharray="2,1.5" stroke-linecap="round"/>
       <polygon points="19.2,14.6 22,15 20.7,12.5" fill="rgba(255,255,255,.38)"/>
+    </svg>`
+  } else if (isBox) {
+    // Box drag: a dashed rectangle reaching out past the mouse's right edge, masked
+    // behind the mouse body the same way the area circle is
+    svg = `<svg class="sc-mouse-svg" viewBox="0 0 25 20" height="22" aria-hidden="true">
+      <rect x="6" y="4" width="17.5" height="13" fill="rgba(220,155,30,.07)" stroke="rgba(220,155,30,.55)" stroke-width="1.3" stroke-dasharray="2.5,2"/>
+      <rect class="sc-mouse-bg" x=".75" y=".75" width="12.5" height="18.5" rx="5.5"/>
+      ${mouseBody(button)}
     </svg>`
   } else {
     // Area drag: circle on the right side of mouse, sticking out past its right edge.

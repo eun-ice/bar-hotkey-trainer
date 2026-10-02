@@ -648,7 +648,7 @@
           "level": 0,
           "displayOnly": true,
           "description": "Left-drag a box — selects the units inside, though buildings are skipped when mobile units are in the box as well",
-          "mouseAction": "drag"
+          "mouseAction": "drag-box"
         },
         {
           "id": "select-box-append",
@@ -657,7 +657,7 @@
           "level": 0,
           "displayOnly": true,
           "description": "Hold Shift while dragging the box — the units join the current selection instead of replacing it, and buildings inside come along too",
-          "mouseAction": "shift-drag"
+          "mouseAction": "shift-drag-box"
         },
         {
           "id": "select-box-deselect",
@@ -666,7 +666,7 @@
           "level": 1,
           "displayOnly": true,
           "description": "Hold Ctrl while dragging the box — the units inside are taken out of the current selection",
-          "mouseAction": "ctrl-drag"
+          "mouseAction": "ctrl-drag-box"
         },
         {
           "id": "select-box-mobile",
@@ -675,7 +675,7 @@
           "level": 1,
           "displayOnly": true,
           "description": "Hold Alt while dragging the box — buildings are left out, so you pick up only what can move",
-          "mouseAction": "alt-drag"
+          "mouseAction": "alt-drag-box"
         },
         {
           "id": "select-box-same",
@@ -685,7 +685,7 @@
           "displayOnly": true,
           "key": "Z",
           "description": "Hold the key while dragging the box — only units of the type already selected are picked up",
-          "mouseAction": "drag"
+          "mouseAction": "drag-box"
         },
         {
           "id": "select-box-idle",
@@ -694,7 +694,7 @@
           "level": 2,
           "displayOnly": true,
           "description": "Hold Space while dragging the box — only units with nothing to do are picked up",
-          "mouseAction": "space-drag"
+          "mouseAction": "space-drag-box"
         },
         {
           "id": "select-commander",
