@@ -3,7 +3,7 @@ import {
   slotPicksUnit, searchReference,
   // Version query kept in step with the one on this file in index.html — a module import
   // is cached on its own, so a stale logic.js would otherwise outlive an app.js update.
-} from './logic.js?v=144'
+} from './logic.js?v=146'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -471,7 +471,7 @@ let SHORTCUTS         = []    // groups from shortcuts.json
 let WATER_EQUIVALENTS = {}    // bidirectional land↔water unit ID map
 let UNIT_LEVELS       = {}    // { unitId → level } inverted from shortcuts.json unitLevels
 let FACTORY_LEVELS    = {}    // { builderId → level } inverted from shortcuts.json factoryLevels
-let CONSTRUCTOR_MODS  = { 'click': 0, 'shift-click': 1, 'space-click': 1 }
+let CONSTRUCTOR_MODS  = { 'click': 0, 'shift-click': 1, 'space-click': 1, 'shift-space-click': 1 }
 // Fallback only — data/shortcuts.json overrides these. Kept in step with it so the two
 // never quietly disagree about which modifier belongs to which difficulty.
 let FACTORY_MODS      = { 'none': 0, 'shift': 1, 'ctrl': 1, 'alt': 1, 'ctrl-shift': 1, 'alt-shift': 1 }
@@ -496,8 +496,8 @@ const CONSTRUCTOR_MOD_INFO = {
   'click':       { mods: [],        short: 'Build',   label: 'Build',           desc: 'Place it — runs after the current orders' },
   'shift-click': { mods: ['shift'], short: 'Queue',   label: 'Queue build',     desc: 'Appends to the build queue' },
   'space-click': { mods: ['space'], short: 'Instant', label: 'Build instantly', desc: 'Skips the queue and starts right away' },
-  // Reference only — `cmd_commandinsert.lua` takes build orders too (`id < 0`), but the
-  // training pad cannot read two modifiers on one click, so CONSTRUCTOR_MODS never draws it
+  // `cmd_commandinsert.lua` takes build orders too (`id < 0`): with Space and Shift it
+  // walks each builder's queue and inserts where the detour is smallest — building en route
   'shift-space-click': { mods: ['shift','space'], short: 'Into route', label: 'Insert into route',
                          desc: 'Slots it into the queue where it costs the least extra walking' },
 }
@@ -2141,6 +2141,11 @@ const SVG_QUEUE = `<svg width="44" height="44" viewBox="0 0 96 96" fill="none" x
 
 const SVG_QUEUE_FRONT = `<svg width="44" height="44" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg"><g clip-path="url(#bmbqf_clip)"><path d="M4.5 48C4.5 55.4558 10.5442 61.5 18 61.5C25.4558 61.5 31.5 55.4558 31.5 48C31.5 40.5442 25.4558 34.5 18 34.5C10.5442 34.5 4.5 40.5442 4.5 48Z" fill="#2B682A" fill-opacity="0.32" stroke="#00FF00" stroke-width="2"/><path d="M34.5 17C34.5 24.4558 40.5442 30.5 48 30.5C55.4558 30.5 61.5 24.4558 61.5 17C61.5 9.54416 55.4558 3.5 48 3.5C40.5442 3.5 34.5 9.54416 34.5 17Z" fill="#2B682A" fill-opacity="0.32" stroke="#00FF00" stroke-width="2"/><g filter="url(#bmbqf_f0)"><path fill-rule="evenodd" clip-rule="evenodd" d="M19.4546 40H16.5454V46.5454H10V49.4546H16.5454V56H19.4546V49.4546H26V46.5454H19.4546V40Z" stroke="white" stroke-width="4"/></g><g filter="url(#bmbqf_f1)"><path d="M78.5 90.5V92.5H80.5V90.5H78.5ZM18 90.5H16V92.5H18V90.5ZM18 62L6.45296 82H29.547L18 62ZM78.5 88.5H18V92.5H78.5V88.5ZM20 90.5V80H16V90.5H20ZM80.5 90.5V48.5H76.5V90.5H80.5Z" fill="white"/></g><path d="M64.5 48C64.5 55.4558 70.5442 61.5 78 61.5C85.4558 61.5 91.5 55.4558 91.5 48C91.5 40.5442 85.4558 34.5 78 34.5C70.5442 34.5 64.5 40.5442 64.5 48Z" fill="#2B682A" fill-opacity="0.32" stroke="#00FF00" stroke-width="2"/></g><defs><filter id="bmbqf_f0" x="5" y="38" width="24" height="24" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/><feOffset dx="-1" dy="2"/><feGaussianBlur stdDeviation="1"/><feComposite in2="hardAlpha" operator="out"/><feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.76 0"/><feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow"/><feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow" result="shape"/></filter><filter id="bmbqf_f1" x="4.45288" y="48.5" width="78.0471" height="53" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/><feOffset dy="5"/><feGaussianBlur stdDeviation="1"/><feComposite in2="hardAlpha" operator="out"/><feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.76 0"/><feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow"/><feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/><feOffset dy="9"/><feComposite in2="hardAlpha" operator="out"/><feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.5 0"/><feBlend mode="normal" in2="effect1_dropShadow" result="effect2_dropShadow"/><feBlend mode="normal" in="SourceGraphic" in2="effect2_dropShadow" result="shape"/></filter><clipPath id="bmbqf_clip"><rect width="96" height="96" fill="white"/></clipPath></defs></svg>`
 
+// Shift+Space: the new build slots in between two queued ones, on the way rather than at
+// the end — SVG_QUEUE's three waypoints in the same places, but the path now runs through
+// the top one, which carries the plus
+const SVG_QUEUE_ROUTE = `<svg width="44" height="44" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><filter id="bmbqr_f0" x="5" y="8" width="88" height="50" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feDropShadow dy="5" stdDeviation="1" flood-opacity="0.76"/></filter></defs><path d="M4 54.5C4 61.9558 10.0442 68 17.5 68C24.9558 68 31 61.9558 31 54.5C31 47.0442 24.9558 41 17.5 41C10.0442 41 4 47.0442 4 54.5Z" fill="#2B682A" fill-opacity="0.32" stroke="#00FF00" stroke-width="2"/><path d="M34 23.5C34 30.9558 40.0442 37 47.5 37C54.9558 37 61 30.9558 61 23.5C61 16.0442 54.9558 10 47.5 10C40.0442 10 34 16.0442 34 23.5Z" fill="#2B682A" fill-opacity="0.32" stroke="#00FF00" stroke-width="2"/><path d="M64 54.5C64 61.9558 70.0442 68 77.5 68C84.9558 68 91 61.9558 91 54.5C91 47.0442 84.9558 41 77.5 41C70.0442 41 64 47.0442 64 54.5Z" fill="#2B682A" fill-opacity="0.32" stroke="#00FF00" stroke-width="2"/><g filter="url(#bmbqr_f0)"><path d="M17.5 41V23.5H26M61 23.5H77.5V33" stroke="white" stroke-width="4"/><path d="M40 23.5L26 14V33Z" fill="white"/><path d="M77.5 49L68 33H87Z" fill="white"/></g><path fill-rule="evenodd" clip-rule="evenodd" d="M48.9546 15.5H46.0454V22.0454H39.5V24.9546H46.0454V31.5H48.9546V24.9546H55.5V22.0454H48.9546V15.5Z" stroke="white" stroke-width="4"/></svg>`
+
 function buildModBadgeSvg(mod, factory) {
   const img = (src) => `<img src="data/${src}" width="44" height="44" alt="">`
   // Ctrl removes from the queue now, so the game's old +20 and +100 artwork is simply
@@ -2161,6 +2166,7 @@ function buildModBadgeSvg(mod, factory) {
   } else {
     if (mod === 'shift-click') return SVG_QUEUE
     if (mod === 'space-click') return SVG_QUEUE_FRONT
+    if (mod === 'shift-space-click') return SVG_QUEUE_ROUTE
     return ''
   }
 }
@@ -2195,6 +2201,7 @@ function updateBuildActionLabel() {
   } else {
     if (mod === 'shift-click') text = 'Queue Build'
     else if (mod === 'space-click') text = 'Build (instant)'
+    else if (mod === 'shift-space-click') text = 'Build en route'
   }
   el.textContent = text
 }
@@ -2665,6 +2672,7 @@ const MOUSE_ACTION_LABELS = {
   'click':                   'Click to place',
   'shift-click':             'Shift + Click (queue)',
   'space-click':             'Space + Click (instant)',
+  'shift-space-click':       'Shift + Space + Click (en route)',
   'click-unit':              'Click the unit',
   'drag':                    'Drag to set area',
   'alt-drag':                'Hold Alt · Drag area',
@@ -2982,6 +2990,18 @@ function initMouseZone() {
           `Hold <kbd>${missing.join('</kbd>+<kbd>')}</kbd>${macSwapNote(missing)} while ${wantsDrag ? 'dragging' : 'clicking'}!`,
           'state-wrong')
         return
+      }
+      // On a build order Shift and Space pick the queue slot, so one too many is another
+      // command: Shift+Space+click slots the build into the route, not onto the end
+      if (currentEntry?.type !== 'shortcut') {
+        const extra = ['Shift', 'Space'].filter(mod => held.includes(mod) && !mouseActionMods(action).includes(mod))
+        if (extra.length) {
+          questionHadWrong = true
+          setInstruction(
+            `Let go of <kbd>${extra.join('</kbd>+<kbd>')}</kbd> — that makes it a different command`,
+            'state-wrong')
+          return
+        }
       }
       handleMouseComplete(!wantsDrag)
     } else if (action === 'click') {

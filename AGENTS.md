@@ -41,7 +41,7 @@ Look ids up in `data/buildmenus.json` (`builders` and `units`).
 http://localhost:3737/?queue=armcom:armsy&mod=shift-click
 ```
 
-`click`, `shift-click` or `space-click`. Otherwise the modifier is drawn at random per
+`click`, `shift-click`, `space-click` or `shift-space-click`. Otherwise the modifier is drawn at random per
 question, so a Shift+click bug takes a dozen reloads to hit. Constructors only —
 factories carry their modifier on the grid key.
 
@@ -256,15 +256,18 @@ rather than being copied into the code, so it can be refreshed when upstream cha
   (`queue-order-front`); with Space *and* Shift it walks the queue per unit and inserts at
   the slot with the smallest detour, `dist(prev→new) + dist(new→next) − dist(prev→next)`,
   appending instead when the end of the queue is the shorter walk (`queue-order-cheapest`).
-  Read from source, not yet confirmed in game.
-- **A `mouseAction` may stack modifier prefixes, but only the reference can train them.**
-  `mouseActionMods()` is the one parser — `shift-space-click-right` wants both Shift and
-  Space — and `formatMouseAction()` and `scGestureMatches()` go through it, so a stacked
-  entry renders and ticks off on the reference pad. The training pad's `mouseup` still
-  dispatches on exact action names (`'shift-click'`, `'ctrl-drag'`, …), so a *trainable*
-  entry with two modifiers would reach no branch and silently do nothing. Keep such
-  entries `displayOnly`, or generalise that chain first.
-  `queue-order-cheapest` also cannot be ticked off on the reference pad, for an unrelated
+  Verified in game for a constructor build — Shift+Space+click slots it into the route,
+  which is what the `shift-space-click` build modifier trains. The right-click order
+  variant is read from source only.
+- **A `mouseAction` may stack modifier prefixes.** `mouseActionMods()` is the one parser —
+  `shift-space-click-right` wants both Shift and Space — and `formatMouseAction()`,
+  `scGestureMatches()` and the training pad's `mouseup` (through `MOUSE_MOD_GESTURE_RE`) all
+  go through it, so a stacked gesture renders, ticks off and trains. The constructor build
+  `shift-space-click` (build en route, `cmd_commandinsert.lua`'s cheapest-detour insert) is
+  drawn from Mid on. On a *build* question Shift and Space are judged exactly: an extra one
+  is wrong, because Shift+Space+click is a different order than Shift+click — modifier
+  gestures elsewhere still let extra modifiers pass.
+  `queue-order-cheapest` cannot be ticked off on the reference pad, for an unrelated
   reason: `Shift+Space` is itself a complete shortcut (`show-build-queue`), so the key
   press flashes that one and pulls the view to Factory, and the right-click that follows
   is a bare gesture — `scFlash`'s `allowSwitch = false` deliberately refuses to yank the

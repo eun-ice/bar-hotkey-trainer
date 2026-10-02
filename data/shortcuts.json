@@ -601,7 +601,8 @@
   "constructorModifiers": {
     "click": 0,
     "shift-click": 1,
-    "space-click": 1
+    "space-click": 1,
+    "shift-space-click": 1
   },
   "factoryModifiers": {
     "none": 0,
