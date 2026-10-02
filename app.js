@@ -3,7 +3,7 @@ import {
   slotPicksUnit,
   // Version query kept in step with the one on this file in index.html — a module import
   // is cached on its own, so a stale logic.js would otherwise outlive an app.js update.
-} from './logic.js?v=132'
+} from './logic.js?v=136'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -1000,8 +1000,10 @@ function showScreen(name) {
   for (const [key, el] of Object.entries(screens)) {
     el.classList.toggle('active', key === name)
   }
-  if (name === 'shortcuts' && activeShortcutsGroupId) {
-    selectShortcutsGroup(activeShortcutsGroupId)
+  if (name === 'shortcuts') {
+    if (activeShortcutsGroupId) selectShortcutsGroup(activeShortcutsGroupId)
+    else if (!$('sc-visual')?.classList.contains('hidden')) showVisualChart?.(null)
+    else setShortcutsHash()
   }
 }
 
@@ -3153,6 +3155,20 @@ function restoreSettingsUI() {
   updateBuilderCount()
 }
 
+// Every screen that shows keys needs to know the layout first — the reference screens
+// label keys (Z vs Y, ^ vs `) just as much as training does. When the browser can tell
+// us the layout there is nothing to ask, so the Y/Z prompt is skipped entirely.
+//
+// `skipOnTouch` opts a button out of the prompt on a device with no keyboard to answer
+// it with. The reference screens are worth reading on a phone even though training is
+// not possible there, and a dialogue asking for a keypress is a dead end. QWERTY labels
+// are the fallback; the radio buttons on the setup screen still switch them.
+const withKeyboard = (fn, skipOnTouch = false) => () => {
+  if (KeyLayout.detected || settings.keyboard) return fn()
+  if (skipOnTouch && isTouchOnly()) return fn()
+  showKbdDetect(fn)
+}
+
 function initSetupScreen() {
   restoreSettingsUI()
 
@@ -3269,20 +3285,6 @@ function initSetupScreen() {
       saveSettings(settings)
       updateBuilderCount()
     })
-
-  // Every screen that shows keys needs to know the layout first — the reference screens
-  // label keys (Z vs Y, ^ vs `) just as much as training does. When the browser can tell
-  // us the layout there is nothing to ask, so the Y/Z prompt is skipped entirely.
-  //
-  // `skipOnTouch` opts a button out of the prompt on a device with no keyboard to answer
-  // it with. The reference screens are worth reading on a phone even though training is
-  // not possible there, and a dialogue asking for a keypress is a dead end. QWERTY labels
-  // are the fallback; the radio buttons on the setup screen still switch them.
-  const withKeyboard = (fn, skipOnTouch = false) => () => {
-    if (KeyLayout.detected || settings.keyboard) return fn()
-    if (skipOnTouch && isTouchOnly()) return fn()
-    showKbdDetect(fn)
-  }
 
   $('btn-start').addEventListener('click', withKeyboard(() => {
     precacheIcons(filteredBuilders(settings))
@@ -3920,6 +3922,65 @@ function browsePageDelta(delta) {
 // ─── Shortcuts reference screen ───────────────────────────────────────────────
 
 let activeShortcutsGroupId = null
+
+// ─── Deep links into the reference ───────────────────────────────────────────
+//
+// The hash mirrors where the reference screen is, so the address bar is always a link
+// back to the same place:
+//   #shortcuts                 the screen, last group
+//   #shortcuts/<group id>      one group        (#shortcuts/move)
+//   #shortcuts/<shortcut id>   one row, highlighted and scrolled into view
+//   #shortcuts/visual/<chart>  the in-game chart (#shortcuts/visual/grid-ctrl)
+// Written with replaceState so browsing the reference never piles up history entries;
+// the Back button therefore still leaves the page, as it did before.
+
+function setShortcutsHash(...parts) {
+  // The screen is rendered once at init while still hidden — that must not clobber a
+  // deep link the page was opened with before applyLocationHash gets to read it
+  if (currentScreen !== 'shortcuts') return
+  const hash = '#' + ['shortcuts', ...parts.filter(Boolean)].join('/')
+  if (location.hash === hash) return
+  history.replaceState(null, '', location.pathname + location.search + hash)
+}
+
+function clearShortcutsHash() {
+  if (!location.hash.startsWith('#shortcuts')) return
+  history.replaceState(null, '', location.pathname + location.search)
+}
+
+/** The group holding shortcut (or toggle state) `id`, and the row id that shows it. */
+function findShortcutRow(id) {
+  for (const group of SHORTCUTS) {
+    for (const sc of group.shortcuts) {
+      if (sc.id !== id && !sc.states?.some(state => state.id === id)) continue
+      // learnHidden rows are not rendered — the group is the closest we can get
+      return { group, rowId: sc.learnHidden ? null : sc.id }
+    }
+  }
+  return null
+}
+
+/** Opens whatever `location.hash` points at. Returns false when it is not ours. */
+function applyLocationHash() {
+  const hash = decodeURIComponent(location.hash.slice(1))
+  const [screen, first, second] = hash.split('/')
+  if (screen !== 'shortcuts') return false
+
+  const open = () => {
+    showScreen('shortcuts')
+    if (first === 'visual') {
+      showVisualChart?.(second || 'grid')
+    } else if (SHORTCUTS.some(group => group.id === first)) {
+      selectShortcutsGroup(first)
+    } else if (first) {
+      const hit = findShortcutRow(first)
+      if (hit) selectShortcutsGroup(hit.group.id, hit.rowId)
+      else setShortcutsHash(activeShortcutsGroupId)   // unknown id: drop it from the bar
+    }
+  }
+  withKeyboard(open, true)()
+  return true
+}
 let scCheckedIds = new Set()
 let scSpaceHeld  = false
 let scArmed      = null   // matches waiting for a pad gesture to disambiguate them
@@ -4358,7 +4419,26 @@ function initShortcutsScreen() {
     scCheckedIds = new Set()
     scSpaceHeld  = false
     scKeySeq     = []
+    clearShortcutsHash()
     showScreen('setup')
+  })
+
+  // Clicking a row pins it: highlighted, and the address bar becomes a link straight to
+  // it. Clicking it again unpins. A drag that selected text is left alone.
+  $('shortcuts-content').addEventListener('click', (event) => {
+    if (event.target.closest('a')) return
+    if (!window.getSelection()?.isCollapsed) return
+    const row = event.target.closest('tr[data-sc-id]')
+    if (!row) return
+    const pinned = row.classList.contains('sc-row-target')
+    for (const el of document.querySelectorAll('.sc-row-target'))
+      el.classList.remove('sc-row-target')
+    if (pinned) {
+      setShortcutsHash(activeShortcutsGroupId)
+    } else {
+      row.classList.add('sc-row-target')
+      setShortcutsHash(row.dataset.scId)
+    }
   })
 
   const padLabel = txt => { const el = $('sc-pad-label'); if (el) el.innerHTML = txt }
@@ -4611,13 +4691,20 @@ const KEYBIND_CHART_SRC = 'https://github.com/beyond-all-reason/Beyond-All-Reaso
 // the area-command modifiers with pictures of what the drag has to start on.
 const GUIDE_CHARTS = new Set(['area-filters', 'reclaim', 'move', 'fight', 'settarget'])
 
+// Set by initVisualReference; opens the chart panel on the given chart (deep links)
+let showVisualChart = null
+
 function initVisualReference() {
   const item = $('sc-visual-item')
   const panel = $('sc-visual')
   if (!item || !panel) return
 
-  let geladen = false
+  let current = null
   const show = chart => {
+    // Unknown chart in a hand-typed link — fall back to the first tab
+    if (!$('sc-visual-tabs').querySelector(`.sc-visual-tab[data-chart="${chart}"]`)) chart = 'grid'
+    current = chart
+    setShortcutsHash('visual', chart)
     const isGuide = GUIDE_CHARTS.has(chart)
     const src = isGuide ? `data/guides/${chart}.webp` : `data/keybinds/${chart}.webp`
     $('sc-visual-img').src = src
@@ -4630,7 +4717,7 @@ function initVisualReference() {
       tab.classList.toggle('active', tab.dataset.chart === chart)
   }
 
-  item.addEventListener('click', () => {
+  const openPanel = chart => {
     activeShortcutsGroupId = null
     for (const el of $('shortcuts-group-list').querySelectorAll('.browse-item'))
       el.classList.remove('active')
@@ -4640,20 +4727,24 @@ function initVisualReference() {
     document.querySelector('.sc-intro')?.classList.add('hidden')
     panel.classList.remove('hidden')
     // Not `if (!img.src)`: an empty src attribute resolves to the page URL, so it is
-    // never falsy. Track it ourselves instead.
-    if (!geladen) { geladen = true; show('grid') }
-  })
+    // never falsy. Track the chart ourselves instead.
+    show(chart ?? current ?? 'grid')
+  }
+
+  item.addEventListener('click', () => openPanel(null))
+  showVisualChart = openPanel
 
   for (const tab of $('sc-visual-tabs').querySelectorAll('.sc-visual-tab'))
     tab.addEventListener('click', () => show(tab.dataset.chart))
 }
 
-function selectShortcutsGroup(id) {
+function selectShortcutsGroup(id, targetRowId = null) {
   // Leaving the chart behind — a key press can pull the view back to a group at any time
   $('sc-visual')?.classList.add('hidden')
   $('sc-visual-item')?.classList.remove('active')
   document.querySelector('.sc-intro')?.classList.remove('hidden')
   activeShortcutsGroupId = id
+  setShortcutsHash(targetRowId ?? id)
   const isQwertz = settings.keyboard === 'qwertz'
 
   for (const el of $('shortcuts-group-list').querySelectorAll('.browse-item'))
@@ -4713,6 +4804,14 @@ function selectShortcutsGroup(id) {
       </thead>
       <tbody>${rows}</tbody>
     </table>`
+
+  if (targetRowId) {
+    const row = content.querySelector(`tr[data-sc-id="${targetRowId}"]`)
+    if (row) {
+      row.classList.add('sc-row-target')
+      requestAnimationFrame(() => row.scrollIntoView({ block: 'center' }))
+    }
+  }
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
@@ -4763,6 +4862,10 @@ async function init() {
   initKeyLog()
   initMouseZone()
   showScreen('setup')
+  applyLocationHash()
+  // Our own navigation uses replaceState, which fires no hashchange — this is only for a
+  // hash typed or pasted into the address bar of an already open page
+  window.addEventListener('hashchange', applyLocationHash)
   // Prevent browser-reserved keys from closing the tab/app. Ctrl+W closes tabs and
   // Ctrl+Q quits the browser on Linux/Windows; Cmd+W and Cmd+Q do the same on macOS,
   // and with the Cmd↔Alt swap on those are exactly what Alt+W and Alt+Q become.
@@ -4780,11 +4883,11 @@ async function init() {
 
   // Belt-and-suspenders: if the keydown block didn't work (Chromium on Linux intercepts
   // Ctrl+W before JS, and macOS takes Cmd+Q outright), the beforeunload dialog is the
-  // last line of defence. It covers the reference screens too, since trying shortcuts
-  // out there is exactly where you press these combinations on purpose.
+  // last line of defence — but only while a run is in progress, where leaving loses the
+  // score. The reference screens have nothing to lose, and the dialog there got in the
+  // way of a plain reload (Cmd+R), so they stay unguarded.
   window.addEventListener('beforeunload', (event) => {
-    const guarded = currentScreen === 'shortcuts' || currentScreen === 'browse'
-                 || (currentScreen === 'training' && !runComplete)
+    const guarded = currentScreen === 'training' && !runComplete
     if (!guarded) return
     event.preventDefault()
     event.returnValue = ''

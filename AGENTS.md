@@ -51,6 +51,22 @@ Forces the fallback path Chrome never takes: the manual QWERTY/QWERTZ pick, and 
 touch device no prompt at all. Use it to check anything Safari or Firefox users see
 without leaving Chrome.
 
+### `#shortcuts/…` — jump into the reference
+
+```
+http://localhost:3737/#shortcuts/select-idle-builders
+```
+
+Not a debug hook but a real feature, and the fastest way to land on one reference row.
+`#shortcuts/<group id>` opens a group, `#shortcuts/<shortcut id>` (or a toggle state's id)
+opens its group with that row highlighted and scrolled into view, and
+`#shortcuts/visual/<chart>` opens an in-game chart (`grid`, `grid-ctrl`, `grid-alt`, or a
+guide such as `reclaim`). The hash follows the view as you browse — clicking a row pins it
+and puts its link in the address bar — written with `replaceState`, so the browser's Back
+still leaves the page. It is written only while the reference screen is active:
+`initShortcutsScreen` renders the first group while the screen is still hidden, and that
+render must not overwrite a deep link before `applyLocationHash` reads it.
+
 ### `?keylog` — raw keyboard events
 
 Shows an overlay with the environment (platform, `IS_MAC`, layout detection) and every

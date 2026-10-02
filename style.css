@@ -1763,6 +1763,10 @@ body:has(#screen-shortcuts.active) { height: 100vh }
 }
 .sc-row-flash td { animation: sc-row-flash 0.8s ease-out; }
 
+/* The row a deep link points at, or one pinned by a click — the address bar links to it */
+.sc-row-target td { background: var(--bg-hover) }
+.sc-row-target td:first-child { box-shadow: inset 3px 0 0 var(--accent) }
+
 /* Keys typed so far on candidate shortcuts — the mouse gesture (or the next key)
    narrows them down to one. Only the pressed keys light up, not the whole row. */
 @keyframes sc-combo-lit {
