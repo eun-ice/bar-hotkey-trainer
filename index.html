@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=77">
+  <link rel="stylesheet" href="style.css?v=79">
   <script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body>
@@ -65,8 +65,8 @@
            needs to touch the settings below, so the buttons stay above the fold. -->
       <div class="setup-actions">
         <div class="setup-action-btns">
-          <button id="btn-browse" class="btn-action">📖 Menu Reference</button>
-          <button id="btn-browse-shortcuts" class="btn-action">⌨ Shortcut Reference</button>
+          <a id="btn-browse" class="btn-action">📖 Menu Reference</a>
+          <a id="btn-browse-shortcuts" class="btn-action">⌨ Shortcut Reference</a>
           <button id="btn-start" class="btn-action btn-action-primary">▶ Start Training</button>
         </div>
       </div>
@@ -417,9 +417,9 @@
       <div id="shortcuts-group-list" class="browse-list"></div>
       <div class="browse-section">
         <div class="browse-section-heading">Reference</div>
-        <div class="browse-item" id="sc-visual-item">
+        <a class="browse-item" id="sc-visual-item">
           <div class="browse-item-label"><span>🖼 Visual reference</span></div>
-        </div>
+        </a>
       </div>
     </div>
 
@@ -429,15 +429,15 @@
       <!-- The in-game keyboard charts, straight from the BAR repo -->
       <div id="sc-visual" class="sc-visual hidden">
         <div class="sc-visual-tabs" id="sc-visual-tabs">
-          <button class="sc-visual-tab active" data-chart="grid">No modifier</button>
-          <button class="sc-visual-tab" data-chart="grid-ctrl">Ctrl held</button>
-          <button class="sc-visual-tab" data-chart="grid-alt">Alt held</button>
+          <a class="sc-visual-tab active" data-chart="grid">No modifier</a>
+          <a class="sc-visual-tab" data-chart="grid-ctrl">Ctrl held</a>
+          <a class="sc-visual-tab" data-chart="grid-alt">Alt held</a>
           <span class="sc-visual-tab-sep"></span>
-          <button class="sc-visual-tab" data-chart="area-filters">Area filters</button>
-          <button class="sc-visual-tab" data-chart="reclaim">Reclaim</button>
-          <button class="sc-visual-tab" data-chart="move">Move</button>
-          <button class="sc-visual-tab" data-chart="fight">Fight</button>
-          <button class="sc-visual-tab" data-chart="settarget">Set Target</button>
+          <a class="sc-visual-tab" data-chart="area-filters">Area filters</a>
+          <a class="sc-visual-tab" data-chart="reclaim">Reclaim</a>
+          <a class="sc-visual-tab" data-chart="move">Move</a>
+          <a class="sc-visual-tab" data-chart="fight">Fight</a>
+          <a class="sc-visual-tab" data-chart="settarget">Set Target</a>
         </div>
         <a id="sc-visual-link" href="" target="_blank" rel="noopener">
           <img id="sc-visual-img" class="sc-visual-img" src="" alt="In-game keyboard chart">
@@ -565,6 +565,6 @@
   All rights remain with the original authors. If you have suggestions, mention @eunice3x on BAR discord.
 </footer>
 
-<script src="app.js?v=138" type="module"></script>
+<script src="app.js?v=139" type="module"></script>
 </body>
 </html>

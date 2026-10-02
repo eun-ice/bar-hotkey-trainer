@@ -3,7 +3,7 @@ import {
   slotPicksUnit,
   // Version query kept in step with the one on this file in index.html — a module import
   // is cached on its own, so a stale logic.js would otherwise outlive an app.js update.
-} from './logic.js?v=138'
+} from './logic.js?v=139'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -3168,6 +3168,26 @@ function restoreSettingsUI() {
 // it with. The reference screens are worth reading on a phone even though training is
 // not possible there, and a dialogue asking for a keypress is a dead end. QWERTY labels
 // are the fallback; the radio buttons on the setup screen still switch them.
+// The reference screens use real <a href> links so the browser's own "Copy link address",
+// middle click and Cmd/Ctrl/Shift+click all work. A plain click stays in the page: the
+// navigation is cancelled and `fn` does what the element always did. Alt is left out of
+// the browser's list on purpose — Alt+click downloads a link, and in the trainer Alt is
+// a game modifier, never a request for a file.
+function opensElsewhere(event) {
+  return event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey
+}
+
+/** Turn `el` into a reference link to `hash`; a plain click runs `fn` instead. */
+function refLink(el, hash, fn) {
+  el.href = hash
+  el.classList.add('ref-link')
+  el.addEventListener('click', event => {
+    if (opensElsewhere(event)) return
+    event.preventDefault()
+    fn(event)
+  })
+}
+
 const withKeyboard = (fn, skipOnTouch = false) => () => {
   if (KeyLayout.detected || settings.keyboard) return fn()
   if (skipOnTouch && isTouchOnly()) return fn()
@@ -3295,8 +3315,8 @@ function initSetupScreen() {
     precacheIcons(filteredBuilders(settings))
     showNewRunCountdown()
   }))
-  $('btn-browse').addEventListener('click', withKeyboard(() => showScreen('browse'), true))
-  $('btn-browse-shortcuts').addEventListener('click', withKeyboard(() => showScreen('shortcuts'), true))
+  refLink($('btn-browse'), '#menu', withKeyboard(() => showScreen('browse'), true))
+  refLink($('btn-browse-shortcuts'), '#shortcuts', withKeyboard(() => showScreen('shortcuts'), true))
   $('btn-settings').addEventListener('click', () => {
     clearAnswerTimer()
     clearHintTimer()
@@ -3507,7 +3527,7 @@ function initBrowseScreen() {
 }
 
 function makeBrowseItem(builder) {
-  const item = document.createElement('div')
+  const item = document.createElement('a')
   item.className = 'browse-item' + (browseBuilder?.id === builder.id ? ' active' : '')
   item.dataset.id = builder.id
 
@@ -3529,7 +3549,7 @@ function makeBrowseItem(builder) {
 
   label.append(tier, name)
   item.append(icon, label)
-  item.addEventListener('click', () => selectBrowseBuilder(builder.id))
+  refLink(item, `#menu/${builder.id}`, () => selectBrowseBuilder(builder.id))
   return item
 }
 
@@ -3635,14 +3655,14 @@ function renderBrowseMenu() {
     tabContainer.classList.remove('hidden')
     for (const cat of CATEGORIES) {
       if (!browseBuilder.categories[cat.id]) continue
-      const tab = document.createElement('div')
+      const tab = document.createElement('a')
       tab.className = 'cat-tab clickable' + (cat.id === browseCatId ? ' active' : '')
       tab.dataset.cat = cat.id
       tab.innerHTML = `
         <span class="tab-key">${display(cat.key, isQwertz)}</span>
         <span class="tab-label">${cat.label}</span>
       `
-      tab.addEventListener('click', () => {
+      refLink(tab, `#menu/${browseBuilder.id}/${cat.id}`, () => {
         browseCatId = cat.id
         browsePage  = 0
         renderBrowseMenu()
@@ -3662,7 +3682,7 @@ function renderBrowseMenu() {
 
   for (const key of GRID_KEYS) {
     const unit = slotMap[key] ?? null
-    const slot = document.createElement('div')
+    const slot = document.createElement(unit ? 'a' : 'div')
     slot.className = 'slot' + (unit ? '' : ' empty')
     slot.dataset.key = key
 
@@ -3708,7 +3728,7 @@ function renderBrowseMenu() {
         if (browsePinnedUnit) showSlotHover(browsePinnedUnit, 'browse-slot-hover-info')
         else clearSlotHover('browse-slot-hover-info')
       })
-      slot.addEventListener('click', () => {
+      refLink(slot, `#menu/${browseBuilder.id}/${unit.id}`, () => {
         const wasPinned = browsePinnedUnit === unit
         clearBrowsePin()
         if (!wasPinned) {
@@ -4494,7 +4514,14 @@ function initShortcutsScreen() {
   // Clicking a row pins it: highlighted, and the address bar becomes a link straight to
   // it. Clicking it again unpins. A drag that selected text is left alone.
   $('shortcuts-content').addEventListener('click', (event) => {
-    if (event.target.closest('a')) return
+    // The row label is a reference link: a plain click pins the row here, anything that
+    // would open it elsewhere goes to the browser. Other links (BAR wiki) are left alone.
+    const link = event.target.closest('a')
+    if (link && !link.classList.contains('ref-link')) return
+    if (link) {
+      if (opensElsewhere(event)) return
+      event.preventDefault()
+    }
     if (!window.getSelection()?.isCollapsed) return
     const row = event.target.closest('tr[data-sc-id]')
     if (!row) return
@@ -4683,7 +4710,7 @@ function initShortcutsScreen() {
 
   const list = $('shortcuts-group-list')
   for (const group of SHORTCUTS) {
-    const item = document.createElement('div')
+    const item = document.createElement('a')
     item.className = 'browse-item'
     item.dataset.id = group.id
 
@@ -4694,7 +4721,7 @@ function initShortcutsScreen() {
     label.appendChild(name)
     item.appendChild(label)
 
-    item.addEventListener('click', () => selectShortcutsGroup(group.id))
+    refLink(item, `#shortcuts/${group.id}`, () => selectShortcutsGroup(group.id))
     list.appendChild(item)
   }
 
@@ -4799,11 +4826,11 @@ function initVisualReference() {
     show(chart ?? current ?? 'grid')
   }
 
-  item.addEventListener('click', () => openPanel(null))
+  refLink(item, '#shortcuts/visual', () => openPanel(null))
   showVisualChart = openPanel
 
   for (const tab of $('sc-visual-tabs').querySelectorAll('.sc-visual-tab'))
-    tab.addEventListener('click', () => show(tab.dataset.chart))
+    refLink(tab, `#shortcuts/visual/${tab.dataset.chart}`, () => show(tab.dataset.chart))
 }
 
 function selectShortcutsGroup(id, targetRowId = null) {
@@ -4853,7 +4880,7 @@ function selectShortcutsGroup(id, targetRowId = null) {
     return `
       <tr data-sc-id="${sc.id}"${checked ? ` class="${checked.trim()}"` : ''}>
         <td class="sc-check-col"><span class="sc-check">✓</span></td>
-        <td class="sc-action"><span class="sc-label">${commandIconHtml(sc.action ?? sc.states?.[0]?.action)}${sc.label}</span>${desc}</td>
+        <td class="sc-action"><a class="sc-label ref-link" href="#shortcuts/${sc.id}">${commandIconHtml(sc.action ?? sc.states?.[0]?.action)}${sc.label}</a>${desc}</td>
         <td class="sc-key"><span class="sc-key-row"><span class="sc-key-keys">${formatShortcutKey(sc, isQwertz)}</span>${formatMouseAction(sc.mouseAction)}</span>${reserved}</td>
         ${anyLevel ? `<td class="sc-level">${lvlBadge}</td>` : ''}
       </tr>`

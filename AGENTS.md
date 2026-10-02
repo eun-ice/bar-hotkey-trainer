@@ -77,6 +77,13 @@ http://localhost:3737/#menu/legck/leggeo
 or a unit id, which opens that unit's category and page with its slot pinned. Clicking a
 slot or a tab rewrites it, guarded by `currentScreen` the same way.
 
+Everything that navigates the two references is a real `<a href="#…">` — the setup
+buttons, sidebar items, category tabs, filled slots, chart tabs and each row's label — so
+the browser's own "Copy link address", middle click and Cmd/Ctrl/Shift+click work.
+`refLink()` wires them: a plain click cancels the navigation and does what the element
+always did. Alt+click is treated as plain on purpose, since the browser would download
+the link. A new clickable element in either reference should go through `refLink()` too.
+
 ### `?keylog` — raw keyboard events
 
 Shows an overlay with the environment (platform, `IS_MAC`, layout detection) and every

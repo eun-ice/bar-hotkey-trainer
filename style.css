@@ -2237,3 +2237,10 @@ body:has(#screen-shortcuts.active) { height: 100vh }
 }
 /* The build legend's click is the reference's mouse icon, sitting right after the "+" */
 .bml-keys .sc-mouse-action, .bmr-note .sc-mouse-action { margin-left: 0; vertical-align: middle }
+
+/* Reference links are <a> only so the browser offers "Copy link address" and opens them
+   in a new tab; they keep the look of whatever they replaced. :where() keeps this at zero
+   specificity, so the element's own class still sets its colour. */
+:where(a.ref-link) { color: inherit; text-decoration: none }
+a.btn-action  { display: inline-block; text-align: center }
+a.slot, a.cat-tab { display: block }
