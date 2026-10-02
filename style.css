@@ -1810,7 +1810,10 @@ body:has(#screen-shortcuts.active) { height: 100vh }
 .sc-key-row:has(.sc-drag-origin) .sc-mouse-action > .sc-mouse-plus { margin-top: 6px }
 .sc-mouse-action { align-items: flex-start }
 .sc-drag-origin .sc-origin-tile { margin-left: -9px }
-.sc-origin-tile { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle }
+/* The tile is exactly as wide as its picture, so the picture's right edge lines up down
+   the column whatever the caption says; the caption hangs below, right-aligned to it and
+   free to run left under the mouse. The padding reserves the caption's line in the row */
+.sc-origin-tile { position: relative; display: inline-block; width: 34px; padding-bottom: 11px; vertical-align: middle }
 .sc-origin-pic { position: relative; display: block; width: 34px; height: 34px }
 .sc-origin-tile img { width: 34px; height: 34px; border-radius: 5px; object-fit: cover; border: 1px solid var(--border2); display: block; box-sizing: border-box }
 /* Two origins in one tile: the second picture fills the lower-right half, a slash between */
@@ -1820,7 +1823,7 @@ body:has(#screen-shortcuts.active) { height: 100vh }
   content: ''; position: absolute; left: 50%; top: -7px; width: 2px; height: 48px;
   margin-left: -1px; background: rgba(255,255,255,.85); transform: rotate(45deg); pointer-events: none;
 }
-.sc-origin-cap { font-size: 9px; letter-spacing: .05em; text-transform: uppercase; color: var(--text-dim); margin-top: 2px; line-height: 1 }
+.sc-origin-cap { position: absolute; top: 36px; right: 0; white-space: nowrap; font-size: 9px; letter-spacing: .05em; text-transform: uppercase; color: var(--text-dim); line-height: 1 }
 /* The command's in-game cursor, in front of its name */
 .sc-cmd-icon    { width: 18px; height: 18px; vertical-align: -4px; margin-right: 6px }
 .cmd-icon-large { width: 26px; height: 26px; vertical-align: -5px; margin-right: 8px }
