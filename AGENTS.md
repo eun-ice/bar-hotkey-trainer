@@ -349,8 +349,8 @@ rather than being copied into the code, so it can be refreshed when upstream cha
   `app.js`, because a module import is cached separately from the file importing it.
   `npm run bump` keeps the two in step; do not edit either by hand.
 - **The reference search is a text field on screens that eat keys.** Both reference
-  topbars carry the same `.ref-search` box; `searchReference()` in `logic.js` does the
-  matching (units with every builder's route, builders, shortcuts — a toggle state that
+  topbars and the setup screen's action block carry the same `.ref-search` box;
+  `searchReference()` in `logic.js` does the matching (units with every builder's route, builders, shortcuts — a toggle state that
   matches on its own is the target) and `npm test` covers it. It also takes the names a
   player reads in their own `uikeys.txt`: every bind action, a prefix row expanded to its
   members (`group set 3`; an F-key member drops its F, `set_camera_anchor 2`),

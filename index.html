@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=85">
+  <link rel="stylesheet" href="style.css?v=87">
   <script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body>
@@ -68,6 +68,13 @@
           <a id="btn-browse" class="btn-action">📖 Menu Reference</a>
           <a id="btn-browse-shortcuts" class="btn-action">⌨ Shortcut Reference</a>
           <button id="btn-start" class="btn-action btn-action-primary">▶ Start Training</button>
+        </div>
+        <!-- The same search as on the two reference screens; a hit opens the reference it
+             lives in, so nobody has to guess which screen holds a unit or a shortcut. -->
+        <div class="ref-search setup-search">
+          <input type="search" class="browse-search ref-search-input"
+                 placeholder="Search units, builders, shortcuts…" aria-label="Search the references">
+          <div class="ref-search-results hidden"></div>
         </div>
       </div>
 

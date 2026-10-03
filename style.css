@@ -1457,6 +1457,11 @@ a.slot:not(.empty):hover img { transform: scale(1.05) }
 /* ── Reference search: one field, units + builders + shortcuts ── */
 .ref-search { position: relative; flex-shrink: 0 }
 .ref-search .browse-search { width: 280px }
+/* On the setup screen it sits centred under the action buttons, and the results drop
+   down under the field itself rather than hugging a top bar's right edge */
+.setup-search { width: 100%; max-width: 420px }
+.setup-search .browse-search { width: 100% }
+.setup-search .ref-search-results { left: 0; right: 0; width: auto }
 .ref-search-results {
   position: absolute;
   top: calc(100% + 6px);
@@ -2006,19 +2011,25 @@ a.slot:not(.empty):hover img { transform: scale(1.05) }
 .sc-mouse-svg { display: block }
 /* Where an area drag has to start: the mouse icon first, then the tile of the thing under
    the cursor, tucked half under the mouse's area circle so both read as one gesture */
-.sc-drag-origin { display: inline-flex; align-items: flex-start }
-.sc-drag-origin .sc-mouse-svg { position: relative; z-index: 1; margin-top: 6px }
+.sc-drag-origin { display: inline-flex; align-items: center }
+.sc-drag-origin .sc-mouse-svg { position: relative; z-index: 1 }
 /* With a tile in the row, keys, modifiers and mouse all sit on the tile picture's centre
-   line; only the caption hangs below */
-.sc-key-row:has(.sc-drag-origin) > .sc-key-keys,
-.sc-key-row:has(.sc-drag-origin) .sc-mouse-action > kbd,
-.sc-key-row:has(.sc-drag-origin) .sc-mouse-action > .sc-mouse-plus { margin-top: 6px }
-.sc-mouse-action { align-items: flex-start }
+   line; only the caption hangs below. The tile's box is just its picture, so flex centring
+   does the aligning — fixed margins drifted as soon as a chip's height changed — and the
+   caption's line is reserved by padding on the wrapper, in the reference row as in the
+   answer card and the search hits */
+.sc-key-row:has(.sc-drag-origin), .rs-sc-key:has(.sc-drag-origin) { align-items: center; padding-bottom: 11px }
+.sc-mouse-action:has(.sc-drag-origin) { padding-bottom: 11px }
+.sc-key-row > .sc-mouse-action:has(.sc-drag-origin),
+.rs-sc-key > .sc-mouse-action:has(.sc-drag-origin) { padding-bottom: 0 }
+/* …except that a "Practice here" line makes the key block two lines tall: keep its first
+   line, not its middle, on the picture's centre (34px picture, 22px key line) */
+.sc-key-row:has(.sc-drag-origin) > .sc-key-keys:has(.sc-mac-practice) { align-self: flex-start; margin-top: 6px }
 .sc-drag-origin .sc-origin-tile { margin-left: -9px }
 /* The tile is exactly as wide as its picture, so the picture's right edge lines up down
    the column whatever the caption says; the caption hangs below, right-aligned to it and
-   free to run left under the mouse. The padding reserves the caption's line in the row */
-.sc-origin-tile { position: relative; display: inline-block; width: 34px; padding-bottom: 11px; vertical-align: middle }
+   free to run left under the mouse */
+.sc-origin-tile { position: relative; display: inline-block; width: 34px; vertical-align: middle }
 .sc-origin-pic { position: relative; display: block; width: 34px; height: 34px }
 .sc-origin-tile img { width: 34px; height: 34px; border-radius: 5px; object-fit: cover; border: 1px solid var(--border2); display: block; box-sizing: border-box }
 /* Two origins in one tile: the second picture fills the lower-right half, a slash between */
