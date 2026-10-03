@@ -3,18 +3,20 @@
 
 :root {
   /* Palette */
-  --bg:           #0c1218;
-  --bg-panel:     #111a24;
-  --bg-panel2:    #18242e;
-  --bg-hover:     #1c2d3c;
-  --border:       #1e3040;
-  --border2:      #2a4458;
-  --accent:       #c8a440;
-  --accent-dim:   #7a6228;
-  --accent-glow:  rgba(200,164,64,.3);
-  --text:         #b8c8d8;
-  --text-dim:     #506070;
-  --text-bright:  #ddeaf4;
+  --bg:           #090e14;
+  --bg-deep:      #05080c;
+  --bg-panel:     #0f171f;
+  --bg-panel2:    #172230;
+  --bg-hover:     #1d2c3c;
+  --border:       #1c2a38;
+  --border2:      #2b3f54;
+  --accent:       #e0b84a;
+  --accent-hi:    #f4d573;
+  --accent-dim:   #8a6f2c;
+  --accent-glow:  rgba(224,184,74,.3);
+  --text:         #b4c3d2;
+  --text-dim:     #6b7d90;
+  --text-bright:  #eaf1f8;
   --success:      #4ab870;
   --success-bg:   rgba(74,184,112,.18);
   --success-glow: rgba(74,184,112,.35);
@@ -27,8 +29,15 @@
   /* Slot grid */
   --slot:  82px;
   --gap:   3px;
-  --rad:   4px;
-  --rad-lg: 8px;
+  --rad:   6px;
+  --rad-md: 9px;
+  --rad-lg: 12px;
+
+  /* Surfaces: a faint top light and a soft drop shadow lift a panel off the page */
+  --panel-sheen:  linear-gradient(180deg, rgba(255,255,255,.028), rgba(255,255,255,0) 55%);
+  --panel-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 10px 28px -16px rgba(0,0,0,.8);
+  --gold-grad:    linear-gradient(180deg, var(--accent-hi), var(--accent));
+  --on-gold:      #17120a;
 
   font-family: 'Exo 2', 'Segoe UI', system-ui, sans-serif;
   font-size: 14px;
@@ -36,6 +45,9 @@
   background: var(--bg);
   line-height: 1.4;
   -webkit-font-smoothing: antialiased;
+  font-variant-numeric: tabular-nums;
+  /* Native scrollbars, form controls and the search field's clear button in dark */
+  color-scheme: dark;
 }
 
 /* ─── Utility ───────────────────────────────────────────────────────────────── */
@@ -68,11 +80,14 @@ kbd {
   display: inline-block;
   padding: 1px 6px;
   border: 1px solid var(--border2);
-  border-radius: 3px;
-  background: var(--bg-panel2);
+  border-bottom-color: #0a0f15;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #243344, #161f2a);
+  box-shadow: 0 1px 0 rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.07);
   font: inherit;
   font-size: 12px;
-  color: var(--accent);
+  font-weight: 600;
+  color: var(--accent-hi);
   vertical-align: middle;
 }
 
@@ -80,8 +95,9 @@ kbd {
 /* In normal flow, not pinned: pinned it sat on top of the content on short screens, and
    the credit line is never urgent enough to cost a strip of a small viewport. */
 #site-footer {
-  padding: 5px 16px;
+  padding: 6px 16px;
   border-top: 1px solid var(--border);
+  background: var(--bg-deep);
   font-size: 11px;
   color: var(--text-dim);
   text-align: center;
@@ -98,7 +114,17 @@ kbd {
 /* Body owns the vertical layout so the active screen can claim the viewport *minus* the
    footer. With the screen at a flat 100vh the footer pushed the page past the fold and
    the browse screen — which is built to fit exactly — could be scrolled half out of view. */
-body { display: flex; flex-direction: column; min-height: 100vh }
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  /* A warm glow at the top and a cool one bottom-right: depth without a texture file */
+  background:
+    radial-gradient(1100px 520px at 50% -180px, rgba(224,184,74,.085), transparent 70%),
+    radial-gradient(900px 600px at 100% 100%, rgba(50,110,170,.10), transparent 65%),
+    var(--bg);
+  background-attachment: fixed;
+}
 .screen { display: none }
 .screen.active { display: flex; flex-direction: column; flex: 1; min-height: 0 }
 
@@ -124,6 +150,7 @@ body:has(#screen-shortcuts.active) { height: 100vh }
   border: 3px solid var(--border2);
   border-top-color: var(--accent);
   border-radius: 50%;
+  box-shadow: 0 0 18px var(--accent-glow);
   animation: spin .7s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg) } }
@@ -132,24 +159,45 @@ body:has(#screen-shortcuts.active) { height: 100vh }
 #screen-setup {
   align-items: center;
   justify-content: flex-start;
-  padding: 32px 16px;
+  padding: 40px 16px 32px;
 }
 .setup-wrap { width: 100%; max-width: 620px; margin: 0 auto }
 
-.setup-welcome { text-align: center; margin-bottom: 32px }
+.setup-welcome {
+  position: relative;
+  text-align: center;
+  margin-bottom: 30px;
+  padding-bottom: 26px;
+}
+/* A gold hairline that fades out at both ends closes the header off from the form */
+.setup-welcome::after {
+  content: '';
+  position: absolute;
+  left: 15%;
+  right: 15%;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent-dim) 30%, var(--accent) 50%, var(--accent-dim) 70%, transparent);
+  opacity: .8;
+}
 .setup-welcome h1 {
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--accent);
-  letter-spacing: .04em;
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: .06em;
   text-transform: uppercase;
+  line-height: 1.1;
+  background: linear-gradient(180deg, var(--accent-hi) 20%, var(--accent) 60%, #b8923a);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 14px rgba(224,184,74,.18));
 }
 .setup-tagline {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--accent);
-  margin: 6px 0 10px;
-  letter-spacing: .03em;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-bright);
+  margin: 10px 0 10px;
+  letter-spacing: .02em;
 }
 .setup-desc {
   font-size: 13px;
@@ -163,14 +211,15 @@ body:has(#screen-shortcuts.active) { height: 100vh }
 .setup-form {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   margin-bottom: 20px;
 }
 .setup-section {
-  background: var(--bg-panel);
+  background: var(--panel-sheen), var(--bg-panel);
   border: 1px solid var(--border);
   border-radius: var(--rad-lg);
-  padding: 14px 20px;
+  padding: 16px 22px;
+  box-shadow: var(--panel-shadow);
 }
 .setup-section-head {
   display: flex;
@@ -412,7 +461,7 @@ body:has(#screen-shortcuts.active) { height: 100vh }
 
 /* ─── Difficulty selector ────────────────────────────────────────────────── */
 
-.difficulty-section { padding: 12px 20px }
+.difficulty-section { padding: 12px }
 
 .difficulty-cards {
   display: flex;
@@ -436,24 +485,35 @@ body:has(#screen-shortcuts.active) { height: 100vh }
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  padding: 14px 8px 12px;
-  border: 2px solid var(--border2);
-  border-radius: var(--rad-lg);
-  background: var(--bg-panel2);
-  transition: border-color .15s, background .15s;
+  padding: 16px 8px 14px;
+  border: 1px solid var(--border2);
+  border-radius: var(--rad-md);
+  background: var(--panel-sheen), var(--bg-panel2);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
+  transition: border-color .15s, background .15s, box-shadow .15s, transform .15s;
   text-align: center;
 }
 
 .difficulty-card:hover .difficulty-inner {
   border-color: var(--accent-dim);
+  transform: translateY(-1px);
 }
 
 .difficulty-card input:checked + .difficulty-inner {
   border-color: var(--accent);
-  background: rgba(200,164,64,.08);
+  background: linear-gradient(180deg, rgba(224,184,74,.16), rgba(224,184,74,.05));
+  box-shadow: inset 0 0 0 1px rgba(224,184,74,.35), 0 8px 24px -10px var(--accent-glow);
+}
+.difficulty-card input:focus-visible + .difficulty-inner {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
-.difficulty-icon { font-size: 26px; line-height: 1 }
+.difficulty-icon {
+  font-size: 28px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,.5));
+}
 .difficulty-name {
   font-size: 13px;
   font-weight: 700;
@@ -503,25 +563,37 @@ body:has(#screen-shortcuts.active) { height: 100vh }
 }
 .btn-action {
   padding: 13px 26px;
-  background: var(--bg-panel);
+  background: var(--panel-sheen), var(--bg-panel2);
   color: var(--text);
   border: 1px solid var(--border2);
-  border-radius: var(--rad-lg);
+  border-radius: var(--rad-md);
+  box-shadow: var(--panel-shadow);
   font: 600 14px/1 'Exo 2', system-ui, sans-serif;
   letter-spacing: .04em;
   cursor: pointer;
-  transition: background .15s, border-color .15s, color .15s, transform .1s;
+  transition: background .15s, border-color .15s, color .15s, transform .1s, box-shadow .15s;
 }
-.btn-action:hover { background: var(--bg-hover); color: var(--text-bright) }
+.btn-action:hover {
+  background: var(--panel-sheen), var(--bg-hover);
+  border-color: #38506a;
+  color: var(--text-bright);
+  transform: translateY(-1px);
+}
 .btn-action:active { transform: scale(.97) }
-.btn-action:disabled { opacity: .4; cursor: not-allowed }
+.btn-action:disabled { opacity: .4; cursor: not-allowed; transform: none }
 .btn-action-primary {
-  background: var(--accent);
-  color: #0c1218;
-  border-color: var(--accent);
+  background: var(--gold-grad);
+  color: var(--on-gold);
+  border-color: var(--accent-hi);
   font-weight: 700;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 10px 24px -10px var(--accent-glow);
 }
-.btn-action-primary:hover { background: #dab840; border-color: #dab840; color: #0c1218 }
+.btn-action-primary:hover {
+  background: linear-gradient(180deg, #fbe28a, var(--accent-hi));
+  border-color: #fbe28a;
+  color: var(--on-gold);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 14px 30px -10px var(--accent-glow);
+}
 
 /* ─── Keyboard detect modal ─────────────────────────────────────────────────── */
 .kbd-detect-modal {
@@ -535,9 +607,10 @@ body:has(#screen-shortcuts.active) { height: 100vh }
   backdrop-filter: blur(8px);
 }
 .kbd-detect-box {
-  background: var(--bg-panel);
+  background: var(--panel-sheen), var(--bg-panel);
   border: 1px solid var(--border2);
   border-radius: var(--rad-lg);
+  box-shadow: var(--panel-shadow), 0 30px 80px -20px rgba(0,0,0,.9);
   padding: 36px 44px;
   text-align: center;
   max-width: 440px;
@@ -564,10 +637,12 @@ body:has(#screen-shortcuts.active) { height: 100vh }
   width: 40px;
   height: 40px;
   border: 1px solid var(--border2);
+  border-bottom-color: #0a0f15;
   border-radius: var(--rad);
-  background: var(--bg-panel2);
+  background: linear-gradient(180deg, #243344, #161f2a);
+  box-shadow: 0 2px 0 rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.07);
   font: 700 16px 'Exo 2', system-ui, sans-serif;
-  color: var(--accent);
+  color: var(--accent-hi);
 }
 .kbd-detect-blank {
   border-color: var(--accent);
@@ -584,32 +659,38 @@ body:has(#screen-shortcuts.active) { height: 100vh }
 /* ─── Buttons ───────────────────────────────────────────────────────────────── */
 .btn-primary {
   padding: 10px 28px;
-  background: var(--accent);
-  color: #0c1218;
+  background: var(--gold-grad);
+  color: var(--on-gold);
   border: none;
-  border-radius: var(--rad);
+  border-radius: var(--rad-md);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 10px 24px -10px var(--accent-glow);
   font: 700 14px/1 'Exo 2', system-ui, sans-serif;
   letter-spacing: .05em;
   text-transform: uppercase;
   cursor: pointer;
   transition: background .15s, transform .1s;
 }
-.btn-primary:hover { background: #dab840 }
+.btn-primary:hover { background: linear-gradient(180deg, #fbe28a, var(--accent-hi)) }
 .btn-primary:active { transform: scale(.97) }
 .btn-primary:disabled { opacity: .4; cursor: not-allowed }
 
 .btn-secondary {
   width: 100%;
-  padding: 7px 10px;
-  background: var(--bg-panel2);
+  padding: 8px 10px;
+  background: var(--panel-sheen), var(--bg-panel2);
   color: var(--text);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border2);
   border-radius: var(--rad);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
   font: 600 12px/1 'Exo 2', system-ui, sans-serif;
   cursor: pointer;
-  transition: border-color .15s, color .15s;
+  transition: border-color .15s, color .15s, background .15s;
 }
-.btn-secondary:hover { border-color: var(--border2); color: var(--text-bright) }
+.btn-secondary:hover {
+  background: var(--panel-sheen), var(--bg-hover);
+  border-color: #38506a;
+  color: var(--text-bright);
+}
 
 /* ─── Training layout ───────────────────────────────────────────────────────── */
 #screen-training {
@@ -635,9 +716,10 @@ body:has(#screen-shortcuts.active) { height: 100vh }
 }
 
 .builder-card, .target-card {
-  background: var(--bg-panel);
+  background: var(--panel-sheen), var(--bg-panel);
   border: 1px solid var(--border);
   border-radius: var(--rad-lg);
+  box-shadow: var(--panel-shadow);
   padding: 14px;
 }
 .builder-card {
@@ -647,10 +729,11 @@ body:has(#screen-shortcuts.active) { height: 100vh }
 }
 .unit-portrait {
   width: 56px; height: 56px;
-  border-radius: var(--rad);
+  border-radius: var(--rad-md);
   object-fit: cover;
   background: var(--bg-panel2);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border2);
+  box-shadow: 0 6px 16px -8px rgba(0,0,0,.9);
   flex-shrink: 0;
 }
 .unit-portrait.err { opacity: .3 }
@@ -699,7 +782,10 @@ body:has(#screen-shortcuts.active) { height: 100vh }
   border-color: var(--success);
   background: var(--success-bg);
 }
-.target-card .unit-portrait { width: 88px; height: 88px }
+.target-card .unit-portrait {
+  width: 92px; height: 92px;
+  box-shadow: 0 0 0 1px rgba(224,184,74,.25), 0 10px 24px -10px rgba(0,0,0,.9);
+}
 .target-card .name-large { text-align: center; font-size: 17px; white-space: normal }
 .target-description {
   text-align: center;
@@ -721,10 +807,12 @@ body:has(#screen-shortcuts.active) { height: 100vh }
 
 .instruction {
   text-align: center;
-  padding: 10px 12px;
-  background: var(--bg-panel);
+  padding: 11px 12px;
+  background: var(--panel-sheen), var(--bg-panel);
   border: 1px solid var(--border);
-  border-radius: var(--rad);
+  border-radius: var(--rad-md);
+  box-shadow: var(--panel-shadow);
+  transition: border-color .15s, box-shadow .15s;
   font-size: 13px;
   color: var(--text-dim);
   min-height: 40px;
@@ -739,8 +827,8 @@ body:has(#screen-shortcuts.active) { height: 100vh }
 /* One child holding everything, so text and keycaps stay a single inline flow */
 .instruction-inner { display: block; width: 100% }
 .instruction strong { color: var(--accent) }
-.instruction.state-correct { border-color: var(--success); color: var(--success) }
-.instruction.state-wrong   { border-color: var(--error);   color: var(--error)   }
+.instruction.state-correct { border-color: var(--success); color: var(--success); box-shadow: 0 0 18px -4px var(--success-glow) }
+.instruction.state-wrong   { border-color: var(--error);   color: var(--error);   box-shadow: 0 0 18px -4px var(--error-glow) }
 
 /* ─── Menu column ───────────────────────────────────────────────────────────── */
 .menu-col {
@@ -754,10 +842,11 @@ body:has(#screen-shortcuts.active) { height: 100vh }
 }
 
 .build-menu {
-  background: var(--bg-panel);
+  background: linear-gradient(180deg, #131d28, #0c141c);
   border: 1px solid var(--border2);
-  border-radius: var(--rad-lg);
-  padding: 10px;
+  border-radius: 14px;
+  padding: 12px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 0 0 1px rgba(0,0,0,.35), 0 24px 50px -24px rgba(0,0,0,.9);
   user-select: none;
 }
 
@@ -774,12 +863,16 @@ body:has(#screen-shortcuts.active) { height: 100vh }
   position: relative;
   width: var(--slot);
   height: var(--slot);
-  background: #0d1a10;
-  border: 1px solid #1a2e1a;
+  background: linear-gradient(180deg, #0f1a14, #0a120d);
+  border: 1px solid #1b2e22;
   border-radius: var(--rad);
   overflow: hidden;
-  transition: border-color .12s;
+  transition: border-color .12s, box-shadow .12s;
 }
+/* Clickable slots on the reference screen answer the hover */
+a.slot:not(.empty):hover { border-color: var(--border2); box-shadow: 0 0 0 1px rgba(255,255,255,.06) inset }
+a.slot img { transition: transform .18s ease }
+a.slot:not(.empty):hover img { transform: scale(1.05) }
 .slot.empty {
   opacity: .18;
   pointer-events: none;
@@ -791,13 +884,17 @@ body:has(#screen-shortcuts.active) { height: 100vh }
 }
 .slot .slot-key {
   position: absolute;
-  top: 3px; right: 5px;
-  font-size: 13px;
+  top: 3px; right: 3px;
+  padding: 2px 5px;
+  font-size: 12px;
   font-weight: 700;
   color: #fff;
-  text-shadow: 0 0 4px #000, 1px 1px 0 #000;
   line-height: 1;
   letter-spacing: .02em;
+  background: rgba(0,0,0,.6);
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 4px;
+  backdrop-filter: blur(2px);
   pointer-events: none;
 }
 /* Cost overlays — bottom-right, stacked: metal above energy */
@@ -836,7 +933,7 @@ body:has(#screen-shortcuts.active) { height: 100vh }
 /* Slot states */
 .slot.is-target {
   border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent-dim) inset;
+  box-shadow: 0 0 0 1px var(--accent-dim) inset, 0 0 12px var(--accent-glow);
 }
 .slot.flash-correct {
   animation: slot-correct .55s ease forwards;
@@ -873,7 +970,7 @@ body:has(#screen-shortcuts.active) { height: 100vh }
 /* ── Page button (to the right of cat-tabs; invisible when only 1 page) ── */
 .page-btn {
   flex: 1;
-  background: var(--bg-panel2);
+  background: var(--panel-sheen), var(--bg-panel2);
   border: 1px solid var(--border);
   border-radius: var(--rad);
   display: flex;
@@ -898,13 +995,13 @@ body:has(#screen-shortcuts.active) { height: 100vh }
 }
 
 .cat-tab {
-  background: var(--bg-panel2);
+  background: var(--panel-sheen), var(--bg-panel2);
   border: 1px solid var(--border);
   border-radius: var(--rad);
   padding: 6px 4px 5px;
   text-align: center;
   cursor: default;
-  transition: border-color .12s, background .12s;
+  transition: border-color .12s, background .12s, box-shadow .12s;
 }
 .cat-tab .tab-key {
   display: block;
@@ -924,8 +1021,9 @@ body:has(#screen-shortcuts.active) { height: 100vh }
   margin-top: 2px;
 }
 .cat-tab.active {
-  background: var(--bg-hover);
+  background: linear-gradient(180deg, rgba(224,184,74,.14), rgba(224,184,74,.04)), var(--bg-hover);
   border-color: var(--accent);
+  box-shadow: inset 0 -2px 0 var(--accent), 0 0 14px -4px var(--accent-glow);
 }
 .cat-tab.active .tab-key   { color: var(--accent) }
 .cat-tab.active .tab-label { color: var(--text) }
@@ -954,7 +1052,7 @@ body:has(#screen-shortcuts.active) { height: 100vh }
   position: absolute;
   inset: 0;
   background: rgba(8,16,24,.88);
-  border-radius: var(--rad-lg);
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -980,23 +1078,26 @@ body:has(#screen-shortcuts.active) { height: 100vh }
   padding-top: 4px;
 }
 .stat-block {
-  background: var(--bg-panel);
+  background: var(--panel-sheen), var(--bg-panel);
   border: 1px solid var(--border);
-  border-radius: var(--rad);
+  border-radius: var(--rad-md);
+  box-shadow: var(--panel-shadow);
   padding: 10px 8px 8px;
   text-align: center;
 }
 .stat-medal {
   font-size: 22px;
   line-height: 1.2;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,.6));
 }
 .stat-medal-void {
   visibility: hidden;
 }
 .stat-count {
-  font-size: 24px;
-  font-weight: 700;
+  font-size: 26px;
+  font-weight: 800;
   line-height: 1.1;
+  color: var(--text-bright);
 }
 .stat-count.error { color: var(--error) }
 .stat-streak-medals {
@@ -1019,8 +1120,8 @@ body:has(#screen-shortcuts.active) { height: 100vh }
 /* ─── Reaction-time stats panel ─────────────────────────────────────────────── */
 .stats-panel {
   border-top: 1px solid var(--border);
-  background: var(--bg-panel);
-  padding: 10px 20px 16px;
+  background: linear-gradient(180deg, var(--bg-panel), var(--bg-deep));
+  padding: 12px 20px 16px;
   flex-shrink: 0;
 }
 
@@ -1061,6 +1162,7 @@ body:has(#screen-shortcuts.active) { height: 100vh }
   background: var(--bg-panel);
   z-index: 1;
 }
+.stats-table tbody tr:nth-child(even) td { background: rgba(255,255,255,.015) }
 .stats-table th {
   padding: 4px 10px 6px;
   text-align: left;
@@ -1108,7 +1210,7 @@ body:has(#screen-shortcuts.active) { height: 100vh }
 }
 .timer-ring-bg {
   fill: none;
-  stroke: var(--bg-panel2);
+  stroke: var(--border2);
   stroke-width: 4;
 }
 .timer-ring-fg {
@@ -1132,18 +1234,19 @@ body:has(#screen-shortcuts.active) { height: 100vh }
 /* ─── New Run button ────────────────────────────────────────────────────────── */
 .btn-newrun {
   width: 100%;
-  padding: 11px 8px;
-  background: var(--accent);
-  color: #0c1218;
+  padding: 12px 8px;
+  background: var(--gold-grad);
+  color: var(--on-gold);
   border: none;
-  border-radius: var(--rad);
+  border-radius: var(--rad-md);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 10px 24px -10px var(--accent-glow);
   font: 700 13px/1 'Exo 2', system-ui, sans-serif;
   letter-spacing: .06em;
   text-transform: uppercase;
   cursor: pointer;
   transition: background .15s, transform .1s;
 }
-.btn-newrun:hover  { background: #dab840 }
+.btn-newrun:hover  { background: linear-gradient(180deg, #fbe28a, var(--accent-hi)) }
 .btn-newrun:active { transform: scale(.97) }
 
 /* ─── Slot hover info ───────────────────────────────────────────────────────── */
@@ -1238,7 +1341,7 @@ body:has(#screen-shortcuts.active) { height: 100vh }
 .run-summary {
   padding: 12px 20px 10px;
   border-bottom: 1px solid var(--border);
-  background: var(--bg-panel2);
+  background: linear-gradient(90deg, rgba(224,184,74,.08), transparent 60%), var(--bg-panel2);
 }
 .run-summary-title {
   font-size: 11px;
@@ -1263,11 +1366,11 @@ body:has(#screen-shortcuts.active) { height: 100vh }
 .rs-verdict {
   font-size: 14px;
   font-weight: 700;
-  color: var(--accent);
-  padding: 2px 8px;
+  color: var(--accent-hi);
+  padding: 2px 10px;
   border: 1px solid var(--accent-dim);
-  border-radius: var(--rad);
-  background: var(--accent-glow);
+  border-radius: 999px;
+  background: rgba(224,184,74,.14);
   align-self: center;
 }
 
@@ -1312,12 +1415,15 @@ body:has(#screen-shortcuts.active) { height: 100vh }
 }
 
 .browse-topbar {
+  position: relative;
+  z-index: 3;
   display: flex;
   align-items: center;
   gap: 16px;
   padding: 12px 20px;
-  background: var(--bg-panel);
+  background: linear-gradient(180deg, #131d28, var(--bg-panel));
   border-bottom: 1px solid var(--border);
+  box-shadow: 0 10px 30px -18px rgba(0,0,0,.9);
   flex-shrink: 0;
 }
 .browse-back-btn {
@@ -1327,24 +1433,26 @@ body:has(#screen-shortcuts.active) { height: 100vh }
 }
 .browse-title {
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--accent);
-  letter-spacing: .06em;
+  letter-spacing: .08em;
   text-transform: uppercase;
   flex: 1;
 }
 .browse-search {
   width: 220px;
-  padding: 6px 12px;
-  background: var(--bg-panel2);
+  padding: 7px 14px;
+  background: var(--bg-deep);
   border: 1px solid var(--border2);
-  border-radius: var(--rad);
+  border-radius: 999px;
   color: var(--text-bright);
   font: inherit;
   font-size: 13px;
   outline: none;
+  transition: border-color .15s, box-shadow .15s;
 }
-.browse-search:focus { border-color: var(--accent) }
+.browse-search::placeholder { color: var(--text-dim) }
+.browse-search:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow) }
 
 /* ── Reference search: one field, units + builders + shortcuts ── */
 .ref-search { position: relative; flex-shrink: 0 }
@@ -1359,10 +1467,10 @@ body:has(#screen-shortcuts.active) { height: 100vh }
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 6px 0;
-  background: var(--bg-panel);
+  background: var(--panel-sheen), var(--bg-panel);
   border: 1px solid var(--border2);
   border-radius: var(--rad-lg);
-  box-shadow: 0 12px 32px rgba(0,0,0,.5);
+  box-shadow: var(--panel-shadow), 0 20px 50px -10px rgba(0,0,0,.8);
 }
 .rs-heading {
   padding: 8px 12px 4px;
@@ -1428,8 +1536,9 @@ body:has(#screen-shortcuts.active) { height: 100vh }
 .browse-diff-switch { display: flex; gap: 3px; flex-shrink: 0 }
 .browse-diff-option { position: relative; cursor: pointer }
 .browse-diff-option input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0 }
-.browse-diff-btn { display: block; padding: 5px 10px; font-size: 12px; font-weight: 600; border: 1px solid var(--border2); border-radius: var(--rad); background: var(--bg-panel2); color: var(--text-dim); cursor: pointer; white-space: nowrap; transition: border-color .12s, background .12s, color .12s }
-.browse-diff-option input:checked + .browse-diff-btn { border-color: var(--accent); background: rgba(200,164,64,.10); color: var(--accent) }
+.browse-diff-btn { display: block; padding: 6px 12px; font-size: 12px; font-weight: 600; border: 1px solid var(--border2); border-radius: 999px; background: var(--panel-sheen), var(--bg-panel2); color: var(--text-dim); cursor: pointer; white-space: nowrap; transition: border-color .12s, background .12s, color .12s }
+.browse-diff-btn:hover { color: var(--text) }
+.browse-diff-option input:checked + .browse-diff-btn { border-color: var(--accent); background: rgba(224,184,74,.14); color: var(--accent-hi) }
 
 .browse-layout {
   display: flex;
@@ -1444,7 +1553,8 @@ body:has(#screen-shortcuts.active) { height: 100vh }
   flex-shrink: 0;
   overflow-y: auto;
   border-right: 1px solid var(--border);
-  background: var(--bg-panel);
+  background: linear-gradient(90deg, var(--bg-panel), var(--bg));
+  padding: 6px 0;
 }
 .browse-section { padding: 6px 0 }
 .browse-section-heading {
@@ -1467,21 +1577,24 @@ body:has(#screen-shortcuts.active) { height: 100vh }
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 6px 14px;
+  margin: 1px 8px;
+  padding: 6px 10px;
+  border-radius: var(--rad-md);
   cursor: pointer;
-  transition: background .12s;
-  border-left: 2px solid transparent;
+  transition: background .12s, color .12s;
 }
 .browse-item:hover { background: var(--bg-hover) }
 .browse-item.active {
-  background: var(--bg-hover);
-  border-left-color: var(--accent);
+  background: linear-gradient(90deg, rgba(224,184,74,.16), rgba(224,184,74,.05)), var(--bg-hover);
+  box-shadow: inset 0 0 0 1px rgba(224,184,74,.22);
+  color: var(--text-bright);
 }
 .browse-item-icon {
   width: 32px; height: 32px;
   border-radius: var(--rad);
   object-fit: cover;
   background: var(--bg-panel2);
+  box-shadow: 0 2px 6px rgba(0,0,0,.5);
   flex-shrink: 0;
 }
 .browse-item-label {
@@ -1524,9 +1637,10 @@ body:has(#screen-shortcuts.active) { height: 100vh }
   display: flex;
   align-items: center;
   gap: 16px;
-  background: var(--bg-panel);
+  background: var(--panel-sheen), var(--bg-panel);
   border: 1px solid var(--border);
   border-radius: var(--rad-lg);
+  box-shadow: var(--panel-shadow);
   padding: 14px 20px;
   min-width: 320px;
 }
@@ -1550,10 +1664,11 @@ body:has(#screen-shortcuts.active) { height: 100vh }
   align-self: stretch;
   max-width: 520px;
   margin: 12px auto 0;
-  padding: 10px 12px;
-  background: var(--bg-panel);
+  padding: 12px 14px;
+  background: var(--panel-sheen), var(--bg-panel);
   border: 1px solid var(--border);
-  border-radius: var(--rad);
+  border-radius: var(--rad-md);
+  box-shadow: var(--panel-shadow);
 }
 .bml-title {
   font-size: 11px;
@@ -1647,10 +1762,10 @@ body:has(#screen-shortcuts.active) { height: 100vh }
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  background: var(--bg-panel2);
+  background: linear-gradient(180deg, rgba(224,184,74,.10), rgba(224,184,74,.02)), var(--bg-panel2);
   border: 1px solid var(--accent-dim);
-  border-radius: var(--rad);
-  box-shadow: 0 0 10px var(--accent-glow);
+  border-radius: var(--rad-md);
+  box-shadow: 0 0 18px -4px var(--accent-glow);
 }
 .browse-mod-result.hidden { display: none }
 .bmr-icon {
@@ -1734,6 +1849,11 @@ body:has(#screen-shortcuts.active) { height: 100vh }
 .shortcuts-content {
   width: 100%;
   max-width: 720px;
+  padding: 18px 16px 6px;
+  background: var(--panel-sheen), var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--rad-lg);
+  box-shadow: var(--panel-shadow);
 }
 
 /* Nudge to actually try the shortcuts rather than just read them */
@@ -1745,10 +1865,10 @@ body:has(#screen-shortcuts.active) { height: 100vh }
   font-size: 12.5px;
   line-height: 1.5;
   color: var(--text-dim);
-  background: var(--bg-panel);
-  border: 1px solid var(--border2);
+  background: linear-gradient(90deg, rgba(224,184,74,.08), transparent 50%), var(--bg-panel);
+  border: 1px solid var(--border);
   border-left: 3px solid var(--accent);
-  border-radius: var(--rad);
+  border-radius: var(--rad-md);
 }
 .sc-intro strong { color: var(--text-bright) }
 .sc-intro-check { color: var(--success); font-weight: 700 }
@@ -1770,13 +1890,14 @@ body:has(#screen-shortcuts.active) { height: 100vh }
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 7px 16px;
+  padding: 8px 16px;
   text-align: center;
   font-size: 12px;
   font-weight: 600;
   color: var(--text-dim);
   letter-spacing: .04em;
-  background: var(--bg-panel);
+  background: rgba(15,23,31,.92);
+  backdrop-filter: blur(6px);
   border-top: 1px solid var(--border);
   pointer-events: none;
   z-index: 41;
@@ -1800,10 +1921,11 @@ body:has(#screen-shortcuts.active) { height: 100vh }
 }
 
 .sc-group-heading {
-  font-size: 16px;
-  font-weight: 700;
+  font-size: 18px;
+  font-weight: 800;
   color: var(--text-bright);
-  margin: 0 0 16px;
+  letter-spacing: .01em;
+  margin: 0 0 12px 12px;
 }
 
 .sc-table {
@@ -2015,9 +2137,10 @@ body:has(#screen-shortcuts.active) { height: 100vh }
   position: relative;
   width: 100%;
   height: 220px;
-  background: #030c04;
+  background: radial-gradient(ellipse at center, #071a0b, #030c04 75%);
   border: 1px solid rgba(0, 160, 0, 0.4);
-  border-radius: var(--rad);
+  border-radius: var(--rad-md);
+  box-shadow: inset 0 0 40px rgba(0,0,0,.6);
   overflow: hidden;
   flex-shrink: 0;
   margin-top: 14px;
@@ -2275,14 +2398,14 @@ body:has(#screen-shortcuts.active) { height: 100vh }
   font-size: 12px;
   font-weight: 600;
   color: var(--text-dim);
-  background: var(--bg-panel2);
+  background: var(--panel-sheen), var(--bg-panel2);
   border: 1px solid var(--border2);
-  border-radius: var(--rad);
+  border-radius: 999px;
   cursor: pointer;
   transition: color .12s, border-color .12s, background .12s;
 }
 .sc-visual-tab:hover  { color: var(--text) }
-.sc-visual-tab.active { color: var(--accent); border-color: var(--accent); background: rgba(200,164,64,.10) }
+.sc-visual-tab.active { color: var(--accent-hi); border-color: var(--accent); background: rgba(224,184,74,.14) }
 .sc-visual-tab-sep    { width: 1px; background: var(--border2); margin: 4px 6px }
 .sc-visual-note.hidden { display: none }
 
@@ -2293,6 +2416,7 @@ body:has(#screen-shortcuts.active) { height: 100vh }
   height: auto;
   border: 1px solid var(--border);
   border-radius: var(--rad-lg);
+  box-shadow: var(--panel-shadow);
 }
 .sc-visual-note { font-size: 12px; color: var(--text-dim); line-height: 1.6 }
 .sc-visual-note a { color: var(--accent) }
@@ -2325,3 +2449,22 @@ body:has(#screen-shortcuts.active) { height: 100vh }
 :where(a.ref-link) { color: inherit; text-decoration: none }
 a.btn-action  { display: inline-block; text-align: center }
 a.slot, a.cat-tab { display: block }
+
+/* ─── Focus & scrollbars ─────────────────────────────────────────────────────── */
+/* Keyboard focus only: the game is played on the keys, and a ring on every clicked
+   button would flicker through a run */
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+.browse-search:focus-visible { outline: none }
+
+input[type=checkbox], input[type=radio] { width: 15px; height: 15px; accent-color: var(--accent) }
+
+.browse-sidebar, .browse-main, .stats-table-wrap, .ref-search-results { scrollbar-width: thin; scrollbar-color: var(--border2) transparent }
+.browse-sidebar::-webkit-scrollbar, .browse-main::-webkit-scrollbar,
+.stats-table-wrap::-webkit-scrollbar, .ref-search-results::-webkit-scrollbar { width: 8px; height: 8px }
+.browse-sidebar::-webkit-scrollbar-thumb, .browse-main::-webkit-scrollbar-thumb,
+.stats-table-wrap::-webkit-scrollbar-thumb, .ref-search-results::-webkit-scrollbar-thumb {
+  background: var(--border2);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
