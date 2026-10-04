@@ -3,7 +3,7 @@ import {
   slotPicksUnit, searchReference,
   // Version query kept in step with the one on this file in index.html — a module import
   // is cached on its own, so a stale logic.js would otherwise outlive an app.js update.
-} from './logic.js?v=165'
+} from './logic.js?v=173'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -4435,7 +4435,8 @@ function formatShortcutKey(shortcut, isQwertz) {
     const practice = bind.keys
       ? bind.keys.map(practiceCombo).join(' → ')
       : practiceCombo(bind.key)
-    return `${canonical}<span class="sc-mac-practice">Practice here: ${practice}</span>`
+    // The keys stay on one line; only the lead-in may wrap away from them
+    return `${canonical}<span class="sc-mac-practice">Practice here: <span class="sc-mac-practice-keys">${practice}</span></span>`
   }
 
   return canonical
@@ -5096,10 +5097,7 @@ function selectShortcutsGroup(id, targetRowId = null) {
   const content = $('shortcuts-content')
   content.classList.remove('hidden')
 
-  // A group made only of reference rows has nothing to put in the Level column, so the
-  // column goes too — a lone "Level" heading over nothing but blanks reads like a bug.
-  const visible  = group.shortcuts.filter(sc => !sc.learnHidden)
-  const anyLevel = visible.some(sc => scIsDrilled(sc, group))
+  const visible = group.shortcuts.filter(sc => !sc.learnHidden)
   const rows = visible.map(sc => {
     // Only flag what this browser/OS actually swallows — a "Windows/Linux" warning on a
     // Mac is noise, and worse, it contradicts the key visibly working when you press it.
@@ -5113,7 +5111,8 @@ function selectShortcutsGroup(id, targetRowId = null) {
     // Commander is the honest fallback, not a guess: `buildShortcutQueue` skips the level
     // check entirely once the threshold is Infinity, so a shortcut with no level — or one
     // above 1 — is reachable on Commander and nowhere else. Do not "fix" this to blank.
-    const lvlBadge = !scIsDrilled(sc, group) ? '<span class="sc-lvl sc-lvl-ref">Reference</span>'
+    // A row the trainer never drills gets no badge at all.
+    const lvlBadge = !scIsDrilled(sc, group) ? ''
       : sc.level === 0 ? '<span class="sc-lvl sc-lvl-0">Noob</span>'
       : sc.level === 1 ? '<span class="sc-lvl sc-lvl-1">Mid</span>'
       : '<span class="sc-lvl sc-lvl-cmd">Commander</span>'
@@ -5124,9 +5123,8 @@ function selectShortcutsGroup(id, targetRowId = null) {
     return `
       <tr data-sc-id="${sc.id}"${checked ? ` class="${checked.trim()}"` : ''}>
         <td class="sc-check-col"><span class="sc-check">✓</span></td>
-        <td class="sc-action"><a class="sc-label ref-link" href="#shortcuts/${sc.id}">${commandIconHtml(sc.action ?? sc.states?.[0]?.action)}${sc.label}</a>${desc}</td>
+        <td class="sc-action"><a class="sc-label ref-link" href="#shortcuts/${sc.id}">${commandIconHtml(sc.action ?? sc.states?.[0]?.action)}${sc.label}</a>${lvlBadge}${desc}</td>
         <td class="sc-key"><span class="sc-key-row"><span class="sc-key-keys">${formatShortcutKey(sc, isQwertz)}</span>${formatMouseAction(sc.mouseAction)}</span>${reserved}</td>
-        ${anyLevel ? `<td class="sc-level">${lvlBadge}</td>` : ''}
       </tr>`
   }).join('')
 
@@ -5138,7 +5136,6 @@ function selectShortcutsGroup(id, targetRowId = null) {
           <th class="sc-check-col"></th>
           <th>Action</th>
           <th>Key</th>
-          ${anyLevel ? '<th>Level</th>' : ''}
         </tr>
       </thead>
       <tbody>${rows}</tbody>

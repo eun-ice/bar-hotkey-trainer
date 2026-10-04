@@ -1975,8 +1975,13 @@ a.slot:not(.empty):hover img { transform: scale(1.05) }
 .sc-table tbody tr:last-child td { border-bottom: none }
 .sc-table tbody tr:hover td { background: var(--bg-hover) }
 
-.sc-action { }
-.sc-label  { font-weight: 600; color: var(--text-bright); display: block }
+/* A share for the Action column, so the browser's auto layout cannot hand the key
+   column more than it needs. Not 100%: that would pin keys at their narrowest and break
+   "Practice here" and a toggle's state list onto two lines even on a wide screen. A key
+   cell wider than its 45% still gets it, with the description taking what is left. */
+.sc-action { width: 55% }
+.sc-label  { font-weight: 600; color: var(--text-bright) }
+.sc-label + .sc-lvl { margin-left: 8px; vertical-align: 1px }
 .sc-check-col { width: 20px; padding-right: 0 !important; text-align: center }
 .sc-check  { color: var(--success); font-weight: 700; font-size: 13px; opacity: 0; transition: opacity 0.15s }
 .sc-row-checked .sc-check { opacity: 1 }
@@ -2005,24 +2010,24 @@ a.slot:not(.empty):hover img { transform: scale(1.05) }
   animation: sc-combo-lit 1.3s ease-in-out infinite;
 }
 
-.sc-key    { white-space: nowrap; text-align: right; padding-left: 20px }
+.sc-key    { text-align: right; padding-left: 20px }
+.sc-combo, .sc-mac-practice-keys { white-space: nowrap }
 /* Keys on the left, mouse icon to their right — also when a "Practice here" line sits
    under the keys, which as a block would otherwise push the mouse onto its own line */
 .sc-key-row  { display: inline-flex; align-items: flex-start }
 .sc-key-keys { display: inline-block; text-align: right }
-.sc-level  { white-space: nowrap; text-align: right; padding-left: 12px }
 .sc-lvl    { display: inline-block; padding: 2px 7px; border-radius: 3px; font-size: 11px; font-weight: 700; letter-spacing: .03em }
 .sc-lvl-0  { background: rgba(80,180,80,.18); color: #5db85d }
 .sc-lvl-1  { background: rgba(200,140,40,.18); color: #c8903a }
 .sc-lvl-cmd { background: rgba(160,120,220,.15); color: #a07edc }
-.sc-lvl-ref { background: rgba(120,140,160,.15); color: #8898a8 }
 .sc-desc   { color: var(--text-dim); font-size: 12px; margin-top: 3px }
 
 .sc-seq-arrow { color: var(--text-dim); padding: 0 2px }
 .slot.slot-dim { opacity: .28; filter: grayscale(.6) }
 .browse-item.item-dim { opacity: .35; filter: grayscale(.5) }
 .sc-reserved    { font-size: 11px; color: var(--text-dim); font-style: italic; display: block; margin-top: 3px }
-.sc-mac-practice { font-size: 11px; color: var(--text-dim); display: block; margin-top: 4px }
+/* One line on a wide screen: the column grows to fit it. Phones let the lead-in wrap. */
+.sc-mac-practice { font-size: 11px; color: var(--text-dim); display: block; margin-top: 4px; white-space: nowrap }
 .sc-mouse-action { display: inline-flex; align-items: center; gap: 0; vertical-align: middle; margin-left: 10px }
 .sc-mouse-bg { fill: var(--bg-panel) }
 .sc-mouse-action kbd { font-size: 11px; padding: 1px 4px; line-height: 16px }
@@ -2403,30 +2408,12 @@ a.slot:not(.empty):hover img { transform: scale(1.05) }
   }
   .ref-sheet-open .browse-sidebar { display: block }
 
-  /* Table rows stack: action on top, keys beneath it, so neither column has to split
-     a 375px screen with the other and wrap a label one word per line. */
-  .sc-table thead { display: none }
-  .sc-table tr {
-    display: grid;
-    grid-template-columns: 20px 1fr;
-    padding: 10px 6px;
-    border-bottom: 1px solid var(--border);
-  }
-  .sc-table tbody tr:last-child { border-bottom: none }
-  .sc-table td { display: block; padding: 0; border-bottom: none }
-  .sc-table td.sc-check-col { grid-row: 1 / span 3; padding-top: 2px }
-  /* Keys and level line up with the label, which keeps its 8px lead-in */
-  .sc-table td.sc-key { text-align: left; padding: 6px 0 0 8px; white-space: normal }
-  .sc-table td.sc-key .sc-key-keys { text-align: left }
-  .sc-table td.sc-level { text-align: left; padding: 6px 0 0 8px }
-  /* Toggle states listed under their label read left to right, not ragged-right */
-  .sc-table td.sc-key .sc-states { align-items: flex-start }
-  .sc-table td.sc-key .sc-state { justify-content: flex-start }
-  .sc-row-target td:first-child { box-shadow: none }
-  .sc-row-target { box-shadow: inset 3px 0 0 var(--accent) }
-  .sc-row-flash td { animation: none }
-  .sc-row-flash { animation: sc-row-flash 0.8s ease-out }
-  .sc-table tbody tr:hover td { background: none }
+  /* The same table as on desktop, only tighter. The key column wraps between its
+     parts, so the Action column keeps room for a readable description. */
+  .sc-table th, .sc-table td { padding-left: 8px; padding-right: 8px }
+  .sc-table td { font-size: 13px }
+  .sc-key { padding-left: 10px }
+  .sc-group-heading { margin-left: 4px }
 
   /* The top bar carries a back button, a title, a search box and the difficulty switch —
      far too much for one phone-width row. The title gets its own line rather than
@@ -2451,13 +2438,10 @@ a.slot:not(.empty):hover img { transform: scale(1.05) }
   /* The hint bar is pinned to the bottom and would sit on the last table row */
   #screen-shortcuts .browse-main { padding-bottom: 60px }
   .sc-table th, .sc-table td { padding-left: 8px; padding-right: 8px }
-
-  /* Four columns do not fit. The level is a difficulty filter rather than something you
-     look up, so it goes first and the action description gets the width back — otherwise
-     it wraps to one word per line while the key column is cut off at the screen edge. */
-  .sc-table th:nth-child(4),
-  .sc-table td.sc-level { display: none }
-  .sc-table td.sc-key { white-space: nowrap }
+  /* A toggle's "Off  Ctrl+G → Ctrl+G" is the widest thing in any key column; letting it
+     break after the arrow keeps the description from wrapping one word per line. */
+  .sc-state { flex-wrap: wrap; justify-content: flex-end }
+  .sc-mac-practice { white-space: normal }
 }
 
 /* ─── No pointing device but a finger ────────────────────────────────────────
