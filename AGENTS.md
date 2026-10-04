@@ -62,8 +62,13 @@ Not a debug hook but a real feature, and the fastest way to land on one referenc
 opens its group with that row highlighted and scrolled into view, and
 `#shortcuts/visual/<chart>` opens an in-game chart (`grid`, `grid-ctrl`, `grid-alt`, or a
 guide such as `reclaim`). The hash follows the view as you browse — clicking a row pins it
-and puts its link in the address bar — written with `replaceState`, so the browser's Back
-still leaves the page. It is written only while the reference screen is active:
+and puts its link in the address bar. A change of *place* — another screen, group, builder
+or the chart — is a pushed entry, so the browser's Back walks back through them and
+finally to the setup screen (`#training` is an entry too, and Back out of it stops the
+run); a row or slot pin, a category, page or chart switch only rewrites the current entry.
+`writeHash()` decides, by comparing the place with `historyKey`, and `asHistory()` makes
+everything a popstate or deep link triggers a rewrite. It is written only while the
+reference screen is active:
 `initShortcutsScreen` renders the first group while the screen is still hidden, and that
 render must not overwrite a deep link before `applyLocationHash` reads it.
 

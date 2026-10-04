@@ -3,7 +3,7 @@ import {
   slotPicksUnit, searchReference,
   // Version query kept in step with the one on this file in index.html — a module import
   // is cached on its own, so a stale logic.js would otherwise outlive an app.js update.
-} from './logic.js?v=146'
+} from './logic.js?v=147'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -1877,7 +1877,19 @@ function startTraining() {
   updateStats()
   renderStatsTable()
   showScreen('training')
+  writeHash('#training', 'training')
   nextQuestion()
+}
+
+/** Ends the run the way the Stop button does — also what Back does mid-run. */
+function stopTraining() {
+  clearAnswerTimer()
+  clearHintTimer()
+  clearShowAnswerCountdown()
+  if (paused) togglePause()
+  archiveCurrentRun()
+  showScreen('setup')
+  clearReferenceHash()
 }
 
 /** Look up the icon src for any unit ID. */
@@ -3339,14 +3351,7 @@ function initSetupScreen() {
   }))
   refLink($('btn-browse'), '#menu', withKeyboard(() => showScreen('browse'), true))
   refLink($('btn-browse-shortcuts'), '#shortcuts', withKeyboard(() => showScreen('shortcuts'), true))
-  $('btn-settings').addEventListener('click', () => {
-    clearAnswerTimer()
-    clearHintTimer()
-    clearShowAnswerCountdown()
-    if (paused) togglePause()
-    archiveCurrentRun()
-    showScreen('setup')
-  })
+  $('btn-settings').addEventListener('click', stopTraining)
   $('btn-pause').addEventListener('click', togglePause)
   $('btn-resume').addEventListener('click', togglePause)
   $('btn-skip').addEventListener('click', () => {
@@ -3992,16 +3997,37 @@ let activeShortcutsGroupId = null
 //   #shortcuts/<group id>      one group        (#shortcuts/move)
 //   #shortcuts/<shortcut id>   one row, highlighted and scrolled into view
 //   #shortcuts/visual/<chart>  the in-game chart (#shortcuts/visual/grid-ctrl)
-// Written with replaceState so browsing the reference never piles up history entries;
-// the Back button therefore still leaves the page, as it did before.
+// A change of *place* — another screen, group, builder or the chart — is a pushed history
+// entry, so the browser's Back walks back through them; pinning a row or a slot, or
+// switching category, page or chart within a place only rewrites the current entry.
+// `historyKey` names the place the current entry stands for.
+
+let historyKey      = ''      // '' is the setup screen
+let applyingHistory = false   // set while a popstate / deep link is being applied
+
+/** Runs `fn` with every hash write a rewrite, never a new entry. */
+function asHistory(fn) {
+  const prev = applyingHistory
+  applyingHistory = true
+  try { return fn() } finally { applyingHistory = prev }
+}
+
+function writeHash(hash, key) {
+  const moved = key !== historyKey
+  historyKey = key
+  if (location.hash === hash) return
+  const url = location.pathname + location.search + hash
+  if (moved && !applyingHistory) history.pushState(null, '', url)
+  else history.replaceState(null, '', url)
+}
 
 function setShortcutsHash(...parts) {
   // The screen is rendered once at init while still hidden — that must not clobber a
   // deep link the page was opened with before applyLocationHash gets to read it
   if (currentScreen !== 'shortcuts') return
   const hash = '#' + ['shortcuts', ...parts.filter(Boolean)].join('/')
-  if (location.hash === hash) return
-  history.replaceState(null, '', location.pathname + location.search + hash)
+  const place = parts[0] === 'visual' ? 'visual' : activeShortcutsGroupId
+  writeHash(hash, `shortcuts/${place ?? ''}`)
 }
 
 // The menu reference follows the same scheme:
@@ -4019,14 +4045,23 @@ function setBrowseHash() {
     if (browsePinnedUnit) parts.push(browsePinnedUnit.id)
     else if (browseCatId !== null && !isFactory(browseBuilder)) parts.push(browseCatId)
   }
-  const hash = '#' + parts.join('/')
-  if (location.hash === hash) return
-  history.replaceState(null, '', location.pathname + location.search + hash)
+  writeHash('#' + parts.join('/'), `menu/${browseBuilder?.id ?? ''}`)
 }
 
+/** Back to the setup screen's address — a new entry, so Back returns to where we were. */
 function clearReferenceHash() {
-  if (!/^#(shortcuts|menu)\b/.test(location.hash)) return
-  history.replaceState(null, '', location.pathname + location.search)
+  if (!/^#(shortcuts|menu|training)\b/.test(location.hash)) return
+  writeHash('', '')
+}
+
+/** The place a hash stands for, before it is applied — see `historyKey`. */
+function hashKey(hash) {
+  const [screen, first] = hash.slice(1).split('/')
+  if (screen === 'menu') return `menu/${first ?? browseBuilder?.id ?? ''}`
+  if (screen !== 'shortcuts') return ''
+  if (!first) return `shortcuts/${activeShortcutsGroupId ?? ''}`
+  if (first === 'visual' || SHORTCUTS.some(group => group.id === first)) return `shortcuts/${first}`
+  return `shortcuts/${findShortcutRow(first)?.group.id ?? first}`
 }
 
 /** Opens `#menu/…`: the builder, then a category or a unit pinned on its page. */
@@ -4072,7 +4107,7 @@ function applyLocationHash() {
   const hash = decodeURIComponent(location.hash.slice(1))
   const [screen, first, second] = hash.split('/')
   if (screen === 'menu') {
-    withKeyboard(() => openBrowseHash(first, second), true)()
+    withKeyboard(() => asHistory(() => openBrowseHash(first, second)), true)()
     return true
   }
   if (screen !== 'shortcuts') return false
@@ -4089,7 +4124,7 @@ function applyLocationHash() {
       else setShortcutsHash(activeShortcutsGroupId)   // unknown id: drop it from the bar
     }
   }
-  withKeyboard(open, true)()
+  withKeyboard(() => asHistory(open), true)()
   return true
 }
 let scCheckedIds = new Set()
@@ -4766,7 +4801,7 @@ function isTextField(target) {
 }
 
 function openReference(hash) {
-  history.replaceState(null, '', location.pathname + location.search + hash)
+  writeHash(hash, hashKey(hash))
   applyLocationHash()
 }
 
@@ -5149,9 +5184,17 @@ async function init() {
   initMouseZone()
   showScreen('setup')
   applyLocationHash()
-  // Our own navigation uses replaceState, which fires no hashchange — this is only for a
-  // hash typed or pasted into the address bar of an already open page
-  window.addEventListener('hashchange', applyLocationHash)
+  // Back, Forward, and a hash typed into the address bar. Our own pushState / replaceState
+  // never fire this. An address that is not a reference is the setup screen — which, in
+  // the middle of a run, means stopping it.
+  window.addEventListener('popstate', () => {
+    if (applyLocationHash()) return
+    asHistory(() => {
+      if (currentScreen === 'training') stopTraining()
+      else showScreen('setup')
+      historyKey = ''
+    })
+  })
   // Prevent browser-reserved keys from closing the tab/app. Ctrl+W closes tabs and
   // Ctrl+Q quits the browser on Linux/Windows; Cmd+W and Cmd+Q do the same on macOS,
   // and with the Cmd↔Alt swap on those are exactly what Alt+W and Alt+Q become.
