@@ -3,7 +3,7 @@ import {
   slotPicksUnit, searchReference,
   // Version query kept in step with the one on this file in index.html — a module import
   // is cached on its own, so a stale logic.js would otherwise outlive an app.js update.
-} from './logic.js?v=164'
+} from './logic.js?v=165'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -3413,16 +3413,21 @@ function updateBuilderCount() {
   if (!DATA) return
   const threshold = difficultyThreshold()
   const builders  = filteredBuilders(settings)
-  const unitCount = builders.reduce((total, b) =>
-    total + Object.values(b.categories).reduce((n, cat) =>
-      n + cat.units.filter(u => {
-        if (u.trainingExcluded) return false
+  // Distinct units, not builder × unit pairs: a Metal Extractor every constructor can
+  // build is one unit, as it is in the Learn card's total, even though each builder that
+  // makes it is its own question.
+  const unitIds = new Set()
+  for (const b of builders)
+    for (const cat of Object.values(b.categories))
+      for (const u of cat.units) {
+        if (u.trainingExcluded) continue
         if (threshold < Infinity) {
           const lvl = UNIT_LEVELS[u.id]
-          if (lvl === undefined || lvl > threshold) return false
+          if (lvl === undefined || lvl > threshold) continue
         }
-        return true
-      }).length, 0), 0)
+        unitIds.add(u.id)
+      }
+  const unitCount = unitIds.size
   const scCount = SHORTCUTS.reduce((total, grp) => {
     if (!settings.shortcuts?.includes(grp.id)) return total
     return total + grp.shortcuts.filter(sc =>
