@@ -3,7 +3,7 @@ import {
   slotPicksUnit, searchReference,
   // Version query kept in step with the one on this file in index.html — a module import
   // is cached on its own, so a stale logic.js would otherwise outlive an app.js update.
-} from './logic.js?v=147'
+} from './logic.js?v=160'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -3434,26 +3434,40 @@ function updateBuilderCount() {
   $('btn-start').disabled = (unitCount === 0 && scCount === 0)
 }
 
+// The headline numbers under the claim come from the data files, so they stay true
+// after every refresh without anyone editing the page.
+function renderSetupStats() {
+  const scCount = SHORTCUTS.reduce((total, group) => total + group.shortcuts.length, 0)
+  const builderCount = Object.keys(DATA.builders).length
+  const unitCount = Object.keys(DATA.units).length
+  $('setup-stats').textContent =
+    `${scCount} shortcuts · ${builderCount} builders · ${unitCount} units`
+}
+
 const ADV_OPEN_KEY = 'bar-trainer-adv-open'
 
+// Folds open by default. The stored list holds the folds the player flipped *away*
+// from their default, so a fold added here later opens for everyone, saved list or not.
+const ADV_OPEN_DEFAULT = new Set(['adv-faction'])
+
 function initAdvancedToggles() {
-  let open
-  try { open = new Set(JSON.parse(localStorage.getItem(ADV_OPEN_KEY) ?? '[]')) }
-  catch { open = new Set() }
+  let flipped
+  try { flipped = new Set(JSON.parse(localStorage.getItem(ADV_OPEN_KEY) ?? '[]')) }
+  catch { flipped = new Set() }
 
   for (const btn of document.querySelectorAll('.btn-adv[data-target]')) {
     const targetId = btn.dataset.target
     const panel = document.getElementById(targetId)
     if (!panel) continue
     const apply = () => {
-      const isOpen = open.has(targetId)
+      const isOpen = ADV_OPEN_DEFAULT.has(targetId) !== flipped.has(targetId)
       panel.classList.toggle('adv-open', isOpen)
       btn.classList.toggle('btn-adv-active', isOpen)
     }
     apply()
     btn.addEventListener('click', () => {
-      open.has(targetId) ? open.delete(targetId) : open.add(targetId)
-      localStorage.setItem(ADV_OPEN_KEY, JSON.stringify([...open]))
+      flipped.has(targetId) ? flipped.delete(targetId) : flipped.add(targetId)
+      localStorage.setItem(ADV_OPEN_KEY, JSON.stringify([...flipped]))
       apply()
     })
   }
@@ -5177,6 +5191,7 @@ async function init() {
   await loadSounds()
 
   initSetupScreen()
+  renderSetupStats()
   initBrowseScreen()
   initShortcutsScreen()
   initReferenceSearch()

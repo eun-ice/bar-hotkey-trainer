@@ -161,13 +161,13 @@ body:has(#screen-shortcuts.active) { height: 100vh }
   justify-content: flex-start;
   padding: 40px 16px 32px;
 }
-.setup-wrap { width: 100%; max-width: 620px; margin: 0 auto }
+.setup-wrap { width: 100%; max-width: 640px; margin: 0 auto }
 
 .setup-welcome {
   position: relative;
   text-align: center;
-  margin-bottom: 30px;
-  padding-bottom: 26px;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
 }
 /* A gold hairline that fades out at both ends closes the header off from the form */
 .setup-welcome::after {
@@ -199,21 +199,7 @@ body:has(#screen-shortcuts.active) { height: 100vh }
   margin: 10px 0 10px;
   letter-spacing: .02em;
 }
-.setup-desc {
-  font-size: 13px;
-  color: var(--text-dim);
-  max-width: 500px;
-  margin: 0 auto;
-  line-height: 1.6;
-  font-style: italic;
-}
 
-.setup-form {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-bottom: 20px;
-}
 .setup-section {
   background: var(--panel-sheen), var(--bg-panel);
   border: 1px solid var(--border);
@@ -461,8 +447,6 @@ body:has(#screen-shortcuts.active) { height: 100vh }
 
 /* ─── Difficulty selector ────────────────────────────────────────────────── */
 
-.difficulty-section { padding: 12px }
-
 .difficulty-cards {
   display: flex;
   gap: 10px;
@@ -532,35 +516,67 @@ body:has(#screen-shortcuts.active) { height: 100vh }
 
 /* ─────────────────────────────────────────────────────────────────────────── */
 
-/* Sits between the difficulty cards and the settings, so a little breathing room
-   on both sides keeps it from reading as part of either. */
-.setup-actions {
+/* ─── Keyboard block ─────────────────────────────────────────────────────── */
+/* Above both cards, because it decides what both of them show */
+.setup-keyboard { margin-top: 4px }
+.setup-keyboard .setup-section-title { color: var(--accent) }
+.setup-keyboard-opts { display: flex; flex-wrap: wrap; gap: 0 24px }
+
+/* ─── Learn / Practice columns ───────────────────────────────────────────── */
+/* Learn is two buttons, Practice is a form; stacked, with the short one first */
+.setup-columns {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 14px 0 24px;
+}
+.setup-column {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 22px 16px;
+}
+.setup-eyebrow {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.setup-eyebrow-row { display: flex; align-items: baseline; gap: 12px }
+/* The claim on the left, the numbers that back it on the right, directly above the search */
+.setup-claim-row { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 2px 16px; margin-bottom: -6px }
+.setup-claim { font-size: 13px; font-weight: 500; color: var(--text) }
+.setup-stats { font-size: 12px; color: var(--text-dim); letter-spacing: .04em; min-height: 16px }
+.setup-learn .setup-search { max-width: none }
+.setup-ext-link { font-size: 12px; color: var(--text-dim); text-decoration: none; opacity: .7 }
+.setup-ext-link:hover { opacity: 1; text-decoration: underline }
+.setup-ext-row { text-align: center; margin-top: -4px }
+.setup-learn-links { display: grid; grid-template-columns: 1fr 1fr; gap: 14px }
+.setup-learn-link .btn-action { width: 100% }
+.setup-column-foot {
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  text-align: center;
+}
+.setup-start-row {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  padding: 6px 0 10px;
+  gap: 8px;
 }
-.setup-count-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  gap: 16px;
-  margin-bottom: 10px;
-}
+.setup-start-row .btn-action { width: 100% }
 .builder-count { color: var(--text-dim); font-size: 13px; min-height: 18px }
-.setup-reference-link { font-size: 12px; color: var(--text-dim); text-align: center }
-.setup-reference-link a { color: var(--text-dim); text-decoration: none; opacity: .7 }
-.setup-reference-link a:hover { opacity: 1; text-decoration: underline }
 .btn-link { background: none; border: none; padding: 0; cursor: pointer; font-size: inherit; color: var(--text-dim); opacity: .7 }
 .btn-link:hover { opacity: 1; text-decoration: underline; color: var(--text-dim) }
-.setup-action-btns {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  justify-content: center;
-}
+
+/* The settings fold under the Start button as hairline-divided rows */
+.setup-folds { display: flex; flex-direction: column }
+.setup-fold { border-top: 1px solid var(--border); padding: 10px 0 }
+.setup-fold .setup-section-head + .adv-section.adv-open { margin-top: 12px }
+.setup-fold .adv-section .setup-sub-label:first-of-type { margin-top: 12px }
 .btn-action {
   padding: 13px 26px;
   background: var(--panel-sheen), var(--bg-panel2);
@@ -2300,6 +2316,12 @@ a.slot:not(.empty):hover img { transform: scale(1.05) }
    of width that a phone does not have. Stack them instead — list on top with its
    own scroll, the menu below. */
 @media (max-width: 720px) {
+  .setup-learn-links { grid-template-columns: 1fr }
+  .setup-keyboard-opts { flex-direction: column }
+  /* The 60% label plus its hint is wider than a phone; let the hint drop a line */
+  .setup-keyboard-opts .setup-checkbox-row { flex-wrap: wrap }
+  /* The topbar rule above sends every search box last; in the Learn card it stays put */
+  .setup-learn .ref-search { order: 0 }
   /* Fitting both panes into one viewport is a desktop luxury. Stacked on a phone it
      leaves the build menu a sliver, so let the page scroll instead: list on top with
      its own scroll, menu below it at full height, footer after that. */
