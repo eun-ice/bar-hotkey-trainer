@@ -5,6 +5,8 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
+    "fetch": "node fetch-bar-data.js",
+    "fetch:refresh": "node fetch-bar-data.js --refresh",
     "extract": "node extract-data.js",
     "extract:no-icons": "node extract-data.js --skip-icons",
     "bump": "node bump.js",

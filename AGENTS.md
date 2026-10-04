@@ -106,7 +106,9 @@ when Alt is pressed alone, and `altKey` stripped from the combo.
 npm test                  # pure matching logic against the real data files
 npm run bump              # cache-bust the assets whose files changed
 npm run bump -- --all     # …or all of them regardless
-npm run extract           # regenerate data/ from the BAR repo (downloads icons)
+npm run fetch             # download the BAR game files into bar-data/
+npm run fetch:refresh     # …forcing a re-download
+npm run extract           # regenerate data/ from bar-data/ (converts icons)
 npm run extract:no-icons  # same, skipping icon conversion — much faster
 ```
 
