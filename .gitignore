@@ -3,3 +3,4 @@ data/keybinds/
 bar-data
 node_modules/
 .vercel
+.DS_Store
