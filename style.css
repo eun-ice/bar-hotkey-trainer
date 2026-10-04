@@ -1568,6 +1568,9 @@ a.slot:not(.empty):hover img { transform: scale(1.05) }
   overflow: hidden;
 }
 
+/* Phone-width picker bar — hidden until the media query below turns it on */
+.ref-picker, .ref-sheet-backdrop { display: none }
+
 /* Sidebar */
 .browse-sidebar {
   width: 240px;
@@ -2334,14 +2337,96 @@ a.slot:not(.empty):hover img { transform: scale(1.05) }
 
   .browse-layout { flex-direction: column }
 
-  .browse-sidebar {
-    width: auto;
-    max-height: 38vh;
-    border-right: none;
+  /* The sidebar list is a desktop luxury too: squeezed into a third of a phone it hid
+     the selected row and gave no hint that it scrolls. It becomes a bar naming the
+     current pick, and the untouched list opens from the bottom as a sheet on tap. */
+  .ref-picker {
+    position: sticky;
+    top: 0;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 14px;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-bright);
+    text-align: left;
+    background: var(--bg-panel2);
+    border: none;
     border-bottom: 1px solid var(--border);
+    box-shadow: 0 8px 20px -14px rgba(0,0,0,.9);
+    cursor: pointer;
+  }
+  .ref-picker-icon {
+    width: 26px; height: 26px;
+    border-radius: var(--rad);
+    object-fit: cover;
+    background: var(--bg-panel);
+    flex-shrink: 0;
+  }
+  .ref-picker-icon:not([src]), .ref-picker-icon[src=""] { display: none }
+  .ref-picker-label { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+  .ref-picker-chevron { color: var(--accent); transition: transform .2s }
+  .ref-sheet-open .ref-picker-chevron { transform: rotate(180deg) }
+
+  .ref-sheet-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 5;
+    background: rgba(0,0,0,.55);
+    backdrop-filter: blur(2px);
+  }
+  .ref-sheet-open .ref-sheet-backdrop { display: block }
+
+  /* The list hangs from the bar like a dropdown and runs to the bottom of the screen.
+     --ref-sheet-top is the bar's lower edge, measured by initRefPicker on each open,
+     because the bar is sticky and its position depends on how far the page has scrolled. */
+  .browse-sidebar {
+    display: none;
+    position: fixed;
+    left: 0; right: 0;
+    top: var(--ref-sheet-top, 0);
+    bottom: 0;
+    z-index: 6;
+    width: auto;
+    max-height: none;
+    padding: 6px 0 max(12px, env(safe-area-inset-bottom));
+    border-right: none;
+    border-top: 1px solid var(--border2);
+    background: var(--bg-panel);
+    box-shadow: 0 20px 50px -10px rgba(0,0,0,.9);
     /* Scrolling to the end of the list must not carry on into the page behind it */
     overscroll-behavior: contain;
   }
+  .ref-sheet-open .browse-sidebar { display: block }
+
+  /* Table rows stack: action on top, keys beneath it, so neither column has to split
+     a 375px screen with the other and wrap a label one word per line. */
+  .sc-table thead { display: none }
+  .sc-table tr {
+    display: grid;
+    grid-template-columns: 20px 1fr;
+    padding: 10px 6px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sc-table tbody tr:last-child { border-bottom: none }
+  .sc-table td { display: block; padding: 0; border-bottom: none }
+  .sc-table td.sc-check-col { grid-row: 1 / span 3; padding-top: 2px }
+  /* Keys and level line up with the label, which keeps its 8px lead-in */
+  .sc-table td.sc-key { text-align: left; padding: 6px 0 0 8px; white-space: normal }
+  .sc-table td.sc-key .sc-key-keys { text-align: left }
+  .sc-table td.sc-level { text-align: left; padding: 6px 0 0 8px }
+  /* Toggle states listed under their label read left to right, not ragged-right */
+  .sc-table td.sc-key .sc-states { align-items: flex-start }
+  .sc-table td.sc-key .sc-state { justify-content: flex-start }
+  .sc-row-target td:first-child { box-shadow: none }
+  .sc-row-target { box-shadow: inset 3px 0 0 var(--accent) }
+  .sc-row-flash td { animation: none }
+  .sc-row-flash { animation: sc-row-flash 0.8s ease-out }
+  .sc-table tbody tr:hover td { background: none }
 
   /* The top bar carries a back button, a title, a search box and the difficulty switch —
      far too much for one phone-width row. The title gets its own line rather than

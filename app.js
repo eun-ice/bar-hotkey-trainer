@@ -3,7 +3,7 @@ import {
   slotPicksUnit, searchReference,
   // Version query kept in step with the one on this file in index.html — a module import
   // is cached on its own, so a stale logic.js would otherwise outlive an app.js update.
-} from './logic.js?v=160'
+} from './logic.js?v=164'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -5148,6 +5148,66 @@ function selectShortcutsGroup(id, targetRowId = null) {
   }
 }
 
+// ─── Phone-width sidebar picker ────────────────────────────────────────────────
+// Below 720px the CSS hides each reference sidebar behind a bar that names the current
+// pick and opens the list as a sheet. This only toggles that state and keeps the bar's
+// label in step with whichever row is `.active` — a MutationObserver watches the list, so
+// the builder, group and chart selectors need not know the bar exists.
+
+function initRefPicker(screenId, barId) {
+  const screen   = $(screenId)
+  const bar      = $(barId)
+  const sidebar  = screen.querySelector('.browse-sidebar')
+  const backdrop = screen.querySelector('.ref-sheet-backdrop')
+  if (!bar || !sidebar) return
+
+  const isOpen  = () => screen.classList.contains('ref-sheet-open')
+  const setOpen = open => {
+    // The list hangs from the bar's lower edge, wherever the sticky bar sits right now
+    if (open) screen.style.setProperty('--ref-sheet-top', `${bar.getBoundingClientRect().bottom}px`)
+    screen.classList.toggle('ref-sheet-open', open)
+    bar.setAttribute('aria-expanded', String(open))
+    if (open) sidebar.querySelector('.browse-item.active')?.scrollIntoView({ block: 'center' })
+  }
+  bar.addEventListener('click', () => setOpen(!isOpen()))
+  backdrop.addEventListener('click', () => setOpen(false))
+  sidebar.addEventListener('click', event => {
+    if (event.target.closest('.browse-item')) setOpen(false)
+  })
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && isOpen()) setOpen(false)
+  })
+
+  const label = bar.querySelector('.ref-picker-label')
+  const icon  = bar.querySelector('.ref-picker-icon')
+  const placeholder = label.textContent
+  const sync = () => {
+    const active = sidebar.querySelector('.browse-item.active')
+    const name   = active?.querySelector('.browse-item-label span:last-child')?.textContent
+    label.textContent = name ?? placeholder
+    if (icon) {
+      const src = active?.querySelector('.browse-item-icon')?.getAttribute('src')
+      if (src) icon.setAttribute('src', src)
+      else icon.removeAttribute('src')
+    }
+  }
+  new MutationObserver(sync).observe(sidebar, {
+    subtree: true, childList: true, attributes: true, attributeFilter: ['class'],
+  })
+  sync()
+
+  // Entering the screen with nothing picked — the Build Menu Reference from the setup
+  // button, say — a bar reading "Choose a builder" is one tap too many: open the list at
+  // once. Only where the bar exists, i.e. at phone width. Leaving the screen closes it.
+  const onScreenChange = () => {
+    const entered = screen.classList.contains('active')
+    if (!entered) { if (isOpen()) setOpen(false); return }
+    const barShown = getComputedStyle(bar).display !== 'none'
+    if (barShown && !sidebar.querySelector('.browse-item.active')) setOpen(true)
+  }
+  new MutationObserver(onScreenChange).observe(screen, { attributes: true, attributeFilter: ['class'] })
+}
+
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
 async function init() {
@@ -5195,6 +5255,8 @@ async function init() {
   initBrowseScreen()
   initShortcutsScreen()
   initReferenceSearch()
+  initRefPicker('screen-browse', 'browse-picker')
+  initRefPicker('screen-shortcuts', 'shortcuts-picker')
   initKeyLog()
   initMouseZone()
   showScreen('setup')
