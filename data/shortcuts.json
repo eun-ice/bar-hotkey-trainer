@@ -915,6 +915,7 @@
         },
         {
           "id": "queue-drop-last",
+          "icon": "site-icons/queue-drop-last.svg",
           "label": "Cancel Last Command",
           "action": "command_cancel_last",
           "level": 2,

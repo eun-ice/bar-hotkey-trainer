@@ -170,7 +170,9 @@ game has a cursor, the cursor is the icon. Where it has none (Stop, Factory Guar
 Builder, the camera anchors, the queue modifiers, the eraser) the icon is the one the
 official page https://www.beyondallreason.info/commands-2-0-grid shows for that command,
 hand-placed under `data/site-icons/` like the `data/badge-*.avif` build-modifier badges,
-which are the same site's files byte for byte. The page's order-command gifs are the game's
+which are the same site's files byte for byte. Two there are trainer-made in the site's
+style because the page has no row for them: `queue-route.svg` (the inline `SVG_QUEUE_ROUTE`
+badge) and `queue-drop-last.svg`, Skip's icon with the last slot crossed out. The page's order-command gifs are the game's
 cursor animations frame for frame, so checking against it only ever turns up a better frame
 choice, never new artwork. Not adopted on purpose, because they vanish at 18px on the dark
 panel: its pale green build squares, the group dots, the Cloak stripes and the ping.
