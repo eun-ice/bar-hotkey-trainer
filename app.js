@@ -3,7 +3,7 @@ import {
   slotPicksUnit, searchReference,
   // Version query kept in step with the one on this file in index.html — a module import
   // is cached on its own, so a stale logic.js would otherwise outlive an app.js update.
-} from './logic.js?v=173'
+} from './logic.js?v=174'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -1220,7 +1220,7 @@ function renderShortcutQuestion(entry) {
   // Target card — show shortcut info, hide costs/icon via inline style (reliable)
   document.querySelector('#screen-training .target-card').classList.add('shortcut-target')
   $('build-action-label').textContent = 'Command:'
-  $('target-name').innerHTML = commandIconHtml(entry.action, 'cmd-icon-large') + entry.label
+  $('target-name').innerHTML = commandIconHtml(entry, 'cmd-icon-large') + entry.label
   const descEl = $('target-description')
   descEl.textContent = entry.description || ''
   descEl.classList.remove('hidden')
@@ -2730,16 +2730,16 @@ function updateMouseZonePendingLabel() {
   if (!labelEl) return
   const verdeckt = currentEntry?.type === 'shortcut' && !shortcutKeyVisible
   labelEl.textContent = verdeckt ? '?' : mouseActionLabel(currentMouseAction)
-  setMouseZoneCommandIcon(currentEntry?.action)
+  setMouseZoneCommandIcon(currentEntry)
 }
 
 /** The command's cursor icon next to the pad label; hidden for builds and unknown commands. */
-function setMouseZoneCommandIcon(action) {
+function setMouseZoneCommandIcon(entry) {
   const cmdEl = $('mouse-zone-cmd')
   if (!cmdEl) return
-  const icon = COMMAND_ICONS[action]
-  cmdEl.src = icon ? `data/commands/${icon}.webp` : ''
-  cmdEl.style.display = icon ? '' : 'none'
+  const src = commandIconSrc(entry)
+  cmdEl.src = src
+  cmdEl.style.display = src ? '' : 'none'
 }
 
 function activateMouseZone(action) {
@@ -2783,7 +2783,7 @@ function activateMouseZone(action) {
   const labelEl = $('mouse-zone-label')
   const labelText = mouseActionLabel(action)
   if (labelEl) labelEl.textContent = labelText
-  setMouseZoneCommandIcon(currentEntry?.action)
+  setMouseZoneCommandIcon(currentEntry)
 
   // A modifier drag names its keys on the pad — one or several, `ctrl-shift-space-drag`
   // reads "Hold Ctrl+Shift+Space · Drag area" — with the Cmd note when Alt is among them
@@ -4233,19 +4233,46 @@ const MOUSE_ORIGIN_UNIT_POOL = ['corraid', 'armstump', 'armpw', 'corak', 'armfla
 // The in-game cursor of a command, first frame only — the symbols the official
 // infographics use, so a row says at a glance which order it is about. Generated from the
 // BAR repo by extract-data.js into data/commands.
+// What a row shows in front of its name: the in-game cursor of the command, one frame
+// under data/commands (generated from command-cursors.js), or — for a command the game
+// has no cursor for — the icon the official Commands page uses, hand-placed under
+// data/site-icons. Keyed by the first word of the BAR action and resolved against data/.
+// An entry's own `icon` wins, which is how the mouse-only rows (right-click, box select)
+// and the odd `select` with a better picture get theirs.
 const COMMAND_ICONS = {
-  reclaim: 'reclaim', repair: 'repair', resurrect: 'resurrect',
-  attack: 'attack', areaattack: 'attack', fight: 'fight', capture: 'capture',
-  settarget: 'settarget', settargetnoground: 'settarget', canceltarget: 'settarget',
-  loadunits: 'load', unloadunits: 'unload',
-  move: 'move', patrol: 'patrol', guard: 'guard', wait: 'wait', gatherwait: 'gather',
-  manualfire: 'manualfire', selfd: 'selfd', areamex: 'areamex', restore: 'restore', repeat: 'repeat',
+  reclaim: 'commands/reclaim.webp', repair: 'commands/repair.webp', resurrect: 'commands/resurrect.webp',
+  attack: 'commands/attack.webp', areaattack: 'commands/attack.webp', fight: 'commands/fight.webp',
+  capture: 'commands/capture.webp', settarget: 'commands/settarget.webp',
+  settargetnoground: 'commands/settarget.webp', canceltarget: 'commands/settarget.webp',
+  loadunits: 'commands/load.webp', unloadunits: 'commands/unload.webp',
+  move: 'commands/move.webp', patrol: 'commands/patrol.webp', guard: 'commands/guard.webp',
+  wait: 'commands/wait.webp', gatherwait: 'commands/gather.webp', manualfire: 'commands/manualfire.webp',
+  selfd: 'commands/selfd.webp', areamex: 'commands/areamex.webp', restore: 'commands/restore.webp',
+  repeat: 'commands/repeat.webp',
+  // The plain pointer for everything that selects, as on the Commands page
+  select: 'commands/normal.webp', selectbox_append: 'commands/normal.webp',
+  selectbox_deselect: 'commands/normal.webp', selectbox_mobile: 'commands/normal.webp',
+  selectbox_same: 'commands/normal.webp', selectbox_idle: 'commands/normal.webp',
+  // Site-made: no cursor exists for these
+  selectcomm: 'site-icons/commander.webp', stop: 'site-icons/stop.webp',
+  factoryguard: 'site-icons/factory-guard.webp', gridmenu_cycle_builder: 'site-icons/factory-cycle.webp',
+  command_skip_current: 'site-icons/queue-next.svg',
+  focus_camera_anchor: 'site-icons/camera.webp', set_camera_anchor: 'site-icons/camera.webp',
+}
+
+/** The icon's path for a shortcut entry, or '' when it has none. */
+function commandIconSrc(entry) {
+  if (!entry) return ''
+  if (entry.icon) return `data/${entry.icon}`
+  const action = entry.action ?? entry.states?.[0]?.action
+  const icon = COMMAND_ICONS[String(action ?? '').split(' ')[0]]
+  return icon ? `data/${icon}` : ''
 }
 
 /** A toggle's states carry the action (`repeat 1`); the first word names the command. */
-function commandIconHtml(action, cls = 'sc-cmd-icon') {
-  const icon = COMMAND_ICONS[String(action ?? '').split(' ')[0]]
-  return icon ? `<img class="${cls}" src="data/commands/${icon}.webp" alt="" loading="lazy">` : ''
+function commandIconHtml(entry, cls = 'sc-cmd-icon') {
+  const src = commandIconSrc(entry)
+  return src ? `<img class="${cls}" src="${src}" alt="" loading="lazy">` : ''
 }
 
 /** Where the drag may start: `[]` when the origin is not judged, else one or more origins. */
@@ -5123,7 +5150,7 @@ function selectShortcutsGroup(id, targetRowId = null) {
     return `
       <tr data-sc-id="${sc.id}"${checked ? ` class="${checked.trim()}"` : ''}>
         <td class="sc-check-col"><span class="sc-check">✓</span></td>
-        <td class="sc-action"><a class="sc-label ref-link" href="#shortcuts/${sc.id}">${commandIconHtml(sc.action ?? sc.states?.[0]?.action)}${sc.label}</a>${lvlBadge}${desc}</td>
+        <td class="sc-action"><a class="sc-label ref-link" href="#shortcuts/${sc.id}">${commandIconHtml(sc)}${sc.label}</a>${lvlBadge}${desc}</td>
         <td class="sc-key"><span class="sc-key-row"><span class="sc-key-keys">${formatShortcutKey(sc, isQwertz)}</span>${formatMouseAction(sc.mouseAction)}</span>${reserved}</td>
       </tr>`
   }).join('')

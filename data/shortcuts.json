@@ -628,6 +628,7 @@
       "shortcuts": [
         {
           "id": "select-click",
+          "icon": "commands/normal.webp",
           "label": "Select",
           "level": 0,
           "displayOnly": true,
@@ -645,6 +646,7 @@
         },
         {
           "id": "select-box",
+          "icon": "commands/normal.webp",
           "label": "Box Select",
           "level": 0,
           "displayOnly": true,
@@ -718,6 +720,7 @@
         },
         {
           "id": "select-idle-builders",
+          "icon": "commands/idle.webp",
           "label": "Cycle Idle Constructors",
           "action": "select AllMap+_Builder_Idle+_ClearSelection_SelectOne+",
           "level": 1,
@@ -807,6 +810,7 @@
       "shortcuts": [
         {
           "id": "right-click-ground",
+          "icon": "commands/move.webp",
           "label": "Move",
           "level": 0,
           "displayOnly": true,
@@ -815,6 +819,7 @@
         },
         {
           "id": "right-click-enemy",
+          "icon": "commands/attack.webp",
           "label": "Set Target / Attack",
           "level": 0,
           "displayOnly": true,
@@ -823,6 +828,7 @@
         },
         {
           "id": "right-click-wreck",
+          "icon": "commands/reclaim.webp",
           "label": "Reclaim",
           "level": 0,
           "displayOnly": true,
@@ -831,6 +837,7 @@
         },
         {
           "id": "right-click-friendly",
+          "icon": "commands/guard.webp",
           "label": "Guard",
           "level": 0,
           "displayOnly": true,
@@ -839,6 +846,7 @@
         },
         {
           "id": "right-click-mex-geo",
+          "icon": "commands/upgmex.webp",
           "label": "Build / Upgrade Mex or Geo",
           "level": 1,
           "displayOnly": true,
@@ -847,6 +855,7 @@
         },
         {
           "id": "move-formation",
+          "icon": "commands/move.webp",
           "label": "Move & Assume Formation",
           "level": 1,
           "displayOnly": true,
@@ -855,6 +864,7 @@
         },
         {
           "id": "move-in-formation",
+          "icon": "commands/move.webp",
           "label": "Move in Formation",
           "level": 1,
           "displayOnly": true,
@@ -870,6 +880,7 @@
       "shortcuts": [
         {
           "id": "queue-order",
+          "icon": "site-icons/queue.svg",
           "label": "Queue",
           "level": 0,
           "displayOnly": true,
@@ -878,6 +889,7 @@
         },
         {
           "id": "queue-order-front",
+          "icon": "site-icons/queue-front.svg",
           "label": "Insert Next",
           "level": 1,
           "displayOnly": true,
@@ -886,6 +898,7 @@
         },
         {
           "id": "queue-order-cheapest",
+          "icon": "site-icons/queue-route.svg",
           "label": "Insert Into Route",
           "level": 2,
           "displayOnly": true,
@@ -2969,6 +2982,7 @@
         },
         {
           "id": "draw-erase",
+          "icon": "site-icons/eraser.webp",
           "label": "Erase Drawings",
           "action": "drawinmap",
           "level": 1,
