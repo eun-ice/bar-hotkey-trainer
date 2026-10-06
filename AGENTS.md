@@ -348,10 +348,13 @@ rather than being copied into the code, so it can be refreshed when upstream cha
   and their ALT page omits nine bindings that do exist (`Alt+Q`, the blueprint keys,
   `Alt+G`, …). Never add an entry on the strength of the picture; check
   `npm run check:bindings` and, where the binding file is silent, the game itself.
-- **Keys are positions, not characters.** BAR binds the grid positionally, so matching
-  goes through `event.code`; the printed label is only for display. `KeyLayout` uses
-  `navigator.keyboard.getLayoutMap()` where available (Chromium, secure context) and
-  falls back to the QWERTY/QWERTZ setting elsewhere.
+- **Keys are positions, not characters.** BAR binds every letter and punctuation key by
+  scancode (`sc_q`, `sc_minus` … in `keybind_defaults.json`), so matching goes through
+  `event.code` in every browser; the printed label is only for display. `KeyLayout` reads
+  the labels from `navigator.keyboard.getLayoutMap()` where available (Chromium, secure
+  context) and from the QWERTY/QWERTZ setting elsewhere — that setting never decides a
+  match. The one key matched by label is ` (see below); `normaliseByLabel` otherwise
+  only serves events with no `code` at all, such as Android virtual keyboards.
 - **The ` key moves.** It is `Backquote` on US and Windows German, but `IntlBackslash`
   on macOS ISO, where `Backquote` carries `<`. On AZERTY `Backquote` prints `²` and the
   circumflex is a separate dead key with no BAR binding.

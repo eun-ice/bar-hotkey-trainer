@@ -3,7 +3,7 @@ import {
   slotPicksUnit, searchReference,
   // Version query kept in step with the one on this file in index.html — a module import
   // is cached on its own, so a stale logic.js would otherwise outlive an app.js update.
-} from './logic.js?v=175'
+} from './logic.js?v=176'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -31,8 +31,9 @@ const GRID_KEYS = ['Q','W','E','R','A','S','D','F','Z','X','C','V']
 //
 // navigator.keyboard.getLayoutMap() reports the real labels of the user's layout, so
 // AZERTY, UK, Danish, Dutch and the rest work with no tables of ours. It is Chromium-
-// only and needs a secure context (https or localhost); elsewhere we fall back to the
-// QWERTY/QWERTZ setting, which is what the app did everywhere before.
+// only and needs a secure context (https or localhost); elsewhere matching still goes by
+// position through event.code, and only the printed labels fall back to the QWERTY/QWERTZ
+// setting.
 
 const CANON_TO_CODE = {
   ...Object.fromEntries([...'QWERTYUIOPASDFGHJKLZXCVBNM'].map(c => [c, 'Key' + c])),
@@ -42,6 +43,13 @@ const CANON_TO_CODE = {
   ';': 'Semicolon',    "'": 'Quote',
   ',': 'Comma',        '.': 'Period',       '/': 'Slash',
 }
+// Position → canonical name, for browsers without the Keyboard Map API. BAR binds every
+// letter and punctuation key by scancode (`sc_q`, `sc_minus` … in keybind_defaults.json),
+// so the position is what counts on every layout, and event.code reports it in Firefox
+// and Safari too. The ` key is left out: its position moves between macOS and the rest
+// (see normaliseByLabel), so it goes by label.
+const CODE_TO_CANON = Object.fromEntries(
+  Object.entries(CANON_TO_CODE).filter(([c]) => c !== '`').map(([c, k]) => [k, c]))
 
 const KeyLayout = {
   map:     null,                    // code → printed label, from getLayoutMap()
@@ -93,6 +101,7 @@ const KeyLayout = {
     // layout. Upper-cased to match what the pre-KeyLayout normalise() returned.
     if (key.length > 1 && key !== 'Dead') return key.toUpperCase()
     if (this.toCanon && code && this.toCanon[code]) return this.toCanon[code]
+    if (code && CODE_TO_CANON[code]) return CODE_TO_CANON[code]
     return normaliseByLabel(key, isQwertz, code)
   },
 
@@ -112,8 +121,10 @@ const KeyLayout = {
   },
 }
 
-// Fallback for browsers without the Keyboard Map API: guess from the QWERTY/QWERTZ
-// setting and the character the browser reported. This is the pre-getLayoutMap path.
+// Last resort, by the character the browser reported: the ` key, whose position is not
+// stable, and events with no code at all — virtual keyboards on Android and some old
+// browsers. Everything else is matched by position in getKeyPressed and never gets here.
+// The QWERTZ swaps are the pre-getLayoutMap guesswork, kept for those code-less events.
 function normaliseByLabel(key, isQwertz, code) {
   const k = key.toUpperCase()
   if (isQwertz && k === 'Y') return 'Z'
@@ -121,11 +132,8 @@ function normaliseByLabel(key, isQwertz, code) {
   if (isQwertz && k === 'Ö') return ';'  // physical ;/Ö key position → ; shortcut
   if (isQwertz && k === '+') return ']'  // physical ] key position → ] shortcut
   if (isQwertz && k === 'Ü') return '['  // physical [ key position on QWERTZ is labeled ü
-  // The rest of the punctuation row moves too — ß sits on Minus, the dead ´ on Equal, ä on
-  // Quote, # on Backslash and the printed '-' on Slash — and a label cannot tell the ß key
-  // from the QWERTY '-' or the QWERTZ '-' from '/'. Firefox and Safari do report the
-  // position, so for those keys the code decides, as the Keyboard Map path does.
-  if (isQwertz && code && QWERTZ_CODE_TO_CANON[code]) return QWERTZ_CODE_TO_CANON[code]
+  if (isQwertz && k === 'ß') return '-'
+  if (isQwertz && k === 'Ä') return "'"
   // BAR's ` key is whichever key is printed ` or ^. Neither the character nor the
   // position is stable: browsers report 'Dead', '^', 'ˆ', '°' or '`', and the position
   // moves too — Backquote on US and Windows German, but IntlBackslash on macOS German,
@@ -134,24 +142,6 @@ function normaliseByLabel(key, isQwertz, code) {
   if (k === '`' || k === '^' || k === 'ˆ' || k === '°') return '`'
   if (k === 'DEAD' && (code === 'Backquote' || code === 'IntlBackslash')) return '`'
   if (k === ' ') return 'SPACE'
-  // A number-row key always means its digit, whatever Shift/Alt turned it into:
-  // Shift+1 is '!' on US and Shift+3 is '§' on German, but both are still the group key.
-  // The digit-row position is identical on QWERTY and QWERTZ, so code is safe here.
-  if (code && code.startsWith('Digit')) return code.slice(5)  // 'Digit1' → '1'
-  // On macOS, Alt/Option composes non-ASCII characters (e.g. Alt+B → '∫', Alt++ → '±').
-  // When event.key lands outside ASCII, fall back to event.code (the physical scan-code)
-  // which is always the unmodified key name regardless of held modifiers or OS.
-  if (code && k.charCodeAt(0) > 127) {
-    if (code.startsWith('Key')) {
-      const letter = code.slice(3)  // 'KeyB' → 'B'
-      if (isQwertz && letter === 'Y') return 'Z'
-      if (isQwertz && letter === 'Z') return 'Y'
-      return letter
-    }
-    if (code === 'BracketLeft')  return '['
-    if (code === 'BracketRight') return ']'
-    if (code === 'Semicolon')    return ';'
-  }
   return k
 }
 
@@ -193,11 +183,6 @@ const QWERTZ_LABELS = {
   ';': 'Ö', "'": 'Ä',
   '/': '-',
 }
-// The punctuation positions whose QWERTZ label differs, code → canonical name, so the
-// fallback matcher can go by position for them like the Keyboard Map path does. The `
-// key is left out: its position is not stable (see normaliseByLabel), its label is.
-const QWERTZ_CODE_TO_CANON = Object.fromEntries(
-  Object.keys(QWERTZ_LABELS).filter(k => !/^[A-Z`]$/.test(k)).map(k => [CANON_TO_CODE[k], k]))
 
 function displayByLayout(key, isQwertz) {
   if (!isQwertz) return key
