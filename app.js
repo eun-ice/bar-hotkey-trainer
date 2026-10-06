@@ -3,7 +3,7 @@ import {
   slotPicksUnit, searchReference,
   // Version query kept in step with the one on this file in index.html — a module import
   // is cached on its own, so a stale logic.js would otherwise outlive an app.js update.
-} from './logic.js?v=174'
+} from './logic.js?v=175'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -121,6 +121,11 @@ function normaliseByLabel(key, isQwertz, code) {
   if (isQwertz && k === 'Ö') return ';'  // physical ;/Ö key position → ; shortcut
   if (isQwertz && k === '+') return ']'  // physical ] key position → ] shortcut
   if (isQwertz && k === 'Ü') return '['  // physical [ key position on QWERTZ is labeled ü
+  // The rest of the punctuation row moves too — ß sits on Minus, the dead ´ on Equal, ä on
+  // Quote, # on Backslash and the printed '-' on Slash — and a label cannot tell the ß key
+  // from the QWERTY '-' or the QWERTZ '-' from '/'. Firefox and Safari do report the
+  // position, so for those keys the code decides, as the Keyboard Map path does.
+  if (isQwertz && code && QWERTZ_CODE_TO_CANON[code]) return QWERTZ_CODE_TO_CANON[code]
   // BAR's ` key is whichever key is printed ` or ^. Neither the character nor the
   // position is stable: browsers report 'Dead', '^', 'ˆ', '°' or '`', and the position
   // moves too — Backquote on US and Windows German, but IntlBackslash on macOS German,
@@ -179,16 +184,24 @@ function isEquivGridKey(key) {
 }
 
 // Fallback labels when the Keyboard Map API is unavailable: the QWERTZ positions that
-// differ from QWERTY. Every other layout falls back to the plain QWERTY label.
+// differ from QWERTY, keyed by canonical name. Every other layout falls back to the plain
+// QWERTY label. Written as German (Windows) QWERTZ — Swiss boards differ on a few keys.
+const QWERTZ_LABELS = {
+  'Z': 'Y', 'Y': 'Z',
+  '`': '^', '-': 'ß', '=': '´',
+  '[': 'Ü', ']': '+', '\\': '#',
+  ';': 'Ö', "'": 'Ä',
+  '/': '-',
+}
+// The punctuation positions whose QWERTZ label differs, code → canonical name, so the
+// fallback matcher can go by position for them like the Keyboard Map path does. The `
+// key is left out: its position is not stable (see normaliseByLabel), its label is.
+const QWERTZ_CODE_TO_CANON = Object.fromEntries(
+  Object.keys(QWERTZ_LABELS).filter(k => !/^[A-Z`]$/.test(k)).map(k => [CANON_TO_CODE[k], k]))
+
 function displayByLayout(key, isQwertz) {
   if (!isQwertz) return key
-  if (key === 'Z') return 'Y'
-  if (key === 'Y') return 'Z'
-  if (key === ';') return 'Ö'
-  if (key === '[') return 'ü'
-  if (key === ']') return '+'
-  if (key === '`') return '^'
-  return key
+  return QWERTZ_LABELS[key] ?? key
 }
 
 // The two entry points the rest of the app uses. Signatures are unchanged so every
