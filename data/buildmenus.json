@@ -1,6 +1,6 @@
 {
-  "version": "2026-10-02",
-  "generatedAt": "2026-10-02T21:11:30.769Z",
+  "version": "2026-10-13",
+  "generatedAt": "2026-10-13T20:34:29.653Z",
   "builders": {
     "armlab": {
       "id": "armlab",
@@ -14617,7 +14617,7 @@
       "description": "Produces 3000 Energy (Hazardous)",
       "metalCost": 9700,
       "energyCost": 69000,
-      "buildTime": 312500,
+      "buildTime": 313000,
       "icon": "icons/armafus.webp"
     },
     "armgmm": {
@@ -14833,7 +14833,7 @@
       "description": "Produces 3000 Energy (Hazardous)",
       "metalCost": 9700,
       "energyCost": 48000,
-      "buildTime": 329200,
+      "buildTime": 330000,
       "icon": "icons/corafus.webp"
     },
     "cormmkr": {
