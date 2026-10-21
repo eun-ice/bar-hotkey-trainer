@@ -2438,8 +2438,8 @@ a.slot:not(.empty):hover img { transform: scale(1.05) }
   /* The hint bar is pinned to the bottom and would sit on the last table row */
   #screen-shortcuts .browse-main { padding-bottom: 60px }
   .sc-table th, .sc-table td { padding-left: 8px; padding-right: 8px }
-  /* A toggle's "Off  Ctrl+G → Ctrl+G" is the widest thing in any key column; letting it
-     break after the arrow keeps the description from wrapping one word per line. */
+  /* A toggle's "Off  Ctrl+G Ctrl+G" is the widest thing in any key column; letting it
+     break between the taps keeps the description from wrapping one word per line. */
   .sc-state { flex-wrap: wrap; justify-content: flex-end }
   .sc-mac-practice { white-space: normal }
 }

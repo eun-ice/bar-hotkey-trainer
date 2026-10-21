@@ -3,7 +3,7 @@ import {
   slotPicksUnit, searchReference,
   // Version query kept in step with the one on this file in index.html — a module import
   // is cached on its own, so a stale logic.js would otherwise outlive an app.js update.
-} from './logic.js?v=178'
+} from './logic.js?v=179'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -1406,7 +1406,7 @@ function showAnswer(prefix = '', suffix = '') {
     const keys = correctKeySequence()
     showAnswerPrefix   = prefix
     showAnswerSuffix   = suffix
-    showAnswerKeysHtml = keys.map(k => `<kbd>${k}</kbd>`).join(' → ')
+    showAnswerKeysHtml = joinKeySequence(keys.map(k => `<kbd>${k}</kbd>`), keys)
     showAnswerKeysHtml += answerMouseHtml()
     // "Press ⌘ Cmd instead" is advice for practising here — nonsense on a study card,
     // which exists precisely because the browser swallows the combo before we see it.
@@ -2096,9 +2096,19 @@ function nextQuestion() {
   preloadNextQuestion()
 }
 
+/**
+ * Join the steps of a key sequence. A repeated tap is the same cap twice — `Z` `Z`,
+ * `L` `L` `L` — the way a double-click is two mice; only a change of key gets an arrow.
+ * `arrow` is what to put between two different keys.
+ */
+function joinKeySequence(htmlParts, keys, arrow = ' → ') {
+  return htmlParts.map((html, idx) =>
+    idx === 0 ? html : (keys[idx] === keys[idx - 1] ? ' ' : arrow) + html).join('')
+}
+
 function formatShortcutKeyHtml(seqKeys, seqMods, currentStep) {
   const isQwertz = settings.keyboard === 'qwertz'
-  return seqKeys.map((key, idx) => {
+  const parts = seqKeys.map((key, idx) => {
     const mods = seqMods[idx] ?? []
     // For single chars use display() so QWERTZ users see their physical key (Z→Y, :→Ö, ]→+)
     const rawLabel = key.length === 1 ? key.toUpperCase() : key  // Tab, F6 keep their casing
@@ -2107,7 +2117,8 @@ function formatShortcutKeyHtml(seqKeys, seqMods, currentStep) {
     const keyHtml = parts.join('+')
     const note = idx === currentStep ? macSwapNote(mods) : ''
     return idx === currentStep ? `<strong>${keyHtml}</strong>${note}` : keyHtml
-  }).join(' → ')
+  })
+  return joinKeySequence(parts, seqKeys)
 }
 
 function updateInstruction() {
@@ -4468,7 +4479,7 @@ function formatShortcutKey(shortcut, isQwertz) {
   // Canonical combo: always show "Alt" — the game's actual key name, never "⌘ Cmd".
   // The Mac Cmd↔Alt swap is a practice aid; players must memorize "Alt" as the shortcut.
   // data-combo indexes each step of the shortcut so the learn screen can light up
-  // just the keys typed so far (Z → Z shows one Z lit after the first press).
+  // just the keys typed so far (Z Z shows one Z lit after the first press).
   const canonicalCombo = (key, index) => {
     const parts = [
       ...mods.map(m => m.toLowerCase() === 'alt' ? 'Alt' : capitalize(m)),
@@ -4478,7 +4489,7 @@ function formatShortcutKey(shortcut, isQwertz) {
       parts.map(p => `<kbd>${p}</kbd>`).join('+')}</span>`
   }
   const canonical = bind.keys
-    ? bind.keys.map(canonicalCombo).join(' <span class="sc-seq-arrow">→</span> ')
+    ? joinKeySequence(bind.keys.map(canonicalCombo), bind.keys, ' <span class="sc-seq-arrow">→</span> ')
     : canonicalCombo(bind.key, 0)
 
   // When swapCmdAlt is active on Mac, Alt shortcuts are practiced with Cmd.
@@ -4489,7 +4500,7 @@ function formatShortcutKey(shortcut, isQwertz) {
       return parts.map(p => `<kbd>${p}</kbd>`).join('+')
     }
     const practice = bind.keys
-      ? bind.keys.map(practiceCombo).join(' → ')
+      ? joinKeySequence(bind.keys.map(practiceCombo), bind.keys)
       : practiceCombo(bind.key)
     // The keys stay on one line; only the lead-in may wrap away from them
     return `${canonical}<span class="sc-mac-practice">Practice here: <span class="sc-mac-practice-keys">${practice}</span></span>`
