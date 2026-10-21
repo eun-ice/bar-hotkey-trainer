@@ -3,7 +3,7 @@ import {
   slotPicksUnit, searchReference,
   // Version query kept in step with the one on this file in index.html — a module import
   // is cached on its own, so a stale logic.js would otherwise outlive an app.js update.
-} from './logic.js?v=177'
+} from './logic.js?v=178'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -630,6 +630,9 @@ function shuffle(arr) {
 // L L for Hold Fire only registers when they come quickly, while a spelled-out sequence
 // like Z Z for Area MEX tolerates a long pause.
 const TAP_WINDOW_MS = 500
+// Two clicks this close together are a double-click. The game's DoubleClickTime is 200 ms,
+// but the pad is for finding the row, not for timing practice.
+const DOUBLE_CLICK_MS = 500
 
 function buildShortcutQueue() {
   const items = []
@@ -2841,6 +2844,7 @@ function initMouseZone() {
 
   let dragOrigin  = null    // { x, y } zone-local px, set on mousedown
   let dragButton  = 'left'  // Attack Line is a *right* drag — the button is part of the answer
+  let dragAmbiguous = false // macOS Ctrl+click: could be either button, see macCtrlClickAmbiguous
 
   const AREA_DRAGS = ['drag', 'click-or-drag', 'click-unit-or-drag']
   const isAreaDrag = action => AREA_DRAGS.includes(action) || MOUSE_MOD_DRAG_RE.test(action ?? '')
@@ -2854,7 +2858,8 @@ function initMouseZone() {
     if (trainingState !== State.WAITING_MOUSE) return
     const rect = zone.getBoundingClientRect()
     dragOrigin = { x: e.clientX - rect.left, y: e.clientY - rect.top }
-    dragButton = e.button === 2 ? 'right' : 'left'
+    dragButton = eventButtonName(e)
+    dragAmbiguous = macCtrlClickAmbiguous(e)
     e.preventDefault()
   })
 
@@ -2907,7 +2912,7 @@ function initMouseZone() {
     // Line a left-drag, and one button must not pass for the other — that difference is
     // the whole point.
     const wantRight = mouseActionWantsRight(rawAction)
-    if (wantRight !== (dragButton === 'right')) {
+    if (!mouseButtonMatches(wantRight ? 'right' : 'left', dragButton, dragAmbiguous)) {
       if (isClick || isDrag) {
         questionHadWrong = true
         setInstruction(`Use the <strong>${wantRight ? 'right' : 'left'}</strong> mouse button!`, 'state-wrong')
@@ -4215,6 +4220,20 @@ function eventButtonName(event) {
   return event.button === 2 ? 'right' : event.button === 1 ? 'middle' : 'left'
 }
 
+/**
+ * On macOS the browser turns Ctrl + left-click into a right-click — `button` is 2 and
+ * nothing in the event says which button was really pressed. Such a press is judged as
+ * either: a Ctrl+click row and a Ctrl+right-click row both accept it.
+ */
+function macCtrlClickAmbiguous(event) {
+  return IS_MAC && event.button === 2 && event.ctrlKey
+}
+
+/** Does a gesture made with `got` satisfy a row that wants `want`? */
+function mouseButtonMatches(want, got, ambiguous) {
+  return want === got || (ambiguous && want === 'left')
+}
+
 // Where an area drag has to *start*. The game reads what sits under the cursor when the
 // circle is begun — a wreck, a rock, a unit, bare ground — and hands out a different order
 // for each, so the start point is part of the answer. Encoded as a trailing `-on-<origin>`:
@@ -4496,7 +4515,10 @@ function scComboFromEvent(e, spaceHeld) {
 function scGestureMatches(mouseAction, gesture) {
   const wantDrag = mouseAction.includes('drag')
   const wantMods = mouseActionMods(mouseAction)
-  if (mouseActionButton(mouseAction) !== gesture.button) return false
+  if (!mouseButtonMatches(mouseActionButton(mouseAction), gesture.button, gesture.ambiguous)) return false
+  // A double-click is its own gesture: a single click does not pass for it, and the
+  // second click of a double does not also pass for the single-click rows
+  if (mouseAction.includes('double') !== (gesture.kind === 'double')) return false
   if (mouseAction.includes('or-drag')) {
     // Either a click or a drag is acceptable
   } else if (wantDrag !== (gesture.kind === 'drag')) return false
@@ -4546,7 +4568,9 @@ function initShortcutsPad(scFlash, scDisarmPad, padLabel) {
   const svg = $('sc-pad-svg')
   let origin = null
   let button = 'left'
+  let ambiguous = false  // macOS Ctrl+click, see macCtrlClickAmbiguous
   let captured = false   // did we take this gesture over from the browser?
+  let lastClick = null   // { time, button, x, y } — the click a double-click would follow
 
   // Sidebar entries, the Back button and links keep their normal click behaviour
   const isChrome = target => target.closest('button, a, .browse-item, input, label, .ref-search')
@@ -4570,6 +4594,7 @@ function initShortcutsPad(scFlash, scDisarmPad, padLabel) {
     if (isChrome(e.target)) return
     origin = { x: e.clientX, y: e.clientY }
     button = eventButtonName(e)
+    ambiguous = macCtrlClickAmbiguous(e)
     captured = capturable(e)
     if (captured) e.preventDefault()
   })
@@ -4601,7 +4626,21 @@ function initShortcutsPad(scFlash, scDisarmPad, padLabel) {
     if (e.shiftKey) mods.push('Shift')
     if (e.altKey || (settings.swapCmdAlt && e.metaKey)) mods.push('Alt')
     if (scSpaceHeld) mods.push('Space')
-    const gesture = { button, kind: dist >= 18 ? 'drag' : 'click', mods }
+
+    // A click right after another click on the same spot, same button, is a double-click.
+    // The first of the two is still judged as a click on its own — in the game it selects
+    // the unit, here it ticks the single-click row — and the second one is the double.
+    let kind = dist >= 18 ? 'drag' : 'click'
+    const now = performance.now()
+    if (kind === 'click' && lastClick && lastClick.button === button
+        && now - lastClick.time <= DOUBLE_CLICK_MS
+        && Math.hypot(e.clientX - lastClick.x, e.clientY - lastClick.y) < 18) {
+      kind = 'double'
+      lastClick = null
+    } else {
+      lastClick = kind === 'click' ? { time: now, button, x: e.clientX, y: e.clientY } : null
+    }
+    const gesture = { button, ambiguous, kind, mods }
 
     // Armed by a key press: narrow those candidates. Otherwise match keyless mouse-only commands.
     const wasArmed = scArmed !== null
@@ -4610,10 +4649,16 @@ function initShortcutsPad(scFlash, scDisarmPad, padLabel) {
         .map(sc => ({ group, sc })))
     const hits = pool.filter(m => scGestureMatches(m.sc.mouseAction, gesture))
 
+    // The first click of a key-armed double-click (` + double-click places a label) is not
+    // a miss: stay armed and wait for the second one
+    if (!hits.length && wasArmed && kind === 'click'
+        && pool.some(m => scGestureMatches(m.sc.mouseAction, { ...gesture, kind: 'double' })))
+      return
+
     scDisarmPad()
     // Only a key-armed gesture may change category; a bare click stays where you are
     if (hits.length) scFlash(hits, wasArmed)
-    else if (wasArmed) padLabel(`No command on that key for a ${gesture.button === 'left' ? '' : gesture.button + '-'}${gesture.kind}`)
+    else if (wasArmed) padLabel(`No command on that key for a ${gesture.button === 'left' ? '' : gesture.button + '-'}${kind === 'double' ? 'double-click' : kind}`)
   })
 }
 

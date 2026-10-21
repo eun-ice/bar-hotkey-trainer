@@ -401,3 +401,13 @@ rather than being copied into the code, so it can be refreshed when upstream cha
   verified in game in October 2026. Three engine behaviours were tried and do **not** work in
   BAR, so they are deliberately absent: a middle-button *tap* toggling the locked pan mode,
   Alt+mouse rotating the camera in that mode, and the middle button on the minimap.
+- **macOS reports Ctrl + left-click as a right-click.** `button` is 2 and `ctrlKey` is set,
+  and nothing in the event says which button was really pressed. Both pads therefore judge
+  such a press as *either* button (`macCtrlClickAmbiguous` / `mouseButtonMatches`): a
+  `ctrl-click` row and a `ctrl-click-right` row both accept it. Before that, Ctrl+click
+  entries could not be ticked or trained on a Mac at all — the training pad answered
+  `target-set-sticky` with "Use the left mouse button!".
+- **A double-click is detected on the reference pad only.** Two clicks within
+  `DOUBLE_CLICK_MS` on the same spot with the same button make a `double` gesture; the first
+  still counts as a click on its own, as in the game. A `double-click` row never passes for
+  a single click, and a key-armed double (` + double-click) stays armed through the first.
