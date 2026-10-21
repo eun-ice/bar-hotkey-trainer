@@ -636,6 +636,24 @@
           "mouseAction": "click"
         },
         {
+          "id": "select-double-click",
+          "icon": "commands/normal.webp",
+          "label": "Double-click: Same Type on Screen",
+          "level": 0,
+          "displayOnly": true,
+          "description": "Double-click a unit — selects every unit of that type on screen, as long as both clicks land on the same unit",
+          "mouseAction": "double-click"
+        },
+        {
+          "id": "select-double-click-map",
+          "icon": "commands/normal.webp",
+          "label": "Double-click: Same Type Anywhere",
+          "level": 1,
+          "displayOnly": true,
+          "description": "Hold Ctrl and double-click a unit — selects every unit of that type on the whole map, not just on screen",
+          "mouseAction": "ctrl-double-click"
+        },
+        {
           "id": "deselect",
           "label": "Deselect All",
           "action": "select AllMap++_ClearSelection_SelectNum_0+",
