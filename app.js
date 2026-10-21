@@ -3,7 +3,7 @@ import {
   slotPicksUnit, searchReference,
   // Version query kept in step with the one on this file in index.html — a module import
   // is cached on its own, so a stale logic.js would otherwise outlive an app.js update.
-} from './logic.js?v=176'
+} from './logic.js?v=177'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -4204,6 +4204,17 @@ function mouseActionWantsRight(mouseAction) {
   return /(^|-)right(-|$)/.test(mouseAction ?? '')
 }
 
+/** `left`, `right` or `middle` — the button the gesture has to be made with. */
+function mouseActionButton(mouseAction) {
+  if (mouseActionWantsRight(mouseAction)) return 'right'
+  return /(^|-)middle(-|$)/.test(mouseAction ?? '') ? 'middle' : 'left'
+}
+
+/** The same three names for a mouse event's `button`. */
+function eventButtonName(event) {
+  return event.button === 2 ? 'right' : event.button === 1 ? 'middle' : 'left'
+}
+
 // Where an area drag has to *start*. The game reads what sits under the cursor when the
 // circle is begun — a wreck, a rock, a unit, bare ground — and hands out a different order
 // for each, so the start point is part of the answer. Encoded as a trailing `-on-<origin>`:
@@ -4364,10 +4375,11 @@ function formatMouseAction(mouseAction) {
 
   let svg
   if (isDouble) {
-    // Two clicks: the ×2 says it, which beats trying to draw a repeat on a 14px mouse
-    svg = `<svg class="sc-mouse-svg" viewBox="0 0 25 20" height="22" aria-hidden="true">
+    // Two clicks are two mice, the way a repeated tap is two key caps (Z Z, L L L) in
+    // the key column — one convention for "press it again"
+    svg = `<svg class="sc-mouse-svg" viewBox="0 0 31 20" height="22" aria-hidden="true">
       ${mouseBody(button)}
-      <text x="16" y="13" font-size="9" font-weight="700" fill="rgba(220,155,30,.85)">×2</text>
+      <g transform="translate(17)">${mouseBody(button)}</g>
     </svg>`
   } else if (!isDrag) {
     // Click icon: show which button (left, middle or right)
@@ -4482,10 +4494,9 @@ function scComboFromEvent(e, spaceHeld) {
 // Does a shortcut's declared mouseAction match the gesture the user performed on the pad?
 // Line-vs-circle drags are indistinguishable by gesture, so both satisfy a drag.
 function scGestureMatches(mouseAction, gesture) {
-  const wantRight = mouseActionWantsRight(mouseAction)
   const wantDrag = mouseAction.includes('drag')
   const wantMods = mouseActionMods(mouseAction)
-  if (wantRight !== (gesture.button === 'right')) return false
+  if (mouseActionButton(mouseAction) !== gesture.button) return false
   if (mouseAction.includes('or-drag')) {
     // Either a click or a drag is acceptable
   } else if (wantDrag !== (gesture.kind === 'drag')) return false
@@ -4541,12 +4552,13 @@ function initShortcutsPad(scFlash, scDisarmPad, padLabel) {
   const isChrome = target => target.closest('button, a, .browse-item, input, label, .ref-search')
 
   // Selecting text is a plain unmodified left drag, so we must not swallow those.
-  // Right-button and modifier-held gestures never select text, and once a key press is
-  // waiting for its mouse action the gesture is unambiguous — take those over. A plain
-  // left press stays with the browser and is judged at mouseup: a click still counts as
-  // a gesture (clicking selects nothing), a drag is the user highlighting text.
+  // Right- and middle-button and modifier-held gestures never select text, and once a
+  // key press is waiting for its mouse action the gesture is unambiguous — take those
+  // over. A plain left press stays with the browser and is judged at mouseup: a click
+  // still counts as a gesture (clicking selects nothing), a drag is the user
+  // highlighting text.
   const capturable = e => scArmed !== null
-    || e.button === 2
+    || e.button !== 0
     || e.ctrlKey || e.shiftKey || e.altKey || e.metaKey || scSpaceHeld
 
   screen.addEventListener('contextmenu', e => {
@@ -4557,7 +4569,7 @@ function initShortcutsPad(scFlash, scDisarmPad, padLabel) {
   screen.addEventListener('mousedown', e => {
     if (isChrome(e.target)) return
     origin = { x: e.clientX, y: e.clientY }
-    button = e.button === 2 ? 'right' : 'left'
+    button = eventButtonName(e)
     captured = capturable(e)
     if (captured) e.preventDefault()
   })
@@ -4601,7 +4613,7 @@ function initShortcutsPad(scFlash, scDisarmPad, padLabel) {
     scDisarmPad()
     // Only a key-armed gesture may change category; a bare click stays where you are
     if (hits.length) scFlash(hits, wasArmed)
-    else if (wasArmed) padLabel(`No command on that key for a ${gesture.button === 'right' ? 'right-' : ''}${gesture.kind}`)
+    else if (wasArmed) padLabel(`No command on that key for a ${gesture.button === 'left' ? '' : gesture.button + '-'}${gesture.kind}`)
   })
 }
 
