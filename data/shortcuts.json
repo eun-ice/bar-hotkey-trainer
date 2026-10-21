@@ -654,6 +654,24 @@
           "mouseAction": "ctrl-double-click"
         },
         {
+          "id": "select-click-add",
+          "icon": "commands/normal.webp",
+          "label": "Select: Add",
+          "level": 0,
+          "displayOnly": true,
+          "description": "Shift + left-click a unit — adds it to the current selection instead of replacing it",
+          "mouseAction": "shift-click"
+        },
+        {
+          "id": "select-click-toggle",
+          "icon": "commands/normal.webp",
+          "label": "Select: Toggle",
+          "level": 1,
+          "displayOnly": true,
+          "description": "Ctrl + left-click a unit — takes it out of the selection if it is in, adds it if it is not",
+          "mouseAction": "ctrl-click"
+        },
+        {
           "id": "deselect",
           "label": "Deselect All",
           "action": "select AllMap++_ClearSelection_SelectNum_0+",
@@ -716,6 +734,15 @@
           "displayOnly": true,
           "description": "Hold Space while dragging the box — only units with nothing to do are picked up",
           "mouseAction": "space-drag-box"
+        },
+        {
+          "id": "select-minimap-box",
+          "icon": "commands/normal.webp",
+          "label": "Box Select on Minimap",
+          "level": 1,
+          "displayOnly": true,
+          "description": "Left-drag a box on the minimap — selects the units inside, with Shift and Ctrl working as on the map",
+          "mouseAction": "drag-box"
         },
         {
           "id": "select-commander",
@@ -888,6 +915,15 @@
           "displayOnly": true,
           "description": "Ctrl + right-click a point — units move there while keeping formation, travelling at the speed of the slowest unit in the selection",
           "mouseAction": "ctrl-click-right"
+        },
+        {
+          "id": "minimap-order",
+          "icon": "commands/move.webp",
+          "label": "Order on the Minimap",
+          "level": 1,
+          "displayOnly": true,
+          "description": "Right-click the minimap — a move order to that spot; with a command picked, a left-click there gives that one instead",
+          "mouseAction": "click-right"
         }
       ]
     },
@@ -1702,6 +1738,46 @@
       "context": "builder",
       "shortcuts": [
         {
+          "id": "build-line",
+          "label": "Build Line",
+          "level": 0,
+          "displayOnly": true,
+          "description": "With a structure picked, hold Shift and drag — one copy after another along the line",
+          "mouseAction": "shift-drag-line"
+        },
+        {
+          "id": "build-grid",
+          "label": "Build Grid",
+          "level": 1,
+          "displayOnly": true,
+          "description": "Hold Shift and Alt while dragging — the rectangle fills up with copies",
+          "mouseAction": "shift-alt-drag-box"
+        },
+        {
+          "id": "build-line-straight",
+          "label": "Build Straight Line",
+          "level": 2,
+          "displayOnly": true,
+          "description": "Hold Ctrl and Shift while dragging — the line snaps to one axis instead of following the mouse",
+          "mouseAction": "ctrl-shift-drag-line"
+        },
+        {
+          "id": "build-border",
+          "label": "Build Border",
+          "level": 2,
+          "displayOnly": true,
+          "description": "Hold Ctrl, Shift and Alt while dragging — only the edge of the rectangle is built, for walling something in",
+          "mouseAction": "ctrl-shift-alt-drag-box"
+        },
+        {
+          "id": "build-ring",
+          "label": "Build Ring",
+          "level": 2,
+          "displayOnly": true,
+          "description": "Hold Ctrl and Shift and click an existing or planned structure — copies ring it on every side",
+          "mouseAction": "ctrl-shift-click"
+        },
+        {
           "id": "rotate-ccw",
           "label": "Rotate Building Left",
           "action": "buildfacing inc",
@@ -1820,6 +1896,24 @@
           "key": "Space",
           "displayOnly": true,
           "description": "Hold Space while giving build orders to several selected builders — the queue is split between them instead of every builder taking the whole thing"
+        },
+        {
+          "id": "build-split-line",
+          "label": "Split Build Line",
+          "action": "buildsplit",
+          "level": 2,
+          "displayOnly": true,
+          "description": "Several builders selected: hold Shift and Space while dragging the line — each builder takes a share of it",
+          "mouseAction": "shift-space-drag-line"
+        },
+        {
+          "id": "build-split-grid",
+          "label": "Split Build Grid",
+          "action": "buildsplit",
+          "level": 2,
+          "displayOnly": true,
+          "description": "Hold Shift, Alt and Space while dragging — the grid is shared out between the selected builders",
+          "mouseAction": "shift-alt-space-drag-box"
         }
       ]
     },
@@ -2500,6 +2594,22 @@
       "name": "Camera",
       "context": "none",
       "shortcuts": [
+        {
+          "id": "camera-drag",
+          "label": "Pan the Camera",
+          "level": 0,
+          "displayOnly": true,
+          "description": "Hold the middle button and drag — the view slides with the mouse",
+          "mouseAction": "middle-drag-line"
+        },
+        {
+          "id": "camera-minimap-goto",
+          "label": "Jump via Minimap",
+          "level": 0,
+          "displayOnly": true,
+          "description": "Left-click the minimap — the camera jumps to that spot",
+          "mouseAction": "click"
+        },
         {
           "id": "camera-recall-1",
           "label": "Jump to Camera Anchor 1",

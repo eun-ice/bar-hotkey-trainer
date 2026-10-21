@@ -393,3 +393,11 @@ rather than being copied into the code, so it can be refreshed when upstream cha
   a bare phone. It skips the layout dialogue and hides the two "press a shortcut" hints,
   all of them pure text. Key checking stays live everywhere, so anyone who does have a
   keyboard and simply tries it still gets their checkmarks.
+- **Engine mouse defaults have no bind action, so `check:bindings` never sees them.** Shift /
+  Ctrl+click selection, double-click same-type selection, the Shift build drags (line, grid,
+  border, axis-locked line, ring around a structure, the Space split variants), middle-drag
+  camera pan and the minimap clicks come from `MouseHandler.cpp`, `SelectedUnitsHandler.cpp`,
+  `GuiHandler::GetBuildPositions` and `MiniMap.cpp` in the Recoil checkout, and were all
+  verified in game in October 2026. Three engine behaviours were tried and do **not** work in
+  BAR, so they are deliberately absent: a middle-button *tap* toggling the locked pan mode,
+  Alt+mouse rotating the camera in that mode, and the middle button on the minimap.
