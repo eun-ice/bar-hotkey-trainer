@@ -262,16 +262,19 @@ rather than being copied into the code, so it can be refreshed when upstream cha
   the filter carries `layer = -1` so it runs first. Reading only the second one once led
   to "correcting" the Alt+drag reclaim text to metal/energy, which is the no-modifier
   behaviour — verified in game as unit id.
-- **Ctrl on a set target means sticky, and the area filter can eat it.**
+- **Ctrl on a set target means sticky; Ctrl on an area attack removes.**
   `unit_target_on_the_move.lua` reads `cmdOptions.ctrl` as `ignoreStop` — "Target survives
   a Stop command" — for `SET_TARGET`, `SET_TARGET_NO_GROUND` and `SET_TARGET_RECTANGLE`
-  alike, which is where `target-set-sticky` / `target-set-area-sticky` come from. But
-  `cmd_area_commands_filter.lua` also claims `UNIT_SET_TARGET`, and it re-issues the
-  filtered orders with only `shift` in `cmdOpts` — the Ctrl is dropped. It only fires on a
-  4-param area command whose centre traces to a unit or feature, so `S` Ctrl+click and a
-  Ctrl+drag centred on empty ground stay sticky, while a Ctrl+drag centred *on an enemy*
-  loses the stickiness (and filters nothing either — `filterUnits` returns every unit in
-  the area when Ctrl is held). Read from source, not yet confirmed in game.
+  alike, which is where `target-set-sticky` / `target-set-area-sticky` come from. The
+  engine's `SelectedUnitsAI` reads Ctrl on an area attack as "delete the matching queued
+  attacks" (`attack-area-remove`). Until October 2026 `cmd_area_commands_filter.lua` and
+  `cmd_exclude_walls_area_attacks.lua` re-issued their filtered orders without Ctrl, so a
+  Ctrl+drag centred on a unit lost both behaviours and the two entries were limited to
+  drags begun on bare ground. Upstream commit `e766023` (#9047) fixed that: Attack+Ctrl
+  without Space is left to the engine entirely, and Set Target keeps Ctrl on every
+  re-issued order. Both entries are now plain `ctrl-drag`, verified in game. Attack + Ctrl
+  + Space still goes through the filter (queue front, split with Shift), which is what the
+  `attack-area-split` entries describe.
 - **Space is one binding with two behaviours, and Shift picks which.** `chat_and_ui_keys.txt`
   binds `Any+space` to `commandinsert prepend_between` — one line, so the trainer will
   never learn the split from the binding files. `cmd_commandinsert.lua` is where it lives:

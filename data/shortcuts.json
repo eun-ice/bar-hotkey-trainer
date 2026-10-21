@@ -1027,12 +1027,13 @@
         },
         {
           "id": "attack-area-remove",
+          "displayOnly": true,
           "label": "Remove Attack Orders in Area",
           "action": "attack",
           "level": 2,
           "key": "A",
-          "description": "Press the key, then hold Ctrl and drag a circle over bare ground to strip the queued attack orders inside it — holding Ctrl while pressing the key instead is the area attack, so let go of it before dragging",
-          "mouseAction": "ctrl-drag-on-ground"
+          "description": "Press the key, then hold Ctrl and drag a circle — the queued attack orders inside it are removed; Ctrl held while pressing the key is the area attack instead, so let go of it first",
+          "mouseAction": "ctrl-drag"
         },
         {
           "id": "attack-area-type",
@@ -1106,8 +1107,8 @@
           "action": "settarget",
           "level": 2,
           "key": "S",
-          "description": "Hold Ctrl and drag the target circle over bare ground to make the targets stick — a Stop order clears ordinary set targets, these survive it",
-          "mouseAction": "ctrl-drag-on-ground"
+          "description": "Hold Ctrl and drag the target circle to make the targets stick — a Stop order clears ordinary set targets, these survive it",
+          "mouseAction": "ctrl-drag"
         },
         {
           "id": "target-set-area-split",
