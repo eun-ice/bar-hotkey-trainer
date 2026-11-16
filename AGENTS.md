@@ -286,24 +286,24 @@ rather than being copied into the code, so it can be refreshed when upstream cha
   which is what the `shift-space-click` build modifier trains. The right-click order
   variant is read from source only.
 - **A `mouseAction` may stack modifier prefixes.** `mouseActionMods()` is the one parser —
-  `shift-space-click-right` wants both Shift and Space — and `formatMouseAction()`,
+  `shift-space-order` wants both Shift and Space — and `formatMouseAction()`,
   `scGestureMatches()` and the training pad's `mouseup` (through `MOUSE_MOD_GESTURE_RE`) all
   go through it, so a stacked gesture renders, ticks off and trains. The constructor build
   `shift-space-click` (build en route, `cmd_commandinsert.lua`'s cheapest-detour insert) is
   drawn from Mid on. On a *build* question Shift and Space are judged exactly: an extra one
   is wrong, because Shift+Space+click is a different order than Shift+click — modifier
   gestures elsewhere still let extra modifiers pass.
-  `queue-order-cheapest` cannot be ticked off on the reference pad, for an unrelated
-  reason: `Shift+Space` is itself a complete shortcut (`show-build-queue`), so the key
-  press flashes that one and pulls the view to Factory, and the right-click that follows
-  is a bare gesture — `scFlash`'s `allowSwitch = false` deliberately refuses to yank the
-  view back to Right-click, so nothing matches. Passing `gesture.mods.length > 0` as
-  `allowSwitch` would fix it, at the cost of letting every modified keyless gesture change
-  category. `select-box-idle` is now stuck the same way — Space completes `build-split`,
-  which pulls the view to Builder before the drag lands — so that one line would free two
-  entries. Note also that `select-box` itself has never been tickable: a plain unmodified
-  left drag is deliberately left to the browser as text selection (`capturable()`), and
-  the mouseup returns early for it.
+  The three Queue / Order Modifier rows (Queue, Insert Next, Insert Into Route) carry the
+  `order` gesture — `shift-order`, `space-order`, `shift-space-order` — rather than a
+  right-click: the modifier goes with *any* order, a build or an attack as much as a
+  right-click, so the key column draws a dashed "any order" cap in place of a mouse and
+  the pad accepts either button, click or drag, with exactly those modifiers held
+  (`mouseActionIsAnyOrder`). All three tick on the reference pad, verified: the
+  Shift+Space tap completes `show-build-queue` in Factory, but a Space tap never switches
+  category, so the gesture that follows still lands in Queue — the same reason Space+drag
+  ticks `select-box-idle`. Note that `select-box` itself
+  has never been tickable: a plain unmodified left drag is deliberately left to the browser
+  as text selection (`capturable()`), and the mouseup returns early for it.
 - **A shortcut with no `level` is Commander-only, not level-less.** `buildShortcutQueue`
   skips the level check whole once the threshold is `Infinity`, which is exactly the
   Commander setting — so an entry without a `level`, or with one above 1, is drawn there

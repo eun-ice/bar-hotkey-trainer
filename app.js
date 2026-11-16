@@ -3,7 +3,7 @@ import {
   slotPicksUnit, searchReference,
   // Version query kept in step with the one on this file in index.html — a module import
   // is cached on its own, so a stale logic.js would otherwise outlive an app.js update.
-} from './logic.js?v=179'
+} from './logic.js?v=188'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -497,7 +497,8 @@ const CONSTRUCTOR_MOD_INFO = {
   // `cmd_commandinsert.lua` takes build orders too (`id < 0`): with Space and Shift it
   // walks each builder's queue and inserts where the detour is smallest — building en route
   'shift-space-click': { mods: ['shift','space'], short: 'Into route', label: 'Insert into route',
-                         desc: 'Slots it into the queue where it costs the least extra walking' },
+                         desc: 'Slots it into the queue where it costs the least extra walking',
+                         note: 'With <strong>several builders</strong> selected the same keys split the buildings between them instead — see <em>Split Build Orders</em> in the shortcut reference.' },
 }
 
 const SHORTCUT_CONTEXT_UNITS = {
@@ -2716,6 +2717,9 @@ const MOUSE_ACTION_LABELS = {
   'alt-click-right':         'Alt + Right-click',
   'ctrl-click-right':        'Ctrl + Right-click',
   'shift-space-click-right': 'Shift + Space + Right-click',
+  'shift-order':             'Shift + any order',
+  'space-order':             'Space + any order',
+  'shift-space-order':       'Shift + Space + any order',
 }
 
 let mouseZoneSpaceHeld = false
@@ -4185,6 +4189,16 @@ const MOUSE_MOD_NAMES = { ctrl: 'Ctrl', shift: 'Shift', alt: 'Alt', space: 'Spac
 // draws a circle for.
 const MOUSE_MOD_GESTURE_RE = /^((ctrl|shift|alt|space)-)+(drag|click)$/
 const MOUSE_MOD_DRAG_RE    = /^((ctrl|shift|alt|space)-)+drag$/
+// A modifier that applies to *every* order — Shift queues, Space inserts — rather than to
+// one gesture: `shift-order`, `shift-space-order`. Drawn as a dashed "any order" cap in
+// place of a mouse, and satisfied by any button, click or drag, with exactly those
+// modifiers held. Spelling it `shift-click-right` taught that Shift only queues right-click
+// orders, when it queues a build or an attack just the same.
+const MOUSE_ANY_ORDER_RE   = /^((ctrl|shift|alt|space)-)+order$/
+
+function mouseActionIsAnyOrder(mouseAction) {
+  return MOUSE_ANY_ORDER_RE.test(mouseActionBase(mouseAction))
+}
 
 function mouseActionMods(mouseAction) {
   const wanted = new Set()
@@ -4382,6 +4396,15 @@ function scIsDrilled(shortcut, group) {
 function formatMouseAction(mouseAction) {
   if (!mouseAction) return ''
 
+  if (mouseActionIsAnyOrder(mouseAction)) {
+    // No mouse to draw: the modifier goes with whatever order follows, by either button,
+    // click or drag — the same dashed placeholder the build-modifier legend uses for
+    // "whichever unit key"
+    const modKbd = mouseActionMods(mouseAction)
+      .map(mod => `<kbd>${mod}</kbd><span class="sc-mouse-plus">+</span>`).join('')
+    return `<span class="sc-mouse-action">${modKbd}<kbd class="mod-anykey">any order</kbd></span>`
+  }
+
   const isRight  = mouseActionWantsRight(mouseAction)
   const isMiddle = mouseAction.includes('middle')
   const isDouble = mouseAction.includes('double')
@@ -4526,6 +4549,10 @@ function scComboFromEvent(e, spaceHeld) {
 function scGestureMatches(mouseAction, gesture) {
   const wantDrag = mouseAction.includes('drag')
   const wantMods = mouseActionMods(mouseAction)
+  // Any order at all: either button, click or drag — only the modifiers are judged. A
+  // double-click is left out; its first click already counted.
+  if (mouseActionIsAnyOrder(mouseAction))
+    return gesture.kind !== 'double' && wantMods.join('+') === gesture.mods.join('+')
   if (!mouseButtonMatches(mouseActionButton(mouseAction), gesture.button, gesture.ambiguous)) return false
   // A double-click is its own gesture: a single click does not pass for it, and the
   // second click of a double does not also pass for the single-click rows
@@ -4823,7 +4850,7 @@ function initShortcutsScreen() {
       e.preventDefault()
       // While a key waits for its gesture, Space is a modifier for that gesture — Split
       // Attack, Reclaim Enemies in Area — not a tap on the Space commands, so the pad
-      // stays armed instead of ticking off Build Split and disarming.
+      // stays armed instead of ticking off Show Queue Presets and disarming.
       if (scArmed !== null) return
     }
     const combo = scComboFromEvent(e, e.key === ' ' ? false : scSpaceHeld)
@@ -4856,8 +4883,8 @@ function initShortcutsScreen() {
     const done       = complete.filter(m => !m.sc.mouseAction)
 
     scLight([...partial, ...needsMouse])
-    // A Space tap ticks off what is already on screen (Build Split in Builder, Show Queue
-    // Presets in Factory) but never pulls the view to another category — reaching for a
+    // A Space tap ticks off what is already on screen (Show Queue Presets in Factory) but
+    // never pulls the view to another category — reaching for a
     // modifier should not move you. Every other key may still switch, as before.
     if (done.length) scFlash(done, combo.key !== 'SPACE')
 

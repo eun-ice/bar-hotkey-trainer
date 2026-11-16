@@ -939,7 +939,7 @@
           "level": 0,
           "displayOnly": true,
           "description": "Hold Shift while giving any order appends it to the queue",
-          "mouseAction": "shift-click-right"
+          "mouseAction": "shift-order"
         },
         {
           "id": "queue-order-front",
@@ -948,7 +948,7 @@
           "level": 1,
           "displayOnly": true,
           "description": "Hold Space while giving any order puts it at the front of the queue",
-          "mouseAction": "space-click-right"
+          "mouseAction": "space-order"
         },
         {
           "id": "queue-order-cheapest",
@@ -956,8 +956,8 @@
           "label": "Insert Into Route",
           "level": 2,
           "displayOnly": true,
-          "description": "Hold Shift and Space to slot the order into the queue where it costs the least extra walking",
-          "mouseAction": "shift-space-click-right"
+          "description": "Hold Shift and Space to slot the order into the queue where it costs the least extra walking — a build order with several builders selected is split between them instead",
+          "mouseAction": "shift-space-order"
         },
         {
           "id": "queue-next",
@@ -1524,7 +1524,7 @@
         {
           "id": "reclaim-area-split",
           "displayOnly": true,
-          "label": "Split Reclaim",
+          "label": "Split Reclaim by Tech Level",
           "action": "reclaim",
           "level": 2,
           "key": "E",
@@ -1675,7 +1675,7 @@
         {
           "id": "resurrect-area-split",
           "displayOnly": true,
-          "label": "Split Resurrect",
+          "label": "Split Resurrect by Tech Level",
           "action": "resurrect",
           "level": 2,
           "key": "W",
@@ -1890,21 +1890,12 @@
           "description": "With several builders or factories selected, step the build menu to the next one"
         },
         {
-          "id": "build-split",
-          "label": "Split Build Orders",
-          "action": "buildsplit",
-          "level": 2,
-          "key": "Space",
-          "displayOnly": true,
-          "description": "Hold Space while giving build orders to several selected builders — the queue is split between them instead of every builder taking the whole thing"
-        },
-        {
           "id": "build-split-line",
           "label": "Split Build Line",
           "action": "buildsplit",
           "level": 2,
           "displayOnly": true,
-          "description": "Several builders selected: hold Shift and Space while dragging the line — each builder takes a share of it",
+          "description": "Several builders selected: hold Shift and Space while dragging the line — each builder takes a share of it instead of one builder slotting it into its route",
           "mouseAction": "shift-space-drag-line"
         },
         {
@@ -1915,6 +1906,20 @@
           "displayOnly": true,
           "description": "Hold Shift, Alt and Space while dragging — the grid is shared out between the selected builders",
           "mouseAction": "shift-alt-space-drag-box"
+        },
+        {
+          "id": "build-split-areamex",
+          "label": "Split Area Mex",
+          "action": "areamex",
+          "level": 2,
+          "keys": [
+            "Z",
+            "Z"
+          ],
+          "note": "QWERTY: ZZ (bottom-left twice), QWERTZ: YY (same physical position)",
+          "displayOnly": true,
+          "description": "Several builders selected: press the key twice, then hold Shift and Space while dragging the area — the extractors are shared out between the builders",
+          "mouseAction": "shift-space-drag"
         }
       ]
     },
@@ -1945,6 +1950,19 @@
           ],
           "description": "Place a blueprint for a structure to be built later",
           "mouseAction": "click"
+        },
+        {
+          "id": "build-split-blueprint",
+          "label": "Split Place Blueprint",
+          "action": "blueprint_place",
+          "level": 2,
+          "key": "B",
+          "modifiers": [
+            "Alt"
+          ],
+          "displayOnly": true,
+          "description": "Several builders selected: hold Shift and Space while placing the blueprint — its buildings are shared out between the builders",
+          "mouseAction": "shift-space-click"
         },
         {
           "id": "next-blueprint",
