@@ -140,6 +140,12 @@ Never edit `data/buildmenus.json` or `data/water-equivalents.json` by hand; chan
 extractor and re-run, or the next refresh undoes the fix.
 
 
+## Verified shortcut behavior
+
+The reference teaches BAR Grid defaults. Optional bundled widgets are named on their
+entries; expandable details cover supported units, input order and queue exceptions.
+See [the correction log](docs/hotkey-audit.md) for the checked game/engine versions.
+
 ## Data format
 
 `data/buildmenus.json`, abridged:

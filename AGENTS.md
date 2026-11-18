@@ -139,7 +139,7 @@ look like the checkout was merely stale.
 (Sept 2026) replaced all eight with `common/configs/keybind_defaults.json` — every shipped
 profile as `{keyset, action}` pairs, plus `fakeMeta` naming the meta key — and
 `common/configs/keybind_catalog.json`, which carries categories, i18n label keys and a
-`hidden` list. `check-bindings.js` reads those two and nothing else — there is no `.txt`
+`hidden` list. `check-bindings.js` reads those files plus the optional widget manifests — there is no `.txt`
 fallback, because upstream deleted the files; a cache without them says so and names the
 command to run.
 Labels resolve against `language/en/commands.json`, not `interface.json`.
@@ -239,7 +239,7 @@ rather than being copied into the code, so it can be refreshed when upstream cha
   Repeated taps must land within `TAP_WINDOW_MS` (500 ms, measured in game) — a spelled
   out sequence like `Z` `Z` for Area MEX has no window and must keep none.
 - **Which keys are tap-count and which are plain toggles** — all verified in game, do not
-  re-derive from `grid_keys.txt` alone, it does not distinguish them:
+  re-derive from binding data alone, it does not distinguish them:
   | Key | Behaviour |
   | --- | --- |
   | `L` | 1 = Fire at Will · 2 = Hold Fire · 3 = Return Fire |
@@ -251,14 +251,15 @@ rather than being copied into the code, so it can be refreshed when upstream cha
   | `K` (Cloak) | plain toggle |
   | `Alt+G` | plain toggle, queue mode ↔ quota mode |
 
-- **Factory build modifiers changed in BAR.** `Ctrl` used to add twenty to the queue and
-  `Ctrl+Shift` a hundred; both now *remove* — `Ctrl` takes one off, `Ctrl+Shift` five.
-  Verified in game. There is no bulk-add beyond `Shift` (×5) any more.
+- **Factory keyboard and mouse modifiers differ.** Grid keys: Ctrl removes one,
+  Ctrl+Shift removes five. On build-menu icons Ctrl+left-click adds twenty and
+  Ctrl+Shift+left-click adds one hundred. Do not apply the keyboard rule to mouse clicks.
 - **Two widgets share the area commands; read both before rewriting a description.**
-  `cmd_area_commands_filter.lua` ("Area Command Filter") acts *only* with Alt or Ctrl and
-  filters by `unitDefID` / `featureDefID` — Alt means same type, Ctrl means same tech
-  level. `unit_smart_area_reclaim.lua` ("Smart Area Reclaim") acts on *every* area reclaim
-  with no modifier and picks metal or energy from the centre feature. Both ship enabled;
+  `cmd_area_commands_filter.lua` ("Area Command Filter") handles Alt/Ctrl area commands:
+  Alt matches exact type, Ctrl on wrecks matches tech level, and Ctrl on units has
+  command-specific behavior. `unit_smart_area_reclaim.lua` ("Smart Area Reclaim")
+  handles remaining feature-origin reclaim circles, filtering resource type and
+  above/below-water location. Ground-origin circles are not its path. Both ship enabled;
   the filter carries `layer = -1` so it runs first. Reading only the second one once led
   to "correcting" the Alt+drag reclaim text to metal/energy, which is the no-modifier
   behaviour — verified in game as unit id.
@@ -275,28 +276,28 @@ rather than being copied into the code, so it can be refreshed when upstream cha
   re-issued order. Both entries are now plain `ctrl-drag`, verified in game. Attack + Ctrl
   + Space still goes through the filter (queue front, split with Shift), which is what the
   `attack-area-split` entries describe.
-- **Space is one binding with two behaviours, and Shift picks which.** `chat_and_ui_keys.txt`
-  binds `Any+space` to `commandinsert prepend_between` — one line, so the trainer will
+- **Space insertion depends on command handling and selection.** The Grid profile in
+  `common/configs/keybind_defaults.json` binds `Any+space` to `commandinsert prepend_between` — one line, so the trainer will
   never learn the split from the binding files. `cmd_commandinsert.lua` is where it lives:
-  with Space alone it is `CMD.INSERT` at position 0, the order runs next
+  with Space alone it is `CMD.INSERT` at position 0, the current order is interrupted immediately and resumed afterwards
   (`queue-order-front`); with Space *and* Shift it walks the queue per unit and inserts at
   the slot with the smallest detour, `dist(prev→new) + dist(new→next) − dist(prev→next)`,
   appending instead when the end of the queue is the shorter walk (`queue-order-cheapest`).
   Verified in game for a constructor build — Shift+Space+click slots it into the route,
   which is what the `shift-space-click` build modifier trains. The right-click order
-  variant is read from source only.
+  variant is covered by the graphical queue-order audit.
 - **A `mouseAction` may stack modifier prefixes.** `mouseActionMods()` is the one parser —
   `shift-space-order` wants both Shift and Space — and `formatMouseAction()`,
   `scGestureMatches()` and the training pad's `mouseup` (through `MOUSE_MOD_GESTURE_RE`) all
   go through it, so a stacked gesture renders, ticks off and trains. The constructor build
   `shift-space-click` (build en route, `cmd_commandinsert.lua`'s cheapest-detour insert) is
   drawn from Mid on. On a *build* question Shift and Space are judged exactly: an extra one
-  is wrong, because Shift+Space+click is a different order than Shift+click — modifier
-  gestures elsewhere still let extra modifiers pass.
-  The three Queue / Order Modifier rows (Queue, Insert Next, Insert Into Route) carry the
+  is wrong, because Shift+Space+click is a different order than Shift+click. Shortcut
+  gestures require exactly the shown modifiers at both mouse press and release.
+  The three Queue / Order Modifier rows (Queue, Execute Immediately, Insert Into Route) carry the
   `order` gesture — `shift-order`, `space-order`, `shift-space-order` — rather than a
-  right-click: the modifier goes with *any* order, a build or an attack as much as a
-  right-click, so the key column draws a dashed "any order" cap in place of a mouse and
+  right-click: these are generic gesture exercises; the descriptions and details scope
+  which queued orders use each behavior, so the key column draws a dashed "any order" cap in place of a mouse and
   the pad accepts either button, click or drag, with exactly those modifiers held
   (`mouseActionIsAnyOrder`). All three tick on the reference pad, verified: the
   Shift+Space tap completes `show-build-queue` in Factory, but a Space tap never switches
@@ -321,21 +322,18 @@ rather than being copied into the code, so it can be refreshed when upstream cha
   branch so the page cannot scroll under the tap even when nothing matches. Space *held*
   is untouched — `Space+X`, `Space+<num>` and the preset rows resolve and may switch
   category like any other key, and the training screen has always treated Space this way.
-- **Factory queue presets are `meta`, and `meta` is Space.** `num_keys.txt` binds
+- **Factory queue presets are `meta`, and `meta` is Space.**
+  `luaui/Widgets/cmd_factoryqmanager/manifest.json` defines
   `meta+<n>` to `factory_preset load <n>`, `meta+alt+<n>` to `factory_preset save <n>` and
   `any+sc_space` to `factory_preset_show`, so holding Space is what draws the ten preset
   boxes the numbers address. `cmd_factoryqmanager.lua` holds the rest: presets are kept
   per *factory type* and persist between matches, repeat state and quota mode travel with
   the queue, saving while the queue is empty deletes that preset, only a single selected
   factory counts, and `MousePress` loads a preset on left-click while right-click saving
-  is explicitly disabled. Read from source, not yet confirmed in game.
-- **60% boards have no factory presets at all, and the data model cannot say so.**
-  `grid_keys_60pct.txt` opens with `unbindaction factory_preset` / `factory_preset_show`
-  because Space+number is the F-row there. A `sixty` block can only *remap* a binding —
-  `resolveBinding()` falls back to the normal key for anything it omits — so the preset
-  entries are shown and drilled even with the 60% box ticked, which is wrong for those
-  users. Needs a genuine "unbound on 60%" flag, honoured by both the question pool and the
-  reference, before it can be fixed.
+  is explicitly disabled. Queue, repeat, quota targets/mode, empty-slot deletion and all ten slots were verified in game.
+- **Factory presets are unbound on the 60% profile.** `sixty: {unbound: true}`
+  makes `resolveBinding` return no keys, excludes practice questions and reference
+  matching, and displays an explicit unbound label. Bindings now live in widget manifests.
 - **`Any+` means with *or without* modifiers, and it hides whole combos from the checker.**
   `bind any+sc_space factory_preset_show` binds Space, Shift+Space, Ctrl+Space and the
   rest, which is why `show-build-queue` on Shift+Space works in game — verified in game —
@@ -345,7 +343,7 @@ rather than being copied into the code, so it can be refreshed when upstream cha
   treats those keys as bound on any combination. That false alarm once led to questioning
   a correct entry, so do not delete a shortcut on the strength of that list — check
   whether its key is bound with `Any+` first.
-- **`grid_keys.txt` is the authority, not the in-game chart.** The keyboard images under
+- **Shipped profiles and widget manifests are authoritative, not archived charts.** The keyboard images under
   `luaui/images/keybinds/` — the ones the visual reference shows — lag behind. Verified:
   they display `F9 Hide HP Bars`, which is in no binding file and does nothing in game,
   and their ALT page omits nine bindings that do exist (`Alt+Q`, the blueprint keys,
@@ -414,3 +412,41 @@ rather than being copied into the code, so it can be refreshed when upstream cha
   `DOUBLE_CLICK_MS` on the same spot with the same button make a `double` gesture; the first
   still counts as a click on its own, as in the game. A `double-click` row never passes for
   a single click, and a key-armed double (` + double-click) stays armed through the first.
+
+## Standard Grid audit corrections (November 2026)
+
+The trainer teaches shipped BAR Grid defaults only. Optional bundled widgets carry
+`requiresWidget`; explain enabling them in the Widget Selector. `details` holds collapsible
+conditions/unit lists, `prerequisite` names the required selection/context, and `inputHint`
+distinguishes command activation from later mouse modifiers. Details are searchable.
+
+Space is fake Meta. Build Split triggers at two selected units, including mixed selections:
+append each builder's section first, then follow-ups. One selected builder uses route insertion.
+Area-filter and enemy-reclaim paths can run before insertion; do not claim every Space order
+has identical queue behavior. See docs/hotkey-audit.md for scope and known edge cases.
+
+`releaseBeforeMouse` requires the activation keys to be released before starting the mouse
+phase. Both pads check exact modifiers at mouse press and release via `mousePhaseMatches`.
+The Area Attack example uses supported artillery, not a commander. Do not reintroduce
+low-health-first attack-circle claims or the obsolete Ctrl-area/sticky-target bug notes.
+
+For Space insertion, use “instant” / “immediately” and explain that the previous
+queue resumes afterwards. Do not add a separate “current build is not finished first”
+explanation; the user considers it redundant.
+
+Unused `note` / `note_*` fields were removed from shortcuts.json. Do not add invisible
+layout explanations there: KeyLayout owns display labels; player-facing conditions
+belong in description/prerequisite/details. Technical format notes belong here.
+`mouseAction` origin suffixes (-on-ground/unit/wreck/metal/energy, or combined
+-on-wreck+metal) describe where a gesture starts. The training pad renders and checks
+these origins; the reference pad only checks the gesture and modifiers.
+
+Write shortcut descriptions for players: what the command does and when it helps.
+Delete irrelevant counterexamples, implementation history and redundant explanations.
+Do not move rejected description text into details. Keep details only when they change
+how a player uses the command, such as selection requirements or queue consequences.
+
+Keep activation and mouse modifiers distinct in prose: “Press F, then hold Alt
+and click”, never “Alt+Fight”. Likewise A then Ctrl+drag is distinct from Ctrl+A.
+Describe only the behavior actually established by a test; observing command
+flags is not itself an execution test of every inferred consequence.

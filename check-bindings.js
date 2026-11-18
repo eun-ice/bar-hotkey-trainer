@@ -101,7 +101,20 @@ function readBinds() {
   if (!profile)
     fail(`keybind_defaults.json has no "${PROFILE}" profile — only: `
       + defaults.profiles.map(p => p.name).join(', '))
-  return profile.binds
+  const binds = [...profile.binds]
+  for (const id of ['cmd_factoryqmanager', 'camera_fov_changer', 'gui_pip']) {
+    const manifest = readBarJson(`luaui/Widgets/${id}/manifest.json`)
+      ?? readBarJson(`luaui/widgets/${id}/manifest.json`)
+    if (!manifest) fail(`Missing optional widget manifest ${id}; run npm run fetch:refresh or use BAR_REPO.`)
+    for (const item of manifest.keybindings ?? []) {
+      const keysets = item.profileKeysets?.[profile.id] ?? item.defaultKeysets ?? []
+      for (const member of item.members ?? [null]) {
+        const action = member === null ? item.action : `${item.action} ${member}`
+        for (const keyset of keysets) binds.push({ action, keyset: keyset.replaceAll('%{n}', member ?? '') })
+      }
+    }
+  }
+  return binds
 }
 
 const bindPairs = readBinds()

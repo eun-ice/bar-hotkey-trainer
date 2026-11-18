@@ -50,11 +50,12 @@ export function scComboMatchesKey(combo, scKey, scMods, optionalMods = []) {
 
 /**
  * Which binding a shortcut has for this user. BAR ships a second hotkey preset for
- * 60%/65% boards (luaui/configs/hotkeys/grid_keys_60pct.txt) that moves everything off
+ * 60%/65% boards (the grid60 profile in keybind_defaults.json) that moves bindings off
  * the F-row and off the ` key; entries that differ carry a `sixty` block.
  */
 export function resolveBinding(shortcut, compact60 = false) {
   const alt = compact60 ? shortcut.sixty : null
+  if (alt?.unbound) return { key: null, keys: null, modifiers: [], optionalModifiers: [], unbound: true }
   return {
     key:               alt?.key ?? shortcut.key,
     keys:              alt ? null : shortcut.keys,
@@ -234,7 +235,8 @@ export function searchReference(query, { builders, units, groups, categoryKeys, 
     for (const sc of group.shortcuts) {
       if (sc.learnHidden) continue
       const actions = shortcutActions(sc)
-      const extra = [sc.description, sc.id, group.name, ...actions,
+      const extra = [sc.description, sc.prerequisite, sc.requiresWidget,
+                     ...(sc.details ?? []).map(d => `${d.title} ${d.text}`), sc.id, group.name, ...actions,
                      ...(sc.states ?? []).map(state => state.label)]
         .filter(Boolean).join(' ')
       const score = searchScore(tokens, sc.label, extra)
@@ -262,4 +264,10 @@ export function searchReference(query, { builders, units, groups, categoryKeys, 
     shortcuts: shortcutHits.sort(byScore).slice(0, limit),
     grid:      grid && { ...grid, action: query.trim().replace(/\s+/g, ' ') },
   }
+}
+
+/** Mouse-phase modifiers must describe the exact taught command, at press and release. */
+export function mousePhaseMatches(startMods, endMods, wantedMods, releaseKeys = [], heldKeys = []) {
+  return modsSatisfy(startMods, wantedMods) && modsSatisfy(endMods, wantedMods)
+    && !releaseKeys.some(key => heldKeys.includes(key.toUpperCase()))
 }

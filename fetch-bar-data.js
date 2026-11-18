@@ -164,6 +164,9 @@ async function main() {
     'common/configs/keybind_defaults.json',
     'common/configs/keybind_catalog.json',
     'language/en/commands.json',
+    'luaui/Widgets/cmd_factoryqmanager/manifest.json',
+    'luaui/Widgets/camera_fov_changer/manifest.json',
+    'luaui/Widgets/gui_pip/manifest.json',
   ]
   for (const relPath of KEYBIND_FILES) {
     if (existsSync(join(BAR_DATA, relPath)) && !refresh) continue

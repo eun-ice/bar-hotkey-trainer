@@ -2016,6 +2016,9 @@ a.slot:not(.empty):hover img { transform: scale(1.05) }
    under the keys, which as a block would otherwise push the mouse onto its own line */
 .sc-key-row  { display: inline-flex; align-items: flex-start }
 .sc-key-keys { display: inline-block; text-align: right }
+.sc-gesture-arrow { align-self: center; margin: 0; padding: 0 3px; font-size: .82rem; line-height: 1; color: #b8c4cc; white-space: nowrap }
+.sc-key-row:has(.sc-mac-practice) > .sc-gesture-arrow { align-self: flex-start; line-height: 22px }
+.sc-key-row:has(.sc-drag-origin):has(.sc-mac-practice) > .sc-gesture-arrow { margin-top: 6px }
 .sc-lvl    { display: inline-block; padding: 2px 7px; border-radius: 3px; font-size: 11px; font-weight: 700; letter-spacing: .03em }
 .sc-lvl-0  { background: rgba(80,180,80,.18); color: #5db85d }
 .sc-lvl-1  { background: rgba(200,140,40,.18); color: #c8903a }
@@ -2570,3 +2573,10 @@ input[type=checkbox], input[type=radio] { width: 15px; height: 15px; accent-colo
   border: 2px solid transparent;
   background-clip: padding-box;
 }
+
+/* Conditions stay close to the shortcut; long unit lists are expandable. */
+.sc-prerequisite, .sc-widget, .sc-input-hint, .sc-profile-note { font-size: .82rem; line-height: 1.5; margin-top: .4rem; color: #b8c4cc; }
+.sc-widget { color: #e7c477; }
+.sc-details { margin-top: .5rem; font-size: .85rem; line-height: 1.5; max-width: 58rem; }
+.sc-details summary { cursor: pointer; color: #a9d9a4; }
+.sc-details p { margin: .65rem 0; }

@@ -1,16 +1,5 @@
 {
   "version": 1,
-  "note": "Key values match browser event.key (uppercase letters, special keys by name).",
-  "note_zy": "Z and Y are always treated as equivalent — handles QWERTY/QWERTZ confusion.",
-  "note_colon": "Position uses ':' — on QWERTY: Shift+; — on QWERTZ: Shift+. — both produce event.key ':' so no special handling needed.",
-  "note_reclaim_space": "Space + drag reclaim (engine META_KEY) is handled by the Area Reclaim Enemy widget (layer 0) when an enemy unit is inside the circle and the center is ground or a unit; confirmed in game 2026-09-15 and listed as reclaim-area-enemy. With no enemy inside, the command insert widget (layer 5) turns it into a plain queue-front insert. Space with Fight (engine: also reclaim enemy units) is untested and not listed.",
-  "note_repair_space": "Space + drag repair (engine META_KEY) would repair finished units only and skip constructions, but no widget handles it before the command insert widget (layer 5) strips the meta option, so in game it is only a queue-front insert. Untested, not listed.",
-  "note_resurrect_space": "Space + drag resurrect (engine META_KEY) would raise only untouched wrecks and skip partly reclaimed ones, but no widget handles it before the command insert widget (layer 5) strips the meta option, so in game it is only a queue-front insert. Untested, not listed.",
-  "note_attack_area_all": "Ctrl + drag started on an enemy with Attack (ctrl-drag-on-unit) is not listed: in game it currently attacks every enemy in the circle, but that is a bug — the filter widget is meant to turn it into Remove Attack Orders in Area, like the bare-ground variant. Add it back once upstream has settled what it does.",
-  "note_target_set_area_all": "Ctrl + drag started on an enemy with Set Target (ctrl-drag-on-unit) is not listed: in game it currently behaves like the plain Set Target Area, but that is a bug — it is meant to be the sticky variant like the bare-ground one (target-set-area-sticky). Add it back once upstream has settled what it does.",
-  "note_capture_area_all": "Ctrl + drag started on an enemy with Capture (ctrl-drag-on-unit) is not listed: the filter widget swallows Ctrl and the result is the plain area capture, so there is nothing separate to learn. Same story as attack-area-all and target-set-area-all.",
-  "note_mouse_origin": "Area drags may end in -on-ground, -on-unit, -on-wreck, -on-metal or -on-energy: what the cursor is over when the circle is started; two origins the game treats alike join with +, as in -on-wreck+metal, and the pad asks for either. The game hands out a different order per origin (engine, cmd_area_commands_filter.lua, unit_smart_area_reclaim.lua). The pad shows a matching target the drag must start on, or a dim wreck to start away from for -on-ground.",
-  "note_area_split": "Ctrl or Alt area drags centered on a unit or resurrectable wreck are taken over by cmd_area_commands_filter.lua (layer -1) for attack, capture, set target, guard, repair, reclaim, load and resurrect: Ctrl = everything of that team (wrecks: same tech level), Alt = same unit type. Adding Space puts the orders at the front of the queue (already covered by queue-order-front); adding Shift and Space splits the targets between the selected units, listed as *-split. Load instead spreads passengers across transports on its own. Ctrl and Alt are not forwarded to the game, so a Ctrl set target started on a unit is not sticky. Guard is ICON_UNIT in the engine and cannot be dragged, so no guard area entries.",
   "unitLevels": {
     "0": [
       "armaap",
@@ -617,8 +606,9 @@
     "battle": "Show commander (represents any combat unit)",
     "factory": "Show a random T1 factory from the selected faction(s)",
     "builder": "Show a random constructor/builder from the selected faction(s)",
-    "rezbot": "Show a Rezbot (ARM: Eraser / COR: Resurrector / LEG: equivalent)",
-    "transport": "Show a transport plane from the selected faction(s)"
+    "rezbot": "Show a resurrection bot from the selected faction(s)",
+    "transport": "Show a transport plane from the selected faction(s)",
+    "area-artillery": "A supported artillery unit: Armada Mauser, Cortex Quaker or Legion Cleaver."
   },
   "groups": [
     {
@@ -641,7 +631,7 @@
           "label": "Double-click: Same Type on Screen",
           "level": 0,
           "displayOnly": true,
-          "description": "Double-click a unit — selects every unit of that type on screen, as long as both clicks land on the same unit",
+          "description": "Double-click a unit to select all units of that type on screen.",
           "mouseAction": "double-click"
         },
         {
@@ -650,7 +640,7 @@
           "label": "Double-click: Same Type Anywhere",
           "level": 1,
           "displayOnly": true,
-          "description": "Hold Ctrl and double-click a unit — selects every unit of that type on the whole map, not just on screen",
+          "description": "Hold Ctrl and double-click a unit to select its type across the map.",
           "mouseAction": "ctrl-double-click"
         },
         {
@@ -659,7 +649,7 @@
           "label": "Select: Add",
           "level": 0,
           "displayOnly": true,
-          "description": "Shift + left-click a unit — adds it to the current selection instead of replacing it",
+          "description": "Hold Shift and left-click a unit to add it to the selection.",
           "mouseAction": "shift-click"
         },
         {
@@ -668,7 +658,7 @@
           "label": "Select: Toggle",
           "level": 1,
           "displayOnly": true,
-          "description": "Ctrl + left-click a unit — takes it out of the selection if it is in, adds it if it is not",
+          "description": "Hold Ctrl and left-click a unit to add or remove it from the selection.",
           "mouseAction": "ctrl-click"
         },
         {
@@ -678,7 +668,7 @@
           "level": 0,
           "displayOnly": true,
           "key": "Escape",
-          "description": "Drop the current selection without giving it an order"
+          "description": "Clear the selection."
         },
         {
           "id": "select-box",
@@ -686,7 +676,7 @@
           "label": "Box Select",
           "level": 0,
           "displayOnly": true,
-          "description": "Left-drag a box — selects the units inside, though buildings are skipped when mobile units are in the box as well",
+          "description": "Drag a box to select units. Higher-priority units take precedence: combat units before constructors and resurrection bots, those before buildings.",
           "mouseAction": "drag-box"
         },
         {
@@ -695,7 +685,7 @@
           "action": "selectbox_append",
           "level": 0,
           "displayOnly": true,
-          "description": "Hold Shift while dragging the box — the units join the current selection instead of replacing it, and buildings inside come along too",
+          "description": "Hold Shift while dragging a box to add its units and buildings to the selection.",
           "mouseAction": "shift-drag-box"
         },
         {
@@ -713,7 +703,7 @@
           "action": "selectbox_mobile",
           "level": 1,
           "displayOnly": true,
-          "description": "Hold Alt while dragging the box — buildings are left out, so you pick up only what can move",
+          "description": "Hold Alt while dragging a box to select mobile combat units.",
           "mouseAction": "alt-drag-box"
         },
         {
@@ -723,7 +713,7 @@
           "level": 1,
           "displayOnly": true,
           "key": "Z",
-          "description": "Hold the key while dragging the box — only units of the type already selected are picked up",
+          "description": "Hold the key and drag a box to select units matching the types already selected.",
           "mouseAction": "drag-box"
         },
         {
@@ -734,15 +724,6 @@
           "displayOnly": true,
           "description": "Hold Space while dragging the box — only units with nothing to do are picked up",
           "mouseAction": "space-drag-box"
-        },
-        {
-          "id": "select-minimap-box",
-          "icon": "commands/normal.webp",
-          "label": "Box Select on Minimap",
-          "level": 1,
-          "displayOnly": true,
-          "description": "Left-drag a box on the minimap — selects the units inside, with Shift and Ctrl working as on the map",
-          "mouseAction": "drag-box"
         },
         {
           "id": "select-commander",
@@ -761,7 +742,7 @@
           "modifiers": [
             "Ctrl"
           ],
-          "description": "Select every unit on the map"
+          "description": "Select all of your units across the map."
         },
         {
           "id": "select-idle-builders",
@@ -784,7 +765,7 @@
           "modifiers": [
             "Ctrl"
           ],
-          "description": "Select every unit of the same type as the currently selected unit"
+          "description": "Select your units across the map whose types match the current selection."
         },
         {
           "id": "select-all-same-type-screen",
@@ -792,7 +773,7 @@
           "action": "select Visible+_InPrevSel+_ClearSelection_SelectAll+",
           "level": 1,
           "key": "Q",
-          "description": "Select all units of the same type visible on screen"
+          "description": "Select your visible units whose types match the current selection."
         },
         {
           "id": "select-damaged",
@@ -803,7 +784,7 @@
           "modifiers": [
             "Alt"
           ],
-          "description": "Narrow the current selection down to the units below 60% HP",
+          "description": "Keep selected non-building units below 60% health.",
           "sixty": {
             "key": "Q",
             "modifiers": [
@@ -821,7 +802,7 @@
           "modifiers": [
             "Ctrl"
           ],
-          "description": "Select half of the current selection — the other half is dropped, so one big group can be split in two and sent two ways"
+          "description": "Select half of the current selection to divide your army into two groups."
         },
         {
           "id": "select-waiting-units",
@@ -832,8 +813,7 @@
           "modifiers": [
             "Ctrl"
           ],
-          "note": "QWERTY: Ctrl+Y, QWERTZ: Ctrl+Z (same physical key, Y/Z positions swapped)",
-          "description": "Select units with a Wait order"
+          "description": "Select your visible units with a Wait order."
         },
         {
           "id": "select-idle-transports",
@@ -844,7 +824,27 @@
           "modifiers": [
             "Ctrl"
           ],
-          "description": "Select transport planes/ships that have no orders"
+          "description": "Select your idle transport units across the map."
+        },
+        {
+          "id": "select-commander-add",
+          "label": "Add Commander to Selection",
+          "description": "Add the commander to the current selection.",
+          "level": 2,
+          "key": "Tab",
+          "modifiers": [
+            "Shift"
+          ],
+          "action": "selectcommander",
+          "displayOnly": true
+        },
+        {
+          "id": "cycle-selection-prev",
+          "label": "Cycle Selection Backwards",
+          "key": ",",
+          "action": "cycleselected prev",
+          "description": "Cycle backwards through the selected units.",
+          "level": 2
         }
       ]
     },
@@ -859,7 +859,7 @@
           "label": "Move",
           "level": 0,
           "displayOnly": true,
-          "description": "Right-click the ground — the plain move order, units path to the point you clicked",
+          "description": "Right-click the ground to move there.",
           "mouseAction": "click-right"
         },
         {
@@ -868,7 +868,7 @@
           "label": "Set Target / Attack",
           "level": 0,
           "displayOnly": true,
-          "description": "Right-click an enemy — which of the two you get is configurable in the game settings: Set Target is recommended, Attack is the default",
+          "description": "Right-click an enemy to attack it. In settings, you can change this to Set Target.",
           "mouseAction": "click-right"
         },
         {
@@ -877,7 +877,25 @@
           "label": "Reclaim",
           "level": 0,
           "displayOnly": true,
-          "description": "Right-click a wreck — the selection reclaims it for metal",
+          "description": "With a constructor selected, right-click a wreck to reclaim it for metal.",
+          "mouseAction": "click-right"
+        },
+        {
+          "id": "right-click-resurrect",
+          "icon": "commands/resurrect.webp",
+          "label": "Resurrect",
+          "level": 0,
+          "displayOnly": true,
+          "description": "With a resurrection bot selected, right-click a wreck to resurrect it.",
+          "mouseAction": "click-right"
+        },
+        {
+          "id": "right-click-repair",
+          "icon": "commands/repair.webp",
+          "label": "Repair",
+          "level": 0,
+          "displayOnly": true,
+          "description": "With a repair-capable unit selected, right-click a damaged friendly to repair it.",
           "mouseAction": "click-right"
         },
         {
@@ -886,7 +904,7 @@
           "label": "Guard",
           "level": 0,
           "displayOnly": true,
-          "description": "Right-click a friendly unit — the selection follows and assists it, repairing it or helping build whatever it builds",
+          "description": "Right-click a friendly unit to guard it.",
           "mouseAction": "click-right"
         },
         {
@@ -904,7 +922,7 @@
           "label": "Move & Assume Formation",
           "level": 1,
           "displayOnly": true,
-          "description": "Alt + right-click a point — units move there and form up with high-HP units in front, all travelling at the speed of the fastest",
+          "description": "Hold Alt and right-click a destination to move into formation.",
           "mouseAction": "alt-click-right"
         },
         {
@@ -913,17 +931,8 @@
           "label": "Move in Formation",
           "level": 1,
           "displayOnly": true,
-          "description": "Ctrl + right-click a point — units move there while keeping formation, travelling at the speed of the slowest unit in the selection",
+          "description": "Hold Ctrl and right-click a destination to move while retaining the unit formation.",
           "mouseAction": "ctrl-click-right"
-        },
-        {
-          "id": "minimap-order",
-          "icon": "commands/move.webp",
-          "label": "Order on the Minimap",
-          "level": 1,
-          "displayOnly": true,
-          "description": "Right-click the minimap — a move order to that spot; with a command picked, a left-click there gives that one instead",
-          "mouseAction": "click-right"
         }
       ]
     },
@@ -938,17 +947,23 @@
           "label": "Queue",
           "level": 0,
           "displayOnly": true,
-          "description": "Hold Shift while giving any order appends it to the queue",
+          "description": "Choose the command, then hold Shift while clicking or dragging its target to append the order.",
           "mouseAction": "shift-order"
         },
         {
           "id": "queue-order-front",
           "icon": "site-icons/queue-front.svg",
-          "label": "Insert Next",
+          "label": "Execute Immediately",
           "level": 1,
           "displayOnly": true,
-          "description": "Hold Space while giving any order puts it at the front of the queue",
-          "mouseAction": "space-order"
+          "description": "Choose the command, then hold Space while clicking or dragging its target to execute it immediately and resume the previous queue afterwards.",
+          "mouseAction": "space-order",
+          "details": [
+            {
+              "title": "Enemy reclaim",
+              "text": "Press E, then hold Space and drag a circle from ground or a unit to reclaim enemies, replacing the queue. Hold Shift as well to append."
+            }
+          ]
         },
         {
           "id": "queue-order-cheapest",
@@ -956,8 +971,18 @@
           "label": "Insert Into Route",
           "level": 2,
           "displayOnly": true,
-          "description": "Hold Shift and Space to slot the order into the queue where it costs the least extra walking — a build order with several builders selected is split between them instead",
-          "mouseAction": "shift-space-order"
+          "description": "Choose the command, then hold Shift+Space while clicking or dragging its target to insert it where it adds the least travel.",
+          "mouseAction": "shift-space-order",
+          "details": [
+            {
+              "title": "Build Split",
+              "text": "With two or more units selected, building orders are split among builders."
+            },
+            {
+              "title": "Patrol, Restore and enemy reclaim",
+              "text": "These orders append to the queue."
+            }
+          ]
         },
         {
           "id": "queue-next",
@@ -965,7 +990,7 @@
           "action": "command_skip_current",
           "level": 0,
           "key": "N",
-          "description": "Move on to the next order — a build already started is left standing, one not yet begun is dropped"
+          "description": "Move on to the next order."
         },
         {
           "id": "queue-drop-last",
@@ -977,7 +1002,35 @@
           "modifiers": [
             "Ctrl"
           ],
-          "description": "Remove the last order in the queue — the current one carries on"
+          "description": "Remove the last order from the queue."
+        },
+        {
+          "id": "waypoint-move",
+          "label": "Move Queued Waypoint",
+          "description": "Hold Shift and left-drag an existing queued waypoint to move it.",
+          "level": 2,
+          "mouseAction": "shift-drag-line",
+          "displayOnly": true,
+          "details": [
+            {
+              "title": "Supported orders",
+              "text": "Move, Fight, Patrol, ground attacks and area orders for Attack, Reclaim, Repair, Resurrect, Load, Unload and Restore. Excludes build orders and attacks on individual units."
+            }
+          ]
+        },
+        {
+          "id": "waypoint-copy",
+          "label": "Copy Queued Waypoint",
+          "description": "Hold Shift+Alt and left-drag an existing queued waypoint to copy it.",
+          "level": 2,
+          "mouseAction": "shift-alt-drag-line",
+          "displayOnly": true,
+          "details": [
+            {
+              "title": "Supported orders",
+              "text": "Move, Fight, Patrol, ground attacks and area orders for Attack, Reclaim, Repair, Resurrect, Load, Unload and Restore. Excludes build orders and attacks on individual units."
+            }
+          ]
         }
       ]
     },
@@ -992,7 +1045,7 @@
           "action": "attack",
           "level": 0,
           "key": "A",
-          "description": "Press the key, then click an enemy to attack it",
+          "description": "Press A, then left-click an enemy to attack it.",
           "mouseAction": "click"
         },
         {
@@ -1001,8 +1054,14 @@
           "action": "attack",
           "level": 1,
           "key": "A",
-          "description": "Left-drag a circle to attack all units inside, in priority order (e.g. low health first)",
-          "mouseAction": "drag"
+          "description": "Press A, then left-drag a circle to attack enemies inside it.",
+          "mouseAction": "drag",
+          "details": [
+            {
+              "title": "Space",
+              "text": "Press A, then hold Space and left-drag a circle: this can insert a ground attack at the circle’s center."
+            }
+          ]
         },
         {
           "id": "attack-line",
@@ -1010,7 +1069,7 @@
           "action": "attack",
           "level": 2,
           "key": "A",
-          "description": "Right-drag to issue attack orders along points on the line, regardless of unit presence",
+          "description": "Press A, then right-drag to attack ground positions along a line.",
           "mouseAction": "right-drag-line"
         },
         {
@@ -1022,8 +1081,65 @@
           "modifiers": [
             "Ctrl"
           ],
-          "description": "Hold Ctrl and drag a circle to attack the entire area, whether units are present or not",
-          "mouseAction": "drag"
+          "description": "Press Ctrl+A, release the keys, then left-drag a circle to area attack.",
+          "mouseAction": "drag",
+          "contextOverride": "area-artillery",
+          "releaseBeforeMouse": true,
+          "prerequisite": "Select a supported unit, for example Mauser or Stormbringer.",
+          "details": [
+            {
+              "title": "Armada: Artillery",
+              "text": "Shellshocker, Basilica, Mauser."
+            },
+            {
+              "title": "Armada: Armed aircraft",
+              "text": "Falcon, Highwind, Cormorant, Liche, Blizzard, Tsunami, Cyclone, Stiletto, Stormbringer."
+            },
+            {
+              "title": "Armada: Unarmed aircraft",
+              "text": "Oracle, Blink, Horizon."
+            },
+            {
+              "title": "Cortex: Artillery",
+              "text": "Basilisk, Quaker, Wolverine."
+            },
+            {
+              "title": "Cortex: Armed aircraft",
+              "text": "Hailstorm, Dam Buster, Bat, Whirlwind, Angler, Nighthawk, Valiant."
+            },
+            {
+              "title": "Cortex: Unarmed aircraft",
+              "text": "Condor, Finch, Watcher."
+            },
+            {
+              "title": "Legion: Artillery",
+              "text": "Cleaver, Olympus."
+            },
+            {
+              "title": "Legion: Armed aircraft",
+              "text": "Ajax, Aesacus, Blindfold, Noctua, Martyr, Harbinger, Phoenix, Pyrphoros, Astrapios, Venator."
+            },
+            {
+              "title": "Legion: Unarmed aircraft",
+              "text": "Okeanos, Whisper."
+            },
+            {
+              "title": "Notably not supported: Armada — artillery, rockets and heavy weapons",
+              "text": "Gauntlet, Rattlesnake, Ragnarok, Pulsar, Starlight, Ambassador, Paralyzer, Janus, Possum, Rocketeer, Recluse, Vanguard, Fatboy, Dreadnought, Longbow."
+            },
+            {
+              "title": "Notably not supported: Cortex — artillery and rockets",
+              "text": "Agitator, Persecutor, Cerberus, Calamity, Tremor, Negotiator, Arbiter, Catapult, Banisher, Mangonel, Aggravator, Catalyst, Despot, Messenger."
+            },
+            {
+              "title": "Notably not supported: Legion — artillery and rockets",
+              "text": "Amputator, Eviscerator, Barrage, Inferno, Boreas, Ballista, Thanatos, Medusa, Salacia, Astraeus, Starfall, Octeres, Corinth, Scylla, Ultor."
+            },
+            {
+              "title": "Notably not supported: Gunships",
+              "text": "Banshee, Roughneck, Hornet, Sabre, Puffin, Wasp, Cutlass, Monsoon, Mosquito, Enyo, Ladon, Stronghold."
+            }
+          ]
         },
         {
           "id": "attack-area-remove",
@@ -1032,7 +1148,7 @@
           "action": "attack",
           "level": 2,
           "key": "A",
-          "description": "Press the key, then hold Ctrl and drag a circle — the queued attack orders inside it are removed; Ctrl held while pressing the key is the area attack instead, so let go of it first",
+          "description": "Press A, then hold Ctrl and left-drag a circle from ground or an enemy to remove queued attacks in that area.",
           "mouseAction": "ctrl-drag"
         },
         {
@@ -1042,7 +1158,7 @@
           "action": "attack",
           "level": 2,
           "key": "A",
-          "description": "Hold Alt and start the circle on an enemy to attack only enemies of that unit type inside it, nearest first",
+          "description": "Press A, then hold Alt and left-drag a circle from an enemy to attack enemies of that exact unit type, nearest first.",
           "mouseAction": "alt-drag-on-unit"
         },
         {
@@ -1052,7 +1168,7 @@
           "action": "attack",
           "level": 2,
           "key": "A",
-          "description": "Hold Ctrl, Shift and Space and start the circle on an enemy to split the enemies inside between your units, each attacking its own share",
+          "description": "Press A, then hold Ctrl+Shift+Space and left-drag a circle from an enemy. Distribute enemy targets among selected units and append the orders.",
           "mouseAction": "ctrl-shift-space-drag-on-unit"
         },
         {
@@ -1062,7 +1178,7 @@
           "action": "attack",
           "level": 2,
           "key": "A",
-          "description": "Hold Alt, Shift and Space and start the circle on an enemy to split only enemies of that unit type inside between your units, each attacking its own share",
+          "description": "Press A, then hold Alt+Shift+Space and left-drag a circle from an enemy. Distribute targets of that exact type among selected units and append the orders.",
           "mouseAction": "alt-shift-space-drag-on-unit"
         },
         {
@@ -1071,7 +1187,7 @@
           "action": "settarget",
           "level": 1,
           "key": "S",
-          "description": "Press the key, then click an enemy to set it as the priority attack target",
+          "description": "Press S, then left-click an enemy to set its priority target.",
           "mouseAction": "click"
         },
         {
@@ -1080,7 +1196,7 @@
           "action": "settarget",
           "level": 1,
           "key": "S",
-          "description": "Drag a circle to set a priority attack target from all enemies in the area",
+          "description": "Press S, then left-drag a circle to set priority targets in the area.",
           "mouseAction": "drag"
         },
         {
@@ -1089,7 +1205,7 @@
           "action": "settarget",
           "level": 2,
           "key": "S",
-          "description": "Hold Alt and start the circle on an enemy to set targets on only enemies of that unit type inside it",
+          "description": "Press S, then hold Alt and left-drag a circle from an enemy to set targets on only enemies of that unit type inside it",
           "mouseAction": "alt-drag-on-unit"
         },
         {
@@ -1098,7 +1214,7 @@
           "action": "settarget",
           "level": 2,
           "key": "S",
-          "description": "Hold Ctrl while clicking the enemy to make the target stick — a Stop order clears an ordinary set target, this one survives it",
+          "description": "Press S, then hold Ctrl and left-click an enemy to keep its priority target after Stop.",
           "mouseAction": "ctrl-click"
         },
         {
@@ -1107,7 +1223,7 @@
           "action": "settarget",
           "level": 2,
           "key": "S",
-          "description": "Hold Ctrl and drag the target circle to make the targets stick — a Stop order clears ordinary set targets, these survive it",
+          "description": "Press S, then hold Ctrl and left-drag a target circle to keep its priority targets after Stop.",
           "mouseAction": "ctrl-drag"
         },
         {
@@ -1117,8 +1233,14 @@
           "action": "settarget",
           "level": 2,
           "key": "S",
-          "description": "Hold Ctrl, Shift and Space and start the circle on an enemy to hand each selected unit its own share of the enemies inside as targets",
-          "mouseAction": "ctrl-shift-space-drag-on-unit"
+          "description": "Press S, then hold Ctrl, Shift and Space and left-drag a circle from an enemy to hand each selected unit its own share of the enemies inside as targets",
+          "mouseAction": "ctrl-shift-space-drag-on-unit",
+          "details": [
+            {
+              "title": "Stop",
+              "text": "These priority targets survive Stop. Use Clear Target to remove them."
+            }
+          ]
         },
         {
           "id": "target-set-area-split-type",
@@ -1127,7 +1249,7 @@
           "action": "settarget",
           "level": 2,
           "key": "S",
-          "description": "Hold Alt, Shift and Space and start the circle on an enemy to hand each selected unit its own share of the enemies of that unit type inside as targets",
+          "description": "Press S, then hold Alt, Shift and Space and left-drag a circle from an enemy to hand each selected unit its own share of the enemies of that unit type inside as targets",
           "mouseAction": "alt-shift-space-drag-on-unit"
         },
         {
@@ -1150,7 +1272,7 @@
           "modifiers": [
             "Alt"
           ],
-          "description": "Set a priority target restricted to actual enemy units or structures — clicks on empty ground are ignored",
+          "description": "Press Alt+S, then left-click an enemy unit or structure to set its priority target.",
           "mouseAction": "click"
         },
         {
@@ -1159,7 +1281,7 @@
           "action": "fight",
           "level": 0,
           "key": "F",
-          "description": "Attack-move: units advance while stopping to engage enemies in range",
+          "description": "Press F, then left-click a destination to advance while engaging enemies in range.",
           "mouseAction": "click"
         },
         {
@@ -1168,7 +1290,7 @@
           "action": "fight",
           "level": 1,
           "key": "F",
-          "description": "Left-drag a line to spread the selection along it, sorted into a battle line with artillery and unarmed units at the back",
+          "description": "Press F, then left-drag to spread units along a line.",
           "mouseAction": "drag-line"
         },
         {
@@ -1177,7 +1299,7 @@
           "action": "fight",
           "level": 1,
           "key": "F",
-          "description": "Right-drag a freehand line to fight-move the selection along it exactly as drawn, without the sorting a left-drag does",
+          "description": "Press F, then right-drag. Multiple units spread along the line; one unit follows a path.",
           "mouseAction": "right-drag-line"
         },
         {
@@ -1186,7 +1308,7 @@
           "action": "patrol",
           "level": 0,
           "key": "H",
-          "description": "Make a looping patrol route for selected units",
+          "description": "Press H, then left-click patrol destinations to make a looping route.",
           "mouseAction": "click"
         },
         {
@@ -1195,7 +1317,7 @@
           "action": "guard",
           "level": 0,
           "key": "O",
-          "description": "Guard a friendly unit or building to help fight, repair, or construct",
+          "description": "Press O, then left-click a friendly unit to guard it.",
           "mouseAction": "click-unit"
         },
         {
@@ -1227,7 +1349,13 @@
           "action": "stop",
           "level": 1,
           "key": "G",
-          "description": "Clear all orders and stop the unit"
+          "description": "Stop the unit and clear its order queue.",
+          "details": [
+            {
+              "title": "Sticky targets",
+              "text": "Targets set by pressing S, then holding Ctrl while clicking or dragging survive Stop. Use Clear Target to remove them."
+            }
+          ]
         },
         {
           "id": "wait",
@@ -1235,7 +1363,6 @@
           "action": "wait",
           "level": 1,
           "key": "Y",
-          "note": "QWERTY: Y (top row), QWERTZ: Z (same physical position, Y/Z swapped)",
           "description": "Pause the unit until further orders — one press flips it back on"
         },
         {
@@ -1244,7 +1371,7 @@
           "action": "gatherwait",
           "level": 2,
           "key": "P",
-          "description": "Wait at current position until a certain number of units gather"
+          "description": "Wait until the selected units reach this point in their queues, then continue together."
         },
         {
           "id": "on-off",
@@ -1335,7 +1462,6 @@
           "label": "Move Stance",
           "level": 1,
           "key": ";",
-          "note": "';' — QWERTY: ; key  QWERTZ: Ö key (same physical position)",
           "description": "How far units stray from where you put them",
           "states": [
             {
@@ -1367,7 +1493,7 @@
           "action": "wantcloak",
           "level": 0,
           "key": "K",
-          "description": "Toggle cloaking on units that support it — one press either way"
+          "description": "Toggle cloaking."
         },
         {
           "id": "dgun",
@@ -1375,7 +1501,7 @@
           "action": "manualfire",
           "level": 0,
           "key": "D",
-          "description": "Fire the unit’s special weapon by hand: the commander’s D-Gun, the Thor’s EMP missile",
+          "description": "Press D, then left-click a target to fire the unit’s special weapon, such as a D-Gun or EMP missile.",
           "mouseAction": "click"
         },
         {
@@ -1384,7 +1510,7 @@
           "action": "capture",
           "level": 1,
           "key": "W",
-          "description": "Capture an enemy unit or structure",
+          "description": "Press W, then left-click an enemy unit or structure to capture it.",
           "mouseAction": "click-unit"
         },
         {
@@ -1394,7 +1520,7 @@
           "action": "capture",
           "level": 1,
           "key": "W",
-          "description": "Drag a circle to capture every enemy unit inside it",
+          "description": "Press W, then left-drag a circle to capture enemies inside it.",
           "mouseAction": "drag"
         },
         {
@@ -1404,7 +1530,7 @@
           "action": "capture",
           "level": 2,
           "key": "W",
-          "description": "Hold Alt and start the circle on an enemy to capture only enemies of that unit type inside it",
+          "description": "Press W, then hold Alt and left-drag a circle from an enemy to capture only enemies of that unit type inside it",
           "mouseAction": "alt-drag-on-unit"
         },
         {
@@ -1426,7 +1552,54 @@
           "modifiers": [
             "Space"
           ],
-          "description": "Hold Space and press the key to preview a unit's explosion radius"
+          "description": "Hold Space+X to preview the explosion radius."
+        },
+        {
+          "id": "wait-queued",
+          "label": "Queue Wait",
+          "description": "Pause after completing the preceding orders.",
+          "level": 2,
+          "key": "Y",
+          "modifiers": [
+            "Shift"
+          ],
+          "action": "wait queued"
+        },
+        {
+          "id": "self-destruct-queued",
+          "label": "Queue Self-Destruct",
+          "description": "Self-destruct after completing the preceding orders.",
+          "level": 2,
+          "key": "B",
+          "modifiers": [
+            "Ctrl",
+            "Shift"
+          ],
+          "action": "selfd queued"
+        },
+        {
+          "id": "unit-state-default-save",
+          "label": "Save Unit-State Default",
+          "description": "Hold Ctrl and left-click a unit-state button to save its state for newly produced units of that type.",
+          "level": 2,
+          "mouseAction": "ctrl-click",
+          "displayOnly": true
+        },
+        {
+          "id": "unit-state-default-clear",
+          "label": "Clear Unit-State Default",
+          "description": "Hold Alt and left-click a unit-state button to remove its saved default.",
+          "level": 2,
+          "mouseAction": "alt-click",
+          "displayOnly": true
+        },
+        {
+          "id": "unit-state-reverse",
+          "label": "Cycle Unit State Backwards",
+          "description": "Right-click a unit-state button to cycle in the opposite direction to left-click.",
+          "level": 2,
+          "mouseAction": "click-right",
+          "displayOnly": true
         }
       ]
     },
@@ -1441,7 +1614,7 @@
           "action": "reclaim",
           "level": 0,
           "key": "E",
-          "description": "Reclaim a wreck or feature for metal",
+          "description": "Press E, then left-click a unit, wreck or feature to reclaim it for metal or energy.",
           "mouseAction": "click"
         },
         {
@@ -1450,7 +1623,7 @@
           "action": "reclaim",
           "level": 1,
           "key": "E",
-          "description": "Drag a circle over bare ground to reclaim everything inside it, nearest first",
+          "description": "Press E, then left-drag a circle from bare ground to reclaim wrecks and features inside it.",
           "mouseAction": "drag-on-ground"
         },
         {
@@ -1460,7 +1633,7 @@
           "action": "reclaim",
           "level": 1,
           "key": "E",
-          "description": "Start the circle on a wreck or a metal rock to reclaim only the metal sources inside it, wrecks and rocks alike",
+          "description": "Press E, then left-drag a circle from a wreck or metal rock to reclaim metal sources inside it.",
           "mouseAction": "drag-on-wreck+metal"
         },
         {
@@ -1470,7 +1643,7 @@
           "action": "reclaim",
           "level": 1,
           "key": "E",
-          "description": "Start the circle on a tree to reclaim only the energy sources inside it",
+          "description": "Press E, then left-drag a circle from a tree to reclaim energy sources inside it.",
           "mouseAction": "drag-on-energy"
         },
         {
@@ -1479,7 +1652,7 @@
           "action": "reclaim",
           "level": 2,
           "key": "E",
-          "description": "Hold Alt and start the circle on a unit or a wreck to reclaim only units or wrecks of exactly that type, yours or the enemy’s",
+          "description": "Press E, then hold Alt and left-drag a circle from a unit or wreck to reclaim only that type. Keeps waiting for matching targets when the area is empty.",
           "mouseAction": "alt-drag-on-unit+wreck"
         },
         {
@@ -1489,7 +1662,7 @@
           "action": "reclaim",
           "level": 2,
           "key": "E",
-          "description": "Hold Alt and start the circle on bare ground for an order that never finishes: the builders keep reclaiming metal and energy inside it until you stop them",
+          "description": "Press E, then hold Alt and left-drag a circle from bare ground to keep reclaiming resources in the area.",
           "mouseAction": "alt-drag-on-ground"
         },
         {
@@ -1498,7 +1671,7 @@
           "action": "reclaim",
           "level": 2,
           "key": "E",
-          "description": "Hold Ctrl and start the circle on bare ground to reclaim every metal source first and only then the energy sources",
+          "description": "Press E, then hold Ctrl and left-drag a circle from bare ground to reclaim every metal source first and only then the energy sources",
           "mouseAction": "ctrl-drag-on-ground"
         },
         {
@@ -1508,7 +1681,7 @@
           "action": "reclaim",
           "level": 2,
           "key": "E",
-          "description": "Hold Ctrl and start the circle on a unit to reclaim every unit of that team inside it, yours or the enemy’s",
+          "description": "Press E, then hold Ctrl and left-drag a circle from a unit. A friendly origin filters its team; an enemy origin includes enemy teams in the circle.",
           "mouseAction": "ctrl-drag-on-unit"
         },
         {
@@ -1518,7 +1691,7 @@
           "action": "reclaim",
           "level": 2,
           "key": "E",
-          "description": "Hold Ctrl and start the circle on a wreck to reclaim only wrecks whose unit has the same tech level",
+          "description": "Press E, then hold Ctrl and left-drag a circle from a wreck to reclaim only wrecks whose unit has the same tech level",
           "mouseAction": "ctrl-drag-on-wreck"
         },
         {
@@ -1528,7 +1701,7 @@
           "action": "reclaim",
           "level": 2,
           "key": "E",
-          "description": "Hold Ctrl, Shift and Space and start the circle on a wreck to split the same-tech wrecks inside between the selected builders, each reclaiming its own share",
+          "description": "Press E, then hold Ctrl, Shift and Space and left-drag a circle from a wreck to split the same-tech wrecks inside between the selected builders, each reclaiming its own share",
           "mouseAction": "ctrl-shift-space-drag-on-wreck"
         },
         {
@@ -1538,7 +1711,7 @@
           "action": "reclaim",
           "level": 2,
           "key": "E",
-          "description": "Hold Alt, Shift and Space and start the circle on a unit or a wreck to split only units or wrecks of exactly that type inside between the selected builders, each reclaiming its own share",
+          "description": "Press E, then hold Alt+Shift+Space and left-drag a circle from a unit or wreck to split targets of that type between builders.",
           "mouseAction": "alt-shift-space-drag-on-unit+wreck"
         },
         {
@@ -1547,7 +1720,7 @@
           "action": "reclaim",
           "level": 2,
           "key": "E",
-          "description": "Hold Space and drag the circle over bare ground to reclaim every enemy unit inside it, nearest first; with no enemy inside it is a plain reclaim at the front of the queue",
+          "description": "Press E, then hold Space and left-drag a circle from ground or a unit to reclaim enemies in the circle. This replaces the queue; hold Shift as well while dragging to append.",
           "mouseAction": "space-drag-on-ground"
         },
         {
@@ -1556,7 +1729,7 @@
           "action": "repair",
           "level": 0,
           "key": "R",
-          "description": "Repair a friendly unit or structure",
+          "description": "Press R, then left-click a friendly unit or structure to repair it.",
           "mouseAction": "click-unit"
         },
         {
@@ -1565,7 +1738,7 @@
           "action": "repair",
           "level": 1,
           "key": "R",
-          "description": "Drag a circle over bare ground to repair the nearest damaged or unfinished friendly, standing targets first; on hold position it will not help factories build",
+          "description": "Press R, then left-drag a circle from bare ground to repair damaged or unfinished friendlies, stationary targets first.",
           "mouseAction": "drag-on-ground"
         },
         {
@@ -1574,7 +1747,7 @@
           "action": "repair",
           "level": 2,
           "key": "R",
-          "description": "Hold Alt and start the circle on a unit to repair only units of exactly that type inside it",
+          "description": "Press R, then hold Alt and left-drag a circle from a unit to repair only units of exactly that type inside it. Keeps waiting for matching targets when the area is empty.",
           "mouseAction": "alt-drag-on-unit"
         },
         {
@@ -1584,7 +1757,7 @@
           "action": "repair",
           "level": 2,
           "key": "R",
-          "description": "Hold Alt and start the circle on bare ground for an order that never finishes: the builders keep repairing anything damaged inside it until you stop them",
+          "description": "Press R, then hold Alt and left-drag a circle from bare ground to keep repairing units in the area.",
           "mouseAction": "alt-drag-on-ground"
         },
         {
@@ -1593,7 +1766,7 @@
           "action": "repair",
           "level": 2,
           "key": "R",
-          "description": "Hold Ctrl and start the circle on a unit to repair every unit of that team inside it",
+          "description": "Press R, then hold Ctrl and left-drag a circle from a unit to repair every unit of that team inside it",
           "mouseAction": "ctrl-drag-on-unit"
         },
         {
@@ -1603,7 +1776,7 @@
           "action": "repair",
           "level": 2,
           "key": "R",
-          "description": "Hold Ctrl, Shift and Space and start the circle on a unit to split the units of that team inside between the selected builders, each repairing its own share",
+          "description": "Press R, then hold Ctrl, Shift and Space and left-drag a circle from a unit to split the units of that team inside between the selected builders, each repairing its own share",
           "mouseAction": "ctrl-shift-space-drag-on-unit"
         },
         {
@@ -1613,7 +1786,7 @@
           "action": "repair",
           "level": 2,
           "key": "R",
-          "description": "Hold Alt, Shift and Space and start the circle on a unit to split only units of exactly that type inside between the selected builders, each repairing its own share",
+          "description": "Press R, then hold Alt, Shift and Space and left-drag a circle from a unit to split only units of exactly that type inside between the selected builders, each repairing its own share",
           "mouseAction": "alt-shift-space-drag-on-unit"
         },
         {
@@ -1623,7 +1796,7 @@
           "action": "repair",
           "level": 2,
           "key": "R",
-          "description": "Hold Ctrl and start the circle on bare ground to repair as usual but also units that are currently being reclaimed, which a plain repair skips",
+          "description": "Press R, then hold Ctrl and left-drag a circle from bare ground to include units currently being reclaimed.",
           "mouseAction": "ctrl-drag-on-ground"
         },
         {
@@ -1632,7 +1805,7 @@
           "action": "resurrect",
           "level": 0,
           "key": "W",
-          "description": "Click a wreck to resurrect it as a friendly unit",
+          "description": "Press W, then left-click a wreck to resurrect it.",
           "mouseAction": "click"
         },
         {
@@ -1641,7 +1814,7 @@
           "action": "resurrect",
           "level": 1,
           "key": "W",
-          "description": "Drag a circle over bare ground to resurrect the wrecks inside it, nearest first, skipping any wreck that is currently being reclaimed; each raised unit is repaired before the next wreck",
+          "description": "Press W, then left-drag a circle from bare ground to resurrect wrecks, nearest first. Each unit is repaired before the next wreck; wrecks being reclaimed are skipped.",
           "mouseAction": "drag-on-ground"
         },
         {
@@ -1650,7 +1823,7 @@
           "action": "resurrect",
           "level": 2,
           "key": "W",
-          "description": "Hold Alt and start the circle on a wreck to raise only wrecks of exactly that unit type",
+          "description": "Press W, then hold Alt and left-drag a circle from a wreck to raise only wrecks of exactly that unit type. Keeps waiting for matching targets when the area is empty.",
           "mouseAction": "alt-drag-on-wreck"
         },
         {
@@ -1660,7 +1833,7 @@
           "action": "resurrect",
           "level": 2,
           "key": "W",
-          "description": "Hold Alt and start the circle on bare ground for an order that never finishes: the rezbots keep raising whatever wreck appears inside it until you stop them",
+          "description": "Press W, then hold Alt and left-drag a circle from bare ground to keep resurrecting wrecks in the area.",
           "mouseAction": "alt-drag-on-ground"
         },
         {
@@ -1669,7 +1842,7 @@
           "action": "resurrect",
           "level": 2,
           "key": "W",
-          "description": "Hold Ctrl and start the circle on a wreck to raise only wrecks whose unit has the same tech level",
+          "description": "Press W, then hold Ctrl and left-drag a circle from a wreck to raise only wrecks whose unit has the same tech level",
           "mouseAction": "ctrl-drag-on-wreck"
         },
         {
@@ -1679,7 +1852,7 @@
           "action": "resurrect",
           "level": 2,
           "key": "W",
-          "description": "Hold Ctrl, Shift and Space and start the circle on a wreck to split the same-tech wrecks inside between the selected builders, each resurrecting its own share",
+          "description": "Press W, then hold Ctrl, Shift and Space and left-drag a circle from a wreck to split the same-tech wrecks inside between the selected builders, each resurrecting its own share",
           "mouseAction": "ctrl-shift-space-drag-on-wreck"
         },
         {
@@ -1689,7 +1862,7 @@
           "action": "resurrect",
           "level": 2,
           "key": "W",
-          "description": "Hold Alt, Shift and Space and start the circle on a wreck to split only wrecks of exactly that unit type inside between the selected builders, each resurrecting its own share",
+          "description": "Press W, then hold Alt, Shift and Space and left-drag a circle from a wreck to split only wrecks of exactly that unit type inside between the selected builders, each resurrecting its own share",
           "mouseAction": "alt-shift-space-drag-on-wreck"
         },
         {
@@ -1699,7 +1872,7 @@
           "action": "resurrect",
           "level": 2,
           "key": "W",
-          "description": "Hold Ctrl and start the circle on bare ground to raise wrecks as usual but also those currently being reclaimed, which a plain resurrect skips",
+          "description": "Press W, then hold Ctrl and left-drag a circle from bare ground to include wrecks currently being reclaimed.",
           "mouseAction": "ctrl-drag-on-ground"
         },
         {
@@ -1709,7 +1882,7 @@
           "level": 1,
           "key": "F",
           "displayOnly": true,
-          "description": "Click a point: rezbots walk there and on the way repair damaged friendlies first, then reclaim wrecks within reach, searching further the more freely their move state lets them roam",
+          "description": "Press F, then left-click a destination to repair friendlies and reclaim wrecks on the way. Full metal storage can pause automatic reclaim.",
           "mouseAction": "click"
         },
         {
@@ -1719,7 +1892,7 @@
           "level": 1,
           "key": "F",
           "displayOnly": true,
-          "description": "Right-drag a line for builders to follow, repairing friendlies and reclaiming wrecks along the way",
+          "description": "Press F, then right-drag to repair and reclaim along the route. Multiple bots spread along the line; one follows a path. Full metal storage can pause automatic reclaim.",
           "mouseAction": "right-drag-line"
         },
         {
@@ -1729,7 +1902,26 @@
           "level": 2,
           "key": "F",
           "mouseAction": "alt-right-drag-line",
-          "description": "Hold Alt while right-dragging the line: rezbots repair friendlies first, then resurrect wrecks along it and reclaim only what cannot be resurrected"
+          "description": "Press F, then hold Alt and right-drag to spread resurrection bots along a line, resurrecting wrecks on the way.",
+          "prerequisite": "Select multiple resurrection bots."
+        },
+        {
+          "id": "fight-rez-click",
+          "label": "Resurrect Along Fight Route",
+          "key": "F",
+          "action": "fight",
+          "mouseAction": "alt-click",
+          "description": "Press F, then hold Alt and left-click a destination to resurrect wrecks on the way.",
+          "level": 2
+        },
+        {
+          "id": "reclaim-area-enemy-queued",
+          "label": "Queue Enemy Area Reclaim",
+          "key": "E",
+          "action": "reclaim",
+          "mouseAction": "shift-space-drag",
+          "description": "Press E, then hold Shift+Space and left-drag a circle from ground or a unit to queue enemy reclaim orders.",
+          "level": 2
         }
       ]
     },
@@ -1743,7 +1935,7 @@
           "label": "Build Line",
           "level": 0,
           "displayOnly": true,
-          "description": "With a structure picked, hold Shift and drag — one copy after another along the line",
+          "description": "Choose a building, then hold Shift and drag — one copy after another along the line",
           "mouseAction": "shift-drag-line"
         },
         {
@@ -1751,7 +1943,7 @@
           "label": "Build Grid",
           "level": 1,
           "displayOnly": true,
-          "description": "Hold Shift and Alt while dragging — the rectangle fills up with copies",
+          "description": "Choose a building, then hold Shift and Alt while dragging — the rectangle fills up with copies",
           "mouseAction": "shift-alt-drag-box"
         },
         {
@@ -1759,7 +1951,7 @@
           "label": "Build Straight Line",
           "level": 2,
           "displayOnly": true,
-          "description": "Hold Ctrl and Shift while dragging — the line snaps to one axis instead of following the mouse",
+          "description": "Choose a building, then hold Ctrl+Shift while dragging to place buildings in an axis-aligned line.",
           "mouseAction": "ctrl-shift-drag-line"
         },
         {
@@ -1767,7 +1959,7 @@
           "label": "Build Border",
           "level": 2,
           "displayOnly": true,
-          "description": "Hold Ctrl, Shift and Alt while dragging — only the edge of the rectangle is built, for walling something in",
+          "description": "Choose a building, then hold Ctrl, Shift and Alt while dragging — only the edge of the rectangle is built, for walling something in",
           "mouseAction": "ctrl-shift-alt-drag-box"
         },
         {
@@ -1775,7 +1967,7 @@
           "label": "Build Ring",
           "level": 2,
           "displayOnly": true,
-          "description": "Hold Ctrl and Shift and click an existing or planned structure — copies ring it on every side",
+          "description": "Choose a building, then hold Ctrl and Shift and click an existing or planned structure — copies ring it on every side",
           "mouseAction": "ctrl-shift-click"
         },
         {
@@ -1784,7 +1976,6 @@
           "action": "buildfacing inc",
           "level": 0,
           "key": "[",
-          "note": "QWERTY: [   QWERTZ: ü (same physical key position)",
           "description": "Rotate the building placement preview counter-clockwise"
         },
         {
@@ -1793,7 +1984,6 @@
           "action": "buildfacing dec",
           "level": 0,
           "key": "]",
-          "note": "QWERTY: ]   QWERTZ: + (same physical key position)",
           "description": "Rotate the building placement preview clockwise"
         },
         {
@@ -1806,7 +1996,6 @@
             "Shift",
             "Alt"
           ],
-          "note": "QWERTY: Shift+Alt+Z   QWERTZ: Shift+Alt+Y (same physical key)",
           "description": "Increase spacing when placing a line or grid of structures",
           "optionalModifiers": [
             "Shift"
@@ -1833,7 +2022,7 @@
           "action": "restore",
           "level": 2,
           "key": "M",
-          "description": "Drag an area to have builders flatten the terrain back to its original shape",
+          "description": "Press M, then left-drag an area to restore its original terrain height.",
           "mouseAction": "drag"
         },
         {
@@ -1842,7 +2031,7 @@
           "action": "fight",
           "level": 1,
           "key": "F",
-          "description": "Click a point: builders walk there and on the way repair damaged friendlies first, then reclaim wrecks within reach, searching further the more freely their move state lets them roam",
+          "description": "Press F, then left-click a destination to repair friendlies and reclaim wrecks on the way. Full metal storage can pause automatic reclaim.",
           "mouseAction": "click"
         },
         {
@@ -1851,7 +2040,7 @@
           "action": "fight",
           "level": 1,
           "key": "F",
-          "description": "Right-drag a line for builders to follow, repairing friendlies and reclaiming wrecks along the way",
+          "description": "Press F, then right-drag to repair and reclaim along the route. Multiple constructors spread along the line; one follows a path. Full metal storage can pause automatic reclaim.",
           "mouseAction": "right-drag-line"
         },
         {
@@ -1863,8 +2052,7 @@
             "Z",
             "Z"
           ],
-          "note": "QWERTY: ZZ (bottom-left twice), QWERTZ: YY (same physical position)",
-          "description": "Place metal extractors on all available spots in a dragged area",
+          "description": "Press the Area Mex key sequence, then left-drag a circle to build on available metal spots.",
           "mouseAction": "drag"
         },
         {
@@ -1876,8 +2064,7 @@
             "Z",
             "Z"
           ],
-          "note": "QWERTY: ZZ, QWERTZ: YY — same keys as Area MEX; Alt+drag to select circle",
-          "description": "Upgrade T1 metal extractors to T2 in a circle — own mexes only, not allied",
+          "description": "Press the Area Mex key sequence, then hold Alt and left-drag a circle to upgrade your T1 metal extractors to T2.",
           "contextOverride": "builder-t2",
           "mouseAction": "alt-drag"
         },
@@ -1895,8 +2082,15 @@
           "action": "buildsplit",
           "level": 2,
           "displayOnly": true,
-          "description": "Several builders selected: hold Shift and Space while dragging the line — each builder takes a share of it instead of one builder slotting it into its route",
-          "mouseAction": "shift-space-drag-line"
+          "description": "Choose a building, then hold Shift+Space and drag to divide a line of buildings among builders and append their orders.",
+          "mouseAction": "shift-space-drag-line",
+          "details": [
+            {
+              "title": "Build order",
+              "text": "Each builder starts its own section, then helps with the remaining buildings."
+            }
+          ],
+          "prerequisite": "Building preview active; at least two units selected."
         },
         {
           "id": "build-split-grid",
@@ -1904,8 +2098,15 @@
           "action": "buildsplit",
           "level": 2,
           "displayOnly": true,
-          "description": "Hold Shift, Alt and Space while dragging — the grid is shared out between the selected builders",
-          "mouseAction": "shift-alt-space-drag-box"
+          "description": "Choose a building, then hold Shift+Alt+Space and drag to divide a grid of buildings among builders and append their orders.",
+          "mouseAction": "shift-alt-space-drag-box",
+          "details": [
+            {
+              "title": "Build order",
+              "text": "Each builder starts its own section, then helps with the remaining buildings."
+            }
+          ],
+          "prerequisite": "Building preview active; at least two units selected."
         },
         {
           "id": "build-split-areamex",
@@ -1916,10 +2117,17 @@
             "Z",
             "Z"
           ],
-          "note": "QWERTY: ZZ (bottom-left twice), QWERTZ: YY (same physical position)",
           "displayOnly": true,
-          "description": "Several builders selected: press the key twice, then hold Shift and Space while dragging the area — the extractors are shared out between the builders",
+          "description": "Press the Area Mex key sequence, then hold Shift+Space and left-drag a circle. Selected builders take different spots first, then help with the remaining spots.",
           "mouseAction": "shift-space-drag"
+        },
+        {
+          "id": "build-spacing-mouse",
+          "label": "Build Spacing with Side Buttons",
+          "description": "With a building preview, hold Shift and use the side mouse buttons to adjust spacing.",
+          "level": 2,
+          "displayOnly": true,
+          "inputLabel": "Shift + side mouse buttons"
         }
       ]
     },
@@ -1948,7 +2156,7 @@
           "modifiers": [
             "Alt"
           ],
-          "description": "Place a blueprint for a structure to be built later",
+          "description": "Press Alt+B, then left-click to place the blueprint’s buildings.",
           "mouseAction": "click"
         },
         {
@@ -1961,7 +2169,7 @@
             "Alt"
           ],
           "displayOnly": true,
-          "description": "Several builders selected: hold Shift and Space while placing the blueprint — its buildings are shared out between the builders",
+          "description": "Press Alt+B, then release Alt, hold Shift+Space and left-click to split the blueprint’s buildings between selected builders.",
           "mouseAction": "shift-space-click"
         },
         {
@@ -1973,7 +2181,6 @@
           "modifiers": [
             "Alt"
           ],
-          "note": "QWERTY: Alt+]  QWERTZ: Alt++ (same physical key; normalised in trainer)",
           "description": "Cycle to the next blueprint in your list"
         },
         {
@@ -1985,7 +2192,6 @@
           "modifiers": [
             "Alt"
           ],
-          "note": "QWERTY: Alt+[  QWERTZ: Alt+ü (same physical key; normalised in trainer)",
           "description": "Cycle to the previous blueprint in your list"
         },
         {
@@ -2041,7 +2247,12 @@
           "modifiers": [
             "Shift"
           ],
-          "description": "Show the factory's current build queue overlay"
+          "description": "Hold Shift+Space to show the selected factory’s queue.",
+          "requiresWidget": "FactoryQ Manager",
+          "sixty": {
+            "unbound": true
+          },
+          "prerequisite": "Exactly one factory selected."
         },
         {
           "id": "factory-queue-mode",
@@ -2052,7 +2263,7 @@
           "modifiers": [
             "Alt"
           ],
-          "description": "Switch the factory between queue mode and quota mode — one press flips it"
+          "description": "Switch between a production queue and target unit counts (quotas)."
         },
         {
           "id": "factory-preset-show",
@@ -2061,7 +2272,18 @@
           "level": 1,
           "key": "Space",
           "displayOnly": true,
-          "description": "Hold Space with a factory selected to show its ten preset boxes — then a number loads that queue, or left-click the box"
+          "description": "Hold Space to show ten preset slots. Press a number or click a slot to load it.",
+          "requiresWidget": "FactoryQ Manager",
+          "sixty": {
+            "unbound": true
+          },
+          "prerequisite": "Exactly one factory selected.",
+          "details": [
+            {
+              "title": "Saved settings",
+              "text": "Presets are kept per factory type between matches and include the queue, repeat state and quota settings."
+            }
+          ]
         },
         {
           "id": "factory-preset-load-1",
@@ -2073,7 +2295,12 @@
             "Space"
           ],
           "learnHidden": true,
-          "description": "Load the factory's saved build queue 1"
+          "description": "Load the factory's saved build queue 1",
+          "requiresWidget": "FactoryQ Manager",
+          "sixty": {
+            "unbound": true
+          },
+          "prerequisite": "Exactly one factory selected; hold Space to display the preset slots."
         },
         {
           "id": "factory-preset-load-2",
@@ -2085,7 +2312,12 @@
             "Space"
           ],
           "learnHidden": true,
-          "description": "Load the factory's saved build queue 2"
+          "description": "Load the factory's saved build queue 2",
+          "requiresWidget": "FactoryQ Manager",
+          "sixty": {
+            "unbound": true
+          },
+          "prerequisite": "Exactly one factory selected; hold Space to display the preset slots."
         },
         {
           "id": "factory-preset-load-3",
@@ -2097,7 +2329,12 @@
             "Space"
           ],
           "learnHidden": true,
-          "description": "Load the factory's saved build queue 3"
+          "description": "Load the factory's saved build queue 3",
+          "requiresWidget": "FactoryQ Manager",
+          "sixty": {
+            "unbound": true
+          },
+          "prerequisite": "Exactly one factory selected; hold Space to display the preset slots."
         },
         {
           "id": "factory-preset-load-range",
@@ -2109,7 +2346,18 @@
             "Space"
           ],
           "displayOnly": true,
-          "description": "Press the number of a preset box to load that build queue back into the factory"
+          "description": "Press the number of a preset box to load that build queue back into the factory",
+          "requiresWidget": "FactoryQ Manager",
+          "sixty": {
+            "unbound": true
+          },
+          "prerequisite": "Exactly one factory selected; hold Space to display the preset slots.",
+          "details": [
+            {
+              "title": "Saved settings",
+              "text": "Presets are kept per factory type between matches and include the queue, repeat state and quota settings."
+            }
+          ]
         },
         {
           "id": "factory-preset-save-1",
@@ -2122,7 +2370,22 @@
             "Alt"
           ],
           "learnHidden": true,
-          "description": "Save the selected factory's current build queue as preset 1"
+          "description": "Save the selected factory's current build queue as preset 1",
+          "requiresWidget": "FactoryQ Manager",
+          "sixty": {
+            "unbound": true
+          },
+          "prerequisite": "Exactly one factory selected.",
+          "details": [
+            {
+              "title": "Saved settings",
+              "text": "Presets are kept per factory type between matches and include the queue, repeat state and quota settings."
+            },
+            {
+              "title": "Delete preset",
+              "text": "Save an empty queue to clear the slot."
+            }
+          ]
         },
         {
           "id": "factory-preset-save-2",
@@ -2135,7 +2398,22 @@
             "Alt"
           ],
           "learnHidden": true,
-          "description": "Save the selected factory's current build queue as preset 2"
+          "description": "Save the selected factory's current build queue as preset 2",
+          "requiresWidget": "FactoryQ Manager",
+          "sixty": {
+            "unbound": true
+          },
+          "prerequisite": "Exactly one factory selected.",
+          "details": [
+            {
+              "title": "Saved settings",
+              "text": "Presets are kept per factory type between matches and include the queue, repeat state and quota settings."
+            },
+            {
+              "title": "Delete preset",
+              "text": "Save an empty queue to clear the slot."
+            }
+          ]
         },
         {
           "id": "factory-preset-save-3",
@@ -2148,7 +2426,22 @@
             "Alt"
           ],
           "learnHidden": true,
-          "description": "Save the selected factory's current build queue as preset 3"
+          "description": "Save the selected factory's current build queue as preset 3",
+          "requiresWidget": "FactoryQ Manager",
+          "sixty": {
+            "unbound": true
+          },
+          "prerequisite": "Exactly one factory selected.",
+          "details": [
+            {
+              "title": "Saved settings",
+              "text": "Presets are kept per factory type between matches and include the queue, repeat state and quota settings."
+            },
+            {
+              "title": "Delete preset",
+              "text": "Save an empty queue to clear the slot."
+            }
+          ]
         },
         {
           "id": "factory-preset-save-range",
@@ -2161,7 +2454,78 @@
             "Alt"
           ],
           "displayOnly": true,
-          "description": "Store the factory's build queue in that box, repeat state and quota mode included — presets are kept per factory type and survive the match. Saving while the queue is empty clears the box instead"
+          "description": "Save the factory’s current production settings in a preset slot.",
+          "requiresWidget": "FactoryQ Manager",
+          "sixty": {
+            "unbound": true
+          },
+          "prerequisite": "Exactly one factory selected.",
+          "details": [
+            {
+              "title": "Saved settings",
+              "text": "Presets are kept per factory type between matches and include the queue, repeat state and quota settings."
+            },
+            {
+              "title": "Delete preset",
+              "text": "Save an empty queue to clear the slot."
+            }
+          ]
+        },
+        {
+          "id": "factory-mouse-add",
+          "label": "Add One by Mouse",
+          "description": "Left-click a factory build icon to add 1 unit.",
+          "level": 2,
+          "mouseAction": "click",
+          "displayOnly": true,
+          "details": [
+            {
+              "title": "Quota mode",
+              "text": "Adjusts the target count instead of the production queue."
+            }
+          ]
+        },
+        {
+          "id": "factory-mouse-add-five",
+          "label": "Add Five by Mouse",
+          "description": "Hold Shift and left-click a factory build icon to add 5 units.",
+          "level": 2,
+          "mouseAction": "shift-click",
+          "displayOnly": true,
+          "details": [
+            {
+              "title": "Quota mode",
+              "text": "Adjusts the target count instead of the production queue."
+            }
+          ]
+        },
+        {
+          "id": "factory-mouse-add-twenty",
+          "label": "Add Twenty by Mouse",
+          "description": "Hold Ctrl and left-click a factory build icon to add 20 units.",
+          "level": 2,
+          "mouseAction": "ctrl-click",
+          "displayOnly": true,
+          "details": [
+            {
+              "title": "Quota mode",
+              "text": "Adjusts the target count instead of the production queue."
+            }
+          ]
+        },
+        {
+          "id": "factory-mouse-add-hundred",
+          "label": "Add One Hundred by Mouse",
+          "description": "Hold Ctrl+Shift and left-click a factory build icon to add 100 units.",
+          "level": 2,
+          "mouseAction": "ctrl-shift-click",
+          "displayOnly": true,
+          "details": [
+            {
+              "title": "Quota mode",
+              "text": "Adjusts the target count instead of the production queue."
+            }
+          ]
         }
       ]
     },
@@ -2176,7 +2540,7 @@
           "action": "loadunits",
           "level": 1,
           "key": "J",
-          "description": "Order the transport to load a specific unit",
+          "description": "Press J, then left-click a unit to load it.",
           "mouseAction": "click-unit"
         },
         {
@@ -2185,7 +2549,7 @@
           "action": "loadunits",
           "level": 1,
           "key": "J",
-          "description": "Drag a circle to load all nearby units into the transport",
+          "description": "Press J, then left-drag a circle to load units inside it.",
           "mouseAction": "drag"
         },
         {
@@ -2195,7 +2559,7 @@
           "action": "loadunits",
           "level": 2,
           "key": "J",
-          "description": "Hold Ctrl and start the circle on a unit to load every unit of that team inside it, the passengers spread across the selected transports",
+          "description": "Press J, then hold Ctrl and left-drag a circle from a unit to distribute passengers across selected transports.",
           "mouseAction": "ctrl-drag-on-unit"
         },
         {
@@ -2205,7 +2569,7 @@
           "action": "loadunits",
           "level": 2,
           "key": "J",
-          "description": "Hold Alt and start the circle on a unit to load only units of that type inside it, spread across the selected transports",
+          "description": "Press J, then hold Alt and left-drag a circle from a unit to load only that type.",
           "mouseAction": "alt-drag-on-unit"
         },
         {
@@ -2214,7 +2578,7 @@
           "action": "unloadunits",
           "level": 1,
           "key": "U",
-          "description": "Drop transported units at a target location",
+          "description": "Press U, then left-click a destination to unload passengers.",
           "mouseAction": "click"
         },
         {
@@ -2223,7 +2587,7 @@
           "action": "unloadunits",
           "level": 1,
           "key": "U",
-          "description": "Drag a circle to spread unloaded units across an area",
+          "description": "Press U, then left-drag a circle to unload passengers in the area.",
           "mouseAction": "drag"
         }
       ]
@@ -2267,7 +2631,7 @@
           "level": 0,
           "key": "0–9",
           "displayOnly": true,
-          "description": "Select units assigned to that group — use the number key for the group you want"
+          "description": "Select the units in a control group."
         },
         {
           "id": "group-set-1",
@@ -2328,7 +2692,7 @@
             "Shift"
           ],
           "learnHidden": true,
-          "description": "Add selected units to group 1 without removing existing members"
+          "description": "Add selected units to control group 1."
         },
         {
           "id": "group-add-2",
@@ -2341,7 +2705,7 @@
             "Shift"
           ],
           "learnHidden": true,
-          "description": "Add selected units to group 2 without removing existing members"
+          "description": "Add selected units to control group 2."
         },
         {
           "id": "group-add-3",
@@ -2354,7 +2718,7 @@
             "Shift"
           ],
           "learnHidden": true,
-          "description": "Add selected units to group 3 without removing existing members"
+          "description": "Add selected units to control group 3."
         },
         {
           "id": "group-add-range",
@@ -2367,7 +2731,7 @@
             "Shift"
           ],
           "displayOnly": true,
-          "description": "Add selected units to a group without replacing its existing members"
+          "description": "Add selected units to a control group."
         },
         {
           "id": "group-unset",
@@ -2378,7 +2742,6 @@
           "modifiers": [
             "Ctrl"
           ],
-          "note": "QWERTY: Ctrl+`  QWERTZ: Ctrl+^ (same physical key, left of 1)",
           "description": "Remove selected units from all their control groups",
           "sixty": {
             "key": "Q",
@@ -2398,7 +2761,7 @@
             "Alt"
           ],
           "learnHidden": true,
-          "description": "Assign selected unit types to auto group 1"
+          "description": "Assign selected unit types to an auto-group, including existing ungrouped units and future units."
         },
         {
           "id": "auto-group-set-2",
@@ -2410,7 +2773,7 @@
             "Alt"
           ],
           "learnHidden": true,
-          "description": "Assign selected unit types to auto group 2"
+          "description": "Assign selected unit types to an auto-group, including existing ungrouped units and future units."
         },
         {
           "id": "auto-group-set-3",
@@ -2422,7 +2785,7 @@
             "Alt"
           ],
           "learnHidden": true,
-          "description": "Assign selected unit types to auto group 3"
+          "description": "Assign selected unit types to an auto-group, including existing ungrouped units and future units."
         },
         {
           "id": "auto-group-set-range",
@@ -2434,7 +2797,7 @@
             "Alt"
           ],
           "displayOnly": true,
-          "description": "Set which group newly built units of this type auto-join — new units of the selected types will auto-assign to that group number"
+          "description": "Assign selected unit types to an auto-group, including existing ungrouped units and future units."
         },
         {
           "id": "remove-from-autogroup",
@@ -2445,7 +2808,6 @@
           "modifiers": [
             "Alt"
           ],
-          "note": "QWERTY: Alt+`  QWERTZ: Alt+^ (same physical key, left of 1)",
           "description": "Remove the unit types of selected units from their auto group configuration",
           "sixty": {
             "key": "Q",
@@ -2516,7 +2878,7 @@
             "Shift"
           ],
           "learnHidden": true,
-          "description": "Add group 1 to what is already selected, instead of replacing it"
+          "description": "Add control group 1 to the selection."
         },
         {
           "id": "group-selectadd-2",
@@ -2528,7 +2890,7 @@
             "Shift"
           ],
           "learnHidden": true,
-          "description": "Add group 2 to what is already selected, instead of replacing it"
+          "description": "Add control group 2 to the selection."
         },
         {
           "id": "group-selectadd-3",
@@ -2540,7 +2902,7 @@
             "Shift"
           ],
           "learnHidden": true,
-          "description": "Add group 3 to what is already selected, instead of replacing it"
+          "description": "Add control group 3 to the selection."
         },
         {
           "id": "group-selectadd-range",
@@ -2552,7 +2914,7 @@
             "Shift"
           ],
           "displayOnly": true,
-          "description": "Add that group to what is already selected, instead of replacing it"
+          "description": "Add a control group to the selection."
         },
         {
           "id": "group-selecttoggle-1",
@@ -2704,7 +3066,7 @@
           "level": 1,
           "key": "F1–F4",
           "displayOnly": true,
-          "description": "Jump to a stored camera position — use the function key for the slot you want",
+          "description": "Jump to a saved camera position.",
           "sixty": {
             "key": "1–4",
             "modifiers": [
@@ -2804,7 +3166,7 @@
           "modifiers": [
             "Ctrl"
           ],
-          "description": "TA-style camera — straight down on the map, and it does not rotate"
+          "description": "Switch to the TA-style overhead camera."
         },
         {
           "id": "camera-spring",
@@ -2816,16 +3178,15 @@
           "modifiers": [
             "Ctrl"
           ],
-          "description": "The free camera — tilts and rotates, the default way to play"
+          "description": "Switch to the Spring camera, which supports tilting and rotating."
         },
         {
           "id": "toggle-los",
           "label": "LOS View",
-          "action": "losradar",
+          "action": "togglelos",
           "level": 1,
           "displayOnly": true,
           "key": "'",
-          "note": "The key right of Ö / ; — BAR binds it by position",
           "description": "Toggle the line-of-sight overlay, shading everything your units cannot see"
         },
         {
@@ -2857,7 +3218,7 @@
             "Alt"
           ],
           "displayOnly": true,
-          "description": "Step to the next attack-range display preset for the selected unit type"
+          "description": "With exactly one unit selected, step to the next attack-range display preset for its type."
         },
         {
           "id": "attack-range-prev",
@@ -2869,7 +3230,7 @@
             "Alt"
           ],
           "displayOnly": true,
-          "description": "Step back to the previous attack-range display preset for the selected unit type"
+          "description": "With exactly one unit selected, step to the previous attack-range display preset for its type."
         },
         {
           "id": "fov-increase",
@@ -2881,7 +3242,8 @@
             "Ctrl"
           ],
           "displayOnly": true,
-          "description": "Widen the camera's field of view by 5° — 40° is the default"
+          "description": "Widen the camera’s field of view by 5°.",
+          "requiresWidget": "FOV changer"
         },
         {
           "id": "fov-decrease",
@@ -2893,7 +3255,64 @@
             "Ctrl"
           ],
           "displayOnly": true,
-          "description": "Narrow the camera's field of view by 5° — 40° is the default"
+          "description": "Narrow the camera’s field of view by 5°.",
+          "requiresWidget": "FOV changer"
+        },
+        {
+          "id": "camera-pan-up",
+          "label": "Pan Camera Up",
+          "description": "Move the camera with the arrow key.",
+          "level": 2,
+          "key": "ArrowUp",
+          "displayOnly": true
+        },
+        {
+          "id": "camera-pan-down",
+          "label": "Pan Camera Down",
+          "description": "Move the camera with the arrow key.",
+          "level": 2,
+          "key": "ArrowDown",
+          "displayOnly": true
+        },
+        {
+          "id": "camera-pan-left",
+          "label": "Pan Camera Left",
+          "description": "Move the camera with the arrow key.",
+          "level": 2,
+          "key": "ArrowLeft",
+          "displayOnly": true
+        },
+        {
+          "id": "camera-pan-right",
+          "label": "Pan Camera Right",
+          "description": "Move the camera with the arrow key.",
+          "level": 2,
+          "key": "ArrowRight",
+          "displayOnly": true
+        },
+        {
+          "id": "camera-wheel",
+          "label": "Zoom Camera",
+          "description": "Use the mouse wheel to zoom.",
+          "level": 2,
+          "displayOnly": true,
+          "inputLabel": "Mouse wheel"
+        },
+        {
+          "id": "camera-tilt",
+          "label": "Tilt Camera",
+          "description": "Hold Ctrl and use the mouse wheel to tilt the camera.",
+          "level": 2,
+          "displayOnly": true,
+          "inputLabel": "Ctrl + mouse wheel"
+        },
+        {
+          "id": "camera-rotate-spring",
+          "label": "Rotate Spring Camera",
+          "description": "In Spring camera mode, hold Alt and drag with the middle button to rotate and tilt.",
+          "level": 2,
+          "displayOnly": true,
+          "inputLabel": "Alt + middle drag"
         }
       ]
     },
@@ -2912,7 +3331,8 @@
             "Alt"
           ],
           "description": "Lock the picture-in-picture camera onto the units you have selected",
-          "displayOnly": true
+          "displayOnly": true,
+          "requiresWidget": "Picture-in-Picture"
         },
         {
           "id": "pip-swap",
@@ -2924,7 +3344,8 @@
             "Space"
           ],
           "description": "Exchange the main camera position with the PiP camera position",
-          "displayOnly": true
+          "displayOnly": true,
+          "requiresWidget": "Picture-in-Picture"
         },
         {
           "id": "pip-copy",
@@ -2937,7 +3358,8 @@
             "Space"
           ],
           "description": "Put the main camera's current position into the PiP",
-          "displayOnly": true
+          "displayOnly": true,
+          "requiresWidget": "Picture-in-Picture"
         }
       ]
     },
@@ -2993,7 +3415,7 @@
           "action": "mutesound",
           "level": 0,
           "key": "Backspace",
-          "description": "Toggle the game sound — press again to undo an accidental mute"
+          "description": "Toggle game sound."
         },
         {
           "id": "volume-down",
@@ -3011,7 +3433,6 @@
           "level": 0,
           "displayOnly": true,
           "key": "=",
-          "note": "QWERTY: =  QWERTZ: ´ (same physical key, right of the 0)",
           "description": "Turn the game sound up a step"
         },
         {
@@ -3024,7 +3445,7 @@
           "modifiers": [
             "Alt"
           ],
-          "description": "Slow the game down — host and single player only"
+          "description": "Decrease game speed in single player, replays or with cheats enabled."
         },
         {
           "id": "gamespeed-up",
@@ -3036,7 +3457,7 @@
           "modifiers": [
             "Alt"
           ],
-          "description": "Speed the game up — host and single player only"
+          "description": "Increase game speed in single player, replays or with cheats enabled."
         },
         {
           "id": "unit-info",
@@ -3045,7 +3466,7 @@
           "level": 1,
           "displayOnly": true,
           "key": "I",
-          "description": "Toggle the stats panel for the unit under the cursor"
+          "description": "Hold I to show unit statistics."
         },
         {
           "id": "map-details",
@@ -3066,7 +3487,7 @@
           "level": 0,
           "displayOnly": true,
           "key": "`",
-          "description": "Hold the key and middle-click — drops a marker your allies see and hear",
+          "description": "Hold the drawing key and middle-click — drops a marker your allies see and hear",
           "mouseAction": "middle-click"
         },
         {
@@ -3076,7 +3497,7 @@
           "level": 1,
           "displayOnly": true,
           "key": "`",
-          "description": "Hold the key and double-click — opens a text label at that spot",
+          "description": "Hold the drawing key and double-click — opens a text label at that spot",
           "mouseAction": "double-click"
         },
         {
@@ -3086,7 +3507,7 @@
           "level": 1,
           "displayOnly": true,
           "key": "`",
-          "description": "Hold the key and drag — freehand lines for your allies",
+          "description": "Hold the drawing key and drag — freehand lines for your allies",
           "mouseAction": "drag-line"
         },
         {
@@ -3126,7 +3547,7 @@
           "modifiers": [
             "Alt"
           ],
-          "description": "Call a vote to start the game without waiting for everyone"
+          "description": "Force the game to start as host, or request a start vote as a player."
         },
         {
           "id": "draw-erase",
@@ -3136,7 +3557,7 @@
           "level": 1,
           "displayOnly": true,
           "key": "`",
-          "description": "Hold the key and right-drag — wipes drawings and markers you pass over",
+          "description": "Hold the drawing key and right-drag — wipes drawings and markers you pass over",
           "mouseAction": "right-drag-line"
         }
       ]

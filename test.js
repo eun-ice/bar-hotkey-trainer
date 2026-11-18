@@ -15,7 +15,7 @@ import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import {
   modsSatisfy, scRangeIncludes, scComboMatchesKey, resolveBinding, equivalentKeyOnPage,
-  slotPicksUnit, menuRouteKeys, searchReference, gridActionKey,
+  slotPicksUnit, menuRouteKeys, searchReference, gridActionKey, mousePhaseMatches,
 } from './logic.js'
 
 const dir  = dirname(fileURLToPath(import.meta.url))
@@ -71,7 +71,7 @@ check('F-key outside',   !scRangeIncludes('F1–F4', 'F5'))
 // ─── 60% preset ───────────────────────────────────────────────────────────────
 group('60% keyboard preset')
 const withSixty = SC.groups.flatMap(g => g.shortcuts).filter(s => s.sixty)
-check('entries carry a sixty block', withSixty.length === 11, `found ${withSixty.length}`)
+check('existing 60% remaps are retained', withSixty.filter(s => !s.sixty.unbound).length === 11)
 for (const sc of withSixty) {
   const std = resolveBinding(sc, false)
   const cmp = resolveBinding(sc, true)
@@ -85,6 +85,28 @@ check('standard mode is a pass-through', SC.groups.flatMap(g => g.shortcuts).eve
   return b.key === sc.key && (b.keys ?? undefined) === (sc.keys ?? undefined)
       && b.modifiers.join() === (sc.modifiers ?? []).join()
 }))
+
+group('Mouse phase preserves command distinctions')
+check('Ctrl+A then bare drag passes', mousePhaseMatches([], [], [], ['A'], []))
+check('Ctrl+A held into drag fails', !mousePhaseMatches(['Ctrl'], ['Ctrl'], [], ['A'], ['A']))
+check('releasing Ctrl only at mouseup fails', !mousePhaseMatches(['Ctrl'], [], [], ['A'], []))
+check('holding A after releasing Ctrl fails', !mousePhaseMatches([], [], [], ['A'], ['A']))
+check('A then Ctrl drag passes removal', mousePhaseMatches(['Ctrl'], ['Ctrl'], ['Ctrl']))
+check('extra Space cannot pass as Ctrl removal', !mousePhaseMatches(['Ctrl','Space'], ['Ctrl','Space'], ['Ctrl']))
+check('Alt Fight cannot pass without Alt', !mousePhaseMatches([], [], ['Alt']))
+check('extra Shift cannot pass as Space insert', !mousePhaseMatches(['Shift','Space'], ['Shift','Space'], ['Space']))
+check('modifier order does not matter', mousePhaseMatches(['Space','Shift'], ['Shift','Space'], ['Shift','Space']))
+const allShortcuts = SC.groups.flatMap(g => g.shortcuts)
+for (const sc of allShortcuts.filter(s => s.requiresWidget === 'FactoryQ Manager')) {
+  check(`${sc.id}: factory presets unbound on 60%`, resolveBinding(sc, true).unbound === true)
+  check(`${sc.id}: factory presets still bound on full Grid`, !!resolveBinding(sc, false).key)
+}
+check('shortcut ids unique', new Set(allShortcuts.map(s => s.id)).size === allShortcuts.length)
+const area = allShortcuts.find(s => s.id === 'attack-area')
+check('Area Attack requires release before mouse', area.releaseBeforeMouse && area.mouseAction === 'drag')
+check('Area Attack uses supported context', area.contextOverride === 'area-artillery')
+check('standard blueprint save retained', allShortcuts.find(s => s.id === 'save-blueprint').key === 'T')
+check('standard blueprint delete retained', allShortcuts.find(s => s.id === 'delete-blueprint').key === 'Y')
 
 // ─── Land / water equivalents ─────────────────────────────────────────────────
 group('Land/water equivalents — every builder, every pair')

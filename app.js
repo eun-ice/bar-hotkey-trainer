@@ -1,9 +1,9 @@
 import {
   modsSatisfy, scRangeIncludes, scComboMatchesKey, resolveBinding, equivalentKeyOnPage,
-  slotPicksUnit, searchReference,
+  slotPicksUnit, searchReference, mousePhaseMatches,
   // Version query kept in step with the one on this file in index.html — a module import
   // is cached on its own, so a stale logic.js would otherwise outlive an app.js update.
-} from './logic.js?v=188'
+} from './logic.js?v=199'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -150,7 +150,7 @@ function keysMatch(pressed, expected) {
 }
 
 // Which binding a shortcut actually has for this user. BAR ships a second hotkey preset
-// for 60%/65% boards (luaui/configs/hotkeys/grid_keys_60pct.txt) that moves everything
+// for 60%/65% boards (the grid60 profile in keybind_defaults.json) that moves bindings
 // off the F-row and off the ` key, since those boards only reach them through an Fn
 // layer. Entries that differ carry a `sixty` block; everything else is identical.
 // The form factor is not detectable from the browser, so this follows a manual setting.
@@ -473,35 +473,36 @@ let CONSTRUCTOR_MODS  = { 'click': 0, 'shift-click': 1, 'space-click': 1, 'shift
 // Fallback only — data/shortcuts.json overrides these. Kept in step with it so the two
 // never quietly disagree about which modifier belongs to which difficulty.
 let FACTORY_MODS      = { 'none': 0, 'shift': 1, 'ctrl': 1, 'alt': 1, 'ctrl-shift': 1, 'alt-shift': 1 }
-// Ctrl used to add twenty and Ctrl+Shift a hundred. BAR changed it: Ctrl now *removes*
-// from the queue, so those two bulk-add modifiers no longer exist. Verified in game.
+// Keyboard grid keys: Ctrl removes. Mouse build-icon clicks still add 20 / 100.
 
 // What each build modifier does, for the reference screen's legend and result cards.
 // `mods` are the modifier names held together with the grid key (factories) or the
 // mouse click (constructors); order matters for display. `note` is an extra caveat
-// shown only on the result card, where there is room for it.
+// shown in the modifier reference legend.
+const FACTORY_QUOTA_NOTE = 'In quota mode, adjusts the target unit count.'
+const FACTORY_PRIORITY_NOTE = '<strong>Repeat on:</strong> finish the current unit first, then build the inserted units. <strong>Repeat off:</strong> the inserted build starts immediately; a different unit under construction is cancelled. Holding Alt while pressing the grid key adds production orders even in quota mode.'
 const FACTORY_MOD_INFO = {
-  'none':       { mods: [],                label: 'Build +1',     desc: 'Adds one to the end of the queue' },
-  'shift':      { mods: ['shift'],         label: 'Build +5',     desc: 'Adds five to the end of the queue' },
-  'ctrl':       { mods: ['ctrl'],          label: 'Build −1',     desc: 'Takes one back off the queue' },
-  'ctrl-shift': { mods: ['ctrl','shift'],  label: 'Build −5',     desc: 'Takes five back off the queue' },
-  'alt-shift':  { mods: ['alt','shift'],   label: 'Insert next ×5', desc: 'Jumps the queue with five of them' },
-  'alt':        { mods: ['alt'],           label: 'Insert next',  desc: 'Jumps the queue — builds this one next',
-                  note: '<strong>Hint:</strong> if the factory is on <strong>Repeat</strong>, any unit being built is finished and this one is built next. If the factory is not on Repeat, a unit under construction is <strong>cancelled</strong> and this one starts instead.' },
+  'none':       { mods: [],                label: 'Build +1',     desc: 'Press the grid key to queue one unit', note: FACTORY_QUOTA_NOTE },
+  'shift':      { mods: ['shift'],         label: 'Build +5',     desc: 'Hold Shift and press the grid key to queue five units', note: FACTORY_QUOTA_NOTE },
+  'ctrl':       { mods: ['ctrl'],          label: 'Build −1',     desc: 'Hold Ctrl and press the grid key to remove one queued unit', note: FACTORY_QUOTA_NOTE },
+  'ctrl-shift': { mods: ['ctrl','shift'],  label: 'Build −5',     desc: 'Hold Ctrl+Shift and press the grid key to remove five queued units', note: FACTORY_QUOTA_NOTE },
+  'alt-shift':  { mods: ['alt','shift'],   label: 'Priority build ×5', desc: 'Hold Alt+Shift and press the grid key to add five priority builds', note: FACTORY_PRIORITY_NOTE },
+  'alt':        { mods: ['alt'],           label: 'Priority build', desc: 'Hold Alt and press the grid key to add one priority build', note: FACTORY_PRIORITY_NOTE },
 }
 // `short` is the compact wording used on the result card, where all three are listed at once
 const CONSTRUCTOR_MOD_INFO = {
-  'click':       { mods: [],        short: 'Build',   label: 'Build',           desc: 'Place it — runs after the current orders' },
-  'shift-click': { mods: ['shift'], short: 'Queue',   label: 'Queue build',     desc: 'Appends to the build queue' },
-  'space-click': { mods: ['space'], short: 'Instant', label: 'Build instantly', desc: 'Skips the queue and starts right away' },
+  'click':       { mods: [],        short: 'Build',   label: 'Build',           desc: 'Choose a building, then left-click to build it and replace the queue' },
+  'shift-click': { mods: ['shift'], short: 'Queue',   label: 'Queue build',     desc: 'Choose a building, then hold Shift and left-click to append it' },
+  'space-click': { mods: ['space'], short: 'Instant', label: 'Build immediately', desc: 'Choose a building, then hold Space and left-click to build immediately; afterwards, resume the previous queue' },
   // `cmd_commandinsert.lua` takes build orders too (`id < 0`): with Space and Shift it
   // walks each builder's queue and inserts where the detour is smallest — building en route
   'shift-space-click': { mods: ['shift','space'], short: 'Into route', label: 'Insert into route',
-                         desc: 'Slots it into the queue where it costs the least extra walking',
-                         note: 'With <strong>several builders</strong> selected the same keys split the buildings between them instead — see <em>Split Build Orders</em> in the shortcut reference.' },
+                         desc: 'Choose a building, then hold Shift+Space and left-click to insert it where it adds the least travel',
+                         note: 'With <strong>two or more units selected</strong>, Build Split appends each builder’s section, followed by the remaining buildings.' },
 }
 
 const SHORTCUT_CONTEXT_UNITS = {
+  'area-artillery': { armada: 'armmart', cortex: 'cormart', legion: 'legamcluster' },
   battle:    { armada: 'armcom',   cortex: 'corcom',   legion: 'legcom'    },
   rezbot:    { armada: 'armrectr', cortex: 'cornecro', legion: 'legrezbot' },
   transport: { armada: 'armatlas', cortex: 'corvalk',  legion: 'legatrans' },
@@ -688,6 +689,7 @@ function expandStates(shortcut) {
 /** One queue entry for a shortcut, or null when this browser/OS cannot reach its key. */
 function shortcutQueueItem(group, shortcut) {
   const bind = binding(shortcut)
+  if (bind.unbound) return null
   // Unreachable in this browser/OS combination — drop it rather than show a study card
   if (isOsReserved(bind.key, bind.modifiers)) return null
   // Normalise keys and per-key modifier arrays
@@ -703,7 +705,8 @@ function shortcutQueueItem(group, shortcut) {
     id:              shortcut.id,
     label:           shortcut.label,
     action:          shortcut.action,   // for the command's cursor icon on the card and the pad
-    description:     shortcut.description ?? '',
+    description:     [shortcut.prerequisite, shortcut.description, shortcut.inputHint, shortcut.requiresWidget ? `Requires optional widget: ${shortcut.requiresWidget}.` : ''].filter(Boolean).join(' '),
+    releaseBeforeMouse: shortcut.releaseBeforeMouse ?? false,
     context:         shortcut.contextOverride ?? group.context,
     seqKeys,
     seqMods,
@@ -1309,7 +1312,7 @@ function clearShortcutKeyTimer() {
  * True when the target unit is at the Z slot (bottom-left) of a constructor menu on page 0.
  * In-game, pressing the category tab key pre-selects that slot automatically — so only ONE
  * keypress is needed.  e.g. MEX = Z, LLT = X (not XZ), Radar = C (not CZ), etc.
- * keysMatch handles the Z/Y QWERTZ equivalence.
+ * KeyLayout normalises physical positions before keysMatch compares canonical keys.
  */
 // The category key doubles as the bottom-left slot, so one press selects it. That also
 // holds when the bottom-left slot carries the land/water counterpart of what was asked
@@ -1929,7 +1932,7 @@ function resolveShortcutContextUnit(context) {
   const unitId = ctxMap[faction]
   return {
     contextUnitId:   unitId ?? null,
-    contextUnitName: DATA.builders[unitId]?.name ?? unitId ?? null,
+    contextUnitName: DATA.builders[unitId]?.name ?? DATA.units[unitId]?.name ?? unitId ?? null,
     contextFaction:  faction,
     contextIcon:     unitIconSrc(unitId),
   }
@@ -2111,7 +2114,7 @@ function formatShortcutKeyHtml(seqKeys, seqMods, currentStep) {
   const isQwertz = settings.keyboard === 'qwertz'
   const parts = seqKeys.map((key, idx) => {
     const mods = seqMods[idx] ?? []
-    // For single chars use display() so QWERTZ users see their physical key (Z→Y, :→Ö, ]→+)
+    // For single chars use display() so QWERTZ users see their physical key (Z→Y, ;→Ö, ]→+)
     const rawLabel = key.length === 1 ? key.toUpperCase() : key  // Tab, F6 keep their casing
     const keyLabel = display(rawLabel, isQwertz)
     const parts = [...mods.map(m => `<kbd>${m.toLowerCase() === 'alt' ? 'Alt' : displayMod(m)}</kbd>`), `<kbd>${keyLabel}</kbd>`]
@@ -2696,7 +2699,7 @@ const MOUSE_TARGET_POSITIONS = [
 const MOUSE_ACTION_LABELS = {
   'click':                   'Click to place',
   'shift-click':             'Shift + Click (queue)',
-  'space-click':             'Space + Click (instant)',
+  'space-click':             'Space + Click (instant, then rest of queue)',
   'shift-space-click':       'Shift + Space + Click (en route)',
   'click-unit':              'Click the unit',
   'drag':                    'Drag to set area',
@@ -2713,7 +2716,7 @@ const MOUSE_ACTION_LABELS = {
   'right-drag-line':         'Right-drag a line',
   'alt-right-drag-line':     'Hold Alt · Right-drag a line',
   'shift-click-right':       'Shift + Right-click (queue)',
-  'space-click-right':       'Space + Right-click (instant)',
+  'space-click-right':       'Space + Right-click (instant, then rest of queue)',
   'alt-click-right':         'Alt + Right-click',
   'ctrl-click-right':        'Ctrl + Right-click',
   'shift-space-click-right': 'Shift + Space + Right-click',
@@ -2722,6 +2725,7 @@ const MOUSE_ACTION_LABELS = {
   'shift-space-order':       'Shift + Space + any order',
 }
 
+const heldCommandKeys = new Set()
 let mouseZoneSpaceHeld = false
 
 function showMouseZonePending(action) {
@@ -2859,6 +2863,8 @@ function initMouseZone() {
 
   let dragOrigin  = null    // { x, y } zone-local px, set on mousedown
   let dragButton  = 'left'  // Attack Line is a *right* drag — the button is part of the answer
+  let mouseStartMods = []
+  let mouseStartKeys = []
   let dragAmbiguous = false // macOS Ctrl+click: could be either button, see macCtrlClickAmbiguous
 
   const AREA_DRAGS = ['drag', 'click-or-drag', 'click-unit-or-drag']
@@ -2875,6 +2881,8 @@ function initMouseZone() {
     dragOrigin = { x: e.clientX - rect.left, y: e.clientY - rect.top }
     dragButton = eventButtonName(e)
     dragAmbiguous = macCtrlClickAmbiguous(e)
+    mouseStartMods = heldMouseMods(e)
+    mouseStartKeys = [...heldCommandKeys]
     e.preventDefault()
   })
 
@@ -2916,6 +2924,15 @@ function initMouseZone() {
     if (svg) svg.innerHTML = ''
 
     const rawAction = currentMouseAction
+    if (currentEntry?.type === 'shortcut') {
+      const release = currentEntry.releaseBeforeMouse ? currentEntry.seqKeys : []
+      if (!mousePhaseMatches(mouseStartMods, heldMouseMods(e), mouseActionMods(rawAction),
+                             release, [...mouseStartKeys, ...heldCommandKeys])) {
+        questionHadWrong = true
+        setInstruction('Use exactly the shown mouse modifiers from press to release. Release the command keys first when instructed.', 'state-wrong')
+        return
+      }
+    }
     // The game takes a click with a bit of travel in it without complaint, so this has to
     // as well. There used to be a gap between the two thresholds where a gesture was
     // neither: a slightly shaky Shift+click landed in it and was met with silence until
@@ -3009,7 +3026,7 @@ function initMouseZone() {
     } else if (MOUSE_MOD_GESTURE_RE.test(action)) {
       // Every modifier gesture — `ctrl-drag`, `shift-click`, `ctrl-shift-space-drag` — is
       // judged alike: the right kind of gesture, with each modifier the action names held
-      // down. Extra modifiers pass, as they always have.
+      // down. Shortcut modifiers were checked exactly at press and release above.
       const wantsDrag = action.endsWith('drag')
       if (wantsDrag ? !isDrag : !isClick) return
       const held    = heldMouseMods(e)
@@ -4381,6 +4398,7 @@ function scExpandRange(key) {
  * drilled, so its badge describes them. Everything else earns no badge at all.
  */
 function scIsDrilled(shortcut, group) {
+  if (binding(shortcut).unbound) return false
   if (!shortcut.displayOnly) return true
   const bind = binding(shortcut)
   const keys = scExpandRange(bind.key)
@@ -4495,6 +4513,8 @@ function formatShortcutStates(shortcut, isQwertz) {
 function formatShortcutKey(shortcut, isQwertz) {
   if (shortcut.states?.length) return formatShortcutStates(shortcut, isQwertz)
   const bind = binding(shortcut)
+  if (bind.unbound) return '<span class="sc-reserved">Unbound in BAR’s 60% preset</span>'
+  if (shortcut.inputLabel) return escapeText(shortcut.inputLabel)
   if (!bind.key && !bind.keys) return ''
   const mods = bind.modifiers
   const hasAlt = mods.some(m => m.toLowerCase() === 'alt')
@@ -4580,6 +4600,7 @@ function scResolveSequence(seq) {
     for (const sc of group.shortcuts.flatMap(expandStates)) {
       if (sc.learnHidden) continue
       const bind = binding(sc)
+      if (bind.unbound) continue
       if (bind.keys) {
         // Each step repeats the full combo — Ctrl+G twice, not Ctrl+G then G. Only the
         // optional modifiers stay tied to the first press.
@@ -4607,11 +4628,13 @@ function initShortcutsPad(scFlash, scDisarmPad, padLabel) {
   let origin = null
   let button = 'left'
   let ambiguous = false  // macOS Ctrl+click, see macCtrlClickAmbiguous
+  let startMods = []
+  let startKeys = []
   let captured = false   // did we take this gesture over from the browser?
   let lastClick = null   // { time, button, x, y } — the click a double-click would follow
 
   // Sidebar entries, the Back button and links keep their normal click behaviour
-  const isChrome = target => target.closest('button, a, .browse-item, input, label, .ref-search')
+  const isChrome = target => target.closest('button, a, summary, details, .browse-item, input, label, .ref-search')
 
   // Selecting text is a plain unmodified left drag, so we must not swallow those.
   // Right- and middle-button and modifier-held gestures never select text, and once a
@@ -4634,6 +4657,9 @@ function initShortcutsPad(scFlash, scDisarmPad, padLabel) {
     button = eventButtonName(e)
     ambiguous = macCtrlClickAmbiguous(e)
     captured = capturable(e)
+    startMods = heldMouseMods(e)
+    if (scSpaceHeld && !startMods.includes('Space')) startMods.push('Space')
+    startKeys = [...heldCommandKeys]
     if (captured) e.preventDefault()
   })
 
@@ -4685,7 +4711,9 @@ function initShortcutsPad(scFlash, scDisarmPad, padLabel) {
     const pool = scArmed ?? SHORTCUTS.flatMap(group =>
       group.shortcuts.filter(sc => !sc.learnHidden && !sc.key && !sc.keys && sc.mouseAction)
         .map(sc => ({ group, sc })))
-    const hits = pool.filter(m => scGestureMatches(m.sc.mouseAction, gesture))
+    const hits = pool.filter(m => scGestureMatches(m.sc.mouseAction, gesture)
+      && mousePhaseMatches(startMods, mods, mouseActionMods(m.sc.mouseAction),
+        m.sc.releaseBeforeMouse ? [m.sc.key] : [], [...startKeys, ...heldCommandKeys]))
 
     // The first click of a key-armed double-click (` + double-click places a label) is not
     // a miss: stay armed and wait for the second one
@@ -5146,7 +5174,6 @@ function initKeyLog() {
 // The in-game keyboard charts, fetched from the BAR repo by fetch-bar-data.js and
 // converted by extract-data.js. Three variants of the same board: plain, Ctrl held,
 // Alt held. Loaded only when the panel is opened — together they are ~700 KB.
-const KEYBIND_CHART_SRC = 'https://github.com/beyond-all-reason/Beyond-All-Reason/blob/master/luaui/images/keybinds'
 // The command infographics under data/guides — hand-placed, not from the repo. They show
 // the area-command modifiers with pictures of what the drag has to start on.
 const GUIDE_CHARTS = new Set(['area-filters', 'reclaim', 'move', 'fight', 'settarget'])
@@ -5168,9 +5195,8 @@ function initVisualReference() {
     const isGuide = GUIDE_CHARTS.has(chart)
     const src = isGuide ? `data/guides/${chart}.webp` : `data/keybinds/${chart}.webp`
     $('sc-visual-img').src = src
-    // Keyboard charts link to their source in the repo; a guide opens full size instead
-    $('sc-visual-link').href = isGuide ? src :
-      `${KEYBIND_CHART_SRC}/${chart === 'grid' ? 'grid_keys' : 'grid_keys_' + chart.slice(5).toUpperCase()}.png`
+    // Open the bundled image; the old upstream keyboard-chart paths were removed.
+    $('sc-visual-link').href = src
     $('sc-visual-note-keys').classList.toggle('hidden', isGuide)
     $('sc-visual-note-guides').classList.toggle('hidden', !isGuide)
     for (const tab of $('sc-visual-tabs').querySelectorAll('.sc-visual-tab'))
@@ -5198,6 +5224,18 @@ function initVisualReference() {
     refLink(tab, `#shortcuts/visual/${tab.dataset.chart}`, () => show(tab.dataset.chart))
 }
 
+function escapeText(value) {
+  return String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))
+}
+
+function shortcutDetails(sc, groupWidgets = []) {
+  const pre = sc.prerequisite ? `<div class="sc-prerequisite">${escapeText(sc.prerequisite)}</div>` : ''
+  const widget = sc.requiresWidget && !groupWidgets.includes(sc.requiresWidget) ? `<div class="sc-widget">Optional widget: ${escapeText(sc.requiresWidget)} — enable it in BAR’s Widget Selector (F11).</div>` : ''
+  const hint = sc.inputHint ? `<div class="sc-input-hint">${escapeText(sc.inputHint)}</div>` : ''
+  const details = !sc.details?.length ? '' : `<details class="sc-details"><summary>${sc.id === 'attack-area' ? 'Supported units and limitations' : 'Conditions and exceptions'}</summary>${sc.details.map(d => `<p><strong>${escapeText(d.title)}</strong><br>${escapeText(d.text)}</p>`).join('')}</details>`
+  return pre + widget + hint + details
+}
+
 function selectShortcutsGroup(id, targetRowId = null) {
   // Leaving the chart behind — a key press can pull the view back to a group at any time
   $('sc-visual')?.classList.add('hidden')
@@ -5218,6 +5256,8 @@ function selectShortcutsGroup(id, targetRowId = null) {
   content.classList.remove('hidden')
 
   const visible = group.shortcuts.filter(sc => !sc.learnHidden)
+  const groupWidgets = ['factory', 'pip'].includes(id) ? [...new Set(visible.map(sc => sc.requiresWidget).filter(Boolean))] : []
+  const widgetNotes = groupWidgets.map(name => `<p class="sc-widget">Optional widget: ${escapeText(name)} — enable it in BAR’s Widget Selector (F11).</p>`).join('')
   const rows = visible.map(sc => {
     // Only flag what this browser/OS actually swallows — a "Windows/Linux" warning on a
     // Mac is noise, and worse, it contradicts the key visibly working when you press it.
@@ -5227,7 +5267,7 @@ function selectShortcutsGroup(id, targetRowId = null) {
       : isOsReserved(bind.key, bind.modifiers)      ? `<span class="sc-reserved">study card — ${IS_MAC ? 'macOS' : 'your OS'} keeps this one</span>`
       : ''
     const desc = sc.description
-      ? `<div class="sc-desc">${sc.description}</div>` : ''
+      ? `<div class="sc-desc">${escapeText(sc.description)}</div>${shortcutDetails(sc, groupWidgets)}` : shortcutDetails(sc, groupWidgets)
     // Commander is the honest fallback, not a guess: `buildShortcutQueue` skips the level
     // check entirely once the threshold is Infinity, so a shortcut with no level — or one
     // above 1 — is reachable on Commander and nowhere else. Do not "fix" this to blank.
@@ -5244,12 +5284,14 @@ function selectShortcutsGroup(id, targetRowId = null) {
       <tr data-sc-id="${sc.id}"${checked ? ` class="${checked.trim()}"` : ''}>
         <td class="sc-check-col"><span class="sc-check">✓</span></td>
         <td class="sc-action"><a class="sc-label ref-link" href="#shortcuts/${sc.id}">${commandIconHtml(sc)}${sc.label}</a>${lvlBadge}${desc}</td>
-        <td class="sc-key"><span class="sc-key-row"><span class="sc-key-keys">${formatShortcutKey(sc, isQwertz)}</span>${formatMouseAction(sc.mouseAction)}</span>${reserved}</td>
+        <td class="sc-key"><span class="sc-key-row"><span class="sc-key-keys">${formatShortcutKey(sc, isQwertz)}</span>${sc.mouseAction && (bind.key || bind.keys) ? `<span class="sc-gesture-arrow">${sc.releaseBeforeMouse ? "release →" : "→"}</span>` : ""}${formatMouseAction(sc.mouseAction)}</span>${reserved}</td>
       </tr>`
   }).join('')
 
   content.innerHTML = `
     <h3 class="sc-group-heading">${group.name}</h3>
+    ${widgetNotes}
+    <p class="sc-profile-note">BAR Grid defaults · Space is BAR’s Meta modifier. Activate commands before applying mouse modifiers.</p>
     <table class="sc-table">
       <thead>
         <tr>
@@ -5421,6 +5463,12 @@ async function init() {
     event.returnValue = ''
   })
 
+  document.addEventListener('keydown', event => {
+    heldCommandKeys.add(normalise(event.key, settings.keyboard === 'qwertz', event.code))
+  }, { capture: true })
+  document.addEventListener('keyup', event => {
+    heldCommandKeys.delete(normalise(event.key, settings.keyboard === 'qwertz', event.code))
+  }, { capture: true })
   document.addEventListener('keydown', onKey)
   // Fallback: some browsers deliver the Shift keydown to the focused element before
   // it bubbles (or swallow it entirely for focus-management shortcuts like Shift+Tab).
@@ -5437,7 +5485,7 @@ async function init() {
     if (event.key === ' ') { spaceHeld = false; mouseZoneSpaceHeld = false }
   })
 
-  window.addEventListener('blur', () => { spaceHeld = false; mouseZoneSpaceHeld = false })
+  window.addEventListener('blur', () => { heldCommandKeys.clear(); spaceHeld = false; mouseZoneSpaceHeld = false; scSpaceHeld = false })
 }
 
 init()
