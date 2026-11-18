@@ -1697,11 +1697,11 @@
         {
           "id": "reclaim-area-split",
           "displayOnly": true,
-          "label": "Split Reclaim by Tech Level",
+          "label": "Split Reclaim",
           "action": "reclaim",
           "level": 2,
           "key": "E",
-          "description": "Press E, then hold Ctrl, Shift and Space and left-drag a circle from a wreck to split the same-tech wrecks inside between the selected builders, each reclaiming its own share",
+          "description": "Press E, then hold Ctrl, Shift and Space and left-drag a circle from a wreck to split all wrecks and resources inside between the selected builders, each reclaiming its own share",
           "mouseAction": "ctrl-shift-space-drag-on-wreck"
         },
         {
@@ -1848,11 +1848,11 @@
         {
           "id": "resurrect-area-split",
           "displayOnly": true,
-          "label": "Split Resurrect by Tech Level",
+          "label": "Split Resurrect",
           "action": "resurrect",
           "level": 2,
           "key": "W",
-          "description": "Press W, then hold Ctrl, Shift and Space and left-drag a circle from a wreck to split the same-tech wrecks inside between the selected builders, each resurrecting its own share",
+          "description": "Press W, then hold Ctrl, Shift and Space and left-drag a circle from a wreck to split all wrecks inside between the selected builders, each resurrecting its own share",
           "mouseAction": "ctrl-shift-space-drag-on-wreck"
         },
         {

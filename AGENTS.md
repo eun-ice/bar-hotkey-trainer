@@ -257,7 +257,10 @@ rather than being copied into the code, so it can be refreshed when upstream cha
 - **Two widgets share the area commands; read both before rewriting a description.**
   `cmd_area_commands_filter.lua` ("Area Command Filter") handles Alt/Ctrl area commands:
   Alt matches exact type, Ctrl on wrecks matches tech level, and Ctrl on units has
-  command-specific behavior. `unit_smart_area_reclaim.lua` ("Smart Area Reclaim")
+  command-specific behavior. Ctrl+Shift+Space is the split and skips the tech-level
+  filter since upstream #10119 (November 2026): `reclaim-area-split` and
+  `resurrect-area-split` hand out every feature in the circle, and only Alt still
+  narrows a split to one type. Before that fix the split took same-tech wrecks only. `unit_smart_area_reclaim.lua` ("Smart Area Reclaim")
   handles remaining feature-origin reclaim circles, filtering resource type and
   above/below-water location. Ground-origin circles are not its path. Both ship enabled;
   the filter carries `layer = -1` so it runs first. Reading only the second one once led
